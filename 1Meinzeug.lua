@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.11
+local localVer = 0.1
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -27,6 +27,7 @@ async_http.dispatch()
 repeat 
     util.yield()
 until response
+
 
 local function get_transition_state(pid)
     return memory.read_int(memory.script_global(((0x2908D3 + 1) + (pid * 0x1C5)) + 230))
@@ -165,7 +166,6 @@ end
 players.on_join(player)
 players.dispatch_on_join()
 
-util.require_natives("natives-1640181023")
 local resource_dir = filesystem.resources_dir()
 if not filesystem.exists(resource_dir) then
 	util.toast("resource directory not found. notification system will be less of a bruh")
@@ -345,6 +345,44 @@ menu.toggle_loop(verschiedenes, "Script Host Addict", {}, "A faster version of s
         menu.trigger_command(menu.ref_by_path("Players>"..players.get_name_with_tags(players.user())..">Friendly>Give Script Host"))
     end
 end)
+
+menu.text_input(verschiedenes, "streamer", {"plstream"}, "streamer eingeben", function(input)
+	streamer = input
+end, '')
+
+menu.action(verschiedenes, "add streamer (join)", {}, "streamer adden mit direkt join", function()
+	if value == streamer then
+		util.toast("oben ist nichts drin", TOAST_ALL)
+	else
+		menu.trigger_commands("historyadd " .. tostring(streamer))
+		util.yield(500)
+		menu.trigger_commands("historynote " .. tostring(streamer) .. " Streamer")
+		util.yield(500)
+		menu.trigger_commands("join " .. tostring(streamer))
+	end
+end)
+
+menu.action(verschiedenes, "add streamer", {}, "streamer adden und öffnen in liste", function()
+	if value == streamer then
+		util.toast("oben ist nichts drin", TOAST_ALL)
+	else	
+		menu.trigger_commands("historyadd " .. tostring(streamer))
+		util.yield(500)
+		menu.trigger_commands("historynote " .. tostring(streamer) .. " Streamer")
+		util.yield(500)
+		menu.trigger_commands("findplayer " .. tostring(streamer))
+	end
+end)
+
+custselc = menu.list(menu.my_root(), "Custom Selection", {}, "", function(); end)
+
+	menu.toggle(custselc, "Exclude Selected", {}, "", function(on_toggle)
+		if on_toggle then
+			excludeselected = true
+		else
+			excludeselected = false
+		end
+	end)
 
 	menu.divider(custselc, "Actions")
 local actionen = menu.list(custselc, "actionen", {}, "")
@@ -973,4 +1011,4 @@ local multikick = menu.list(Permakick, "MultiPerma kick / Crash", {}, "")
     		util.yield(tostring(timetokick))
 	end)
 
-util.keep_running() 
+util.keep_running()
