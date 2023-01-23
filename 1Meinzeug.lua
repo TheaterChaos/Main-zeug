@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.11
+local localVer = 0.12
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -346,11 +346,13 @@ menu.toggle_loop(verschiedenes, "Script Host Addict", {}, "A faster version of s
     end
 end)
 
-menu.text_input(verschiedenes, "streamer", {"plstream"}, "streamer eingeben", function(input)
+local streamer = menu.list(verschiedenes(), "Streamer zeug", {}, "")
+
+menu.text_input(streamer, "streamer", {"plstream"}, "streamer eingeben", function(input)
 	streamer = input
 end, '')
 
-menu.action(verschiedenes, "add streamer (join)", {}, "streamer adden mit direkt join", function()
+menu.action(streamer, "add streamer (join)", {}, "streamer adden mit direkt join", function()
 	if value == streamer then
 		util.toast("oben ist nichts drin", TOAST_ALL)
 	else
@@ -362,7 +364,7 @@ menu.action(verschiedenes, "add streamer (join)", {}, "streamer adden mit direkt
 	end
 end)
 
-menu.action(verschiedenes, "add streamer", {}, "streamer adden und öffnen in liste", function()
+menu.action(streamer, "add streamer", {}, "streamer adden und öffnen in liste", function()
 	if value == streamer then
 		util.toast("oben ist nichts drin", TOAST_ALL)
 	else	
