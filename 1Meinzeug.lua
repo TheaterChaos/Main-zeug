@@ -1,13 +1,13 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.13
+local localVer = 0.1
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
     response = true
     if localVer ~= currentVer then
         util.toast("Neue version ist verfügbar lad sie dir mit Update lua runter.")
-        menu.action(menu.my_root(), "Update Lua", {}, "", function()
+        menu.action(menu.my_root(), "Update Lua", {}, "wenn update lua immer noch angezeigt wird dann einfach 2-3 minuten warten dann noch einmal probieren", function()
             async_http.init('raw.githubusercontent.com','/TheaterChaos/Mein-zeug/main/1Meinzeug.lua',function(a)
                 local err = select(2,load(a))
                 if err then
@@ -343,7 +343,6 @@ local chaos, gravity, speed = false, true, 100
 menu.toggle_loop(verschiedenes, "Script Host Addict", {}, "A faster version of script host kleptomaniac", function()
     if players.get_script_host() ~= players.user() and not util.is_session_transition_active(players.user) then
         menu.trigger_commands("scripthost")
-		util.toast("testen ob was passiert", TOAST_ALL)
     end
 end)
 
