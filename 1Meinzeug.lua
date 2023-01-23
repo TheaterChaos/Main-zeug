@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.12
+local localVer = 0.1
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
