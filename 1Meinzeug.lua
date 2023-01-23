@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.12
+local localVer = 0.13
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -341,8 +341,9 @@ local chaos, gravity, speed = false, true, 100
     	end)
 
 menu.toggle_loop(verschiedenes, "Script Host Addict", {}, "A faster version of script host kleptomaniac", function()
-    if players.get_script_host() ~= players.user() and get_transition_state(players.user()) ~= 0 then
-        menu.trigger_command(menu.ref_by_path("Players>"..players.get_name_with_tags(players.user())..">Friendly>Give Script Host"))
+    if players.get_script_host() ~= players.user() and not util.is_session_transition_active(players.user) then
+        menu.trigger_commands("scripthost")
+		util.toast("testen ob was passiert", TOAST_ALL)
     end
 end)
 
