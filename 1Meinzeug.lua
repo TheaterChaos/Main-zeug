@@ -346,7 +346,7 @@ menu.toggle_loop(verschiedenes, "Script Host Addict", {}, "A faster version of s
     end
 end)
 
-local streamer = menu.list(verschiedenes(), "Streamer zeug", {}, "")
+local streamer = menu.list(verschiedenes, "Streamer zeug", {}, "")
 
 menu.text_input(streamer, "streamer", {"plstream"}, "streamer eingeben", function(input)
 	streamer = input
