@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.1
+local localVer = 0.11
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -110,14 +110,12 @@ local function player(pid)
 	local anderes = menu.list(main, "anderes zeug", {"anderes"}, "")
 	local spam = menu.list(main, "spam zeug", {"spamzeug"}, "")
 
-	menu.toggle(spam, "alle loops", {}, "Blocked by most menus.", function(on_toggle)
+	menu.toggle(spam, "alle loops", {}, "auto spam besser selber an machen sonst kaka", function(on_toggle)
 		if on_toggle then
 			menu.trigger_commands("ptfxspam" .. players.get_name(pid) .. " on")
-			menu.trigger_commands("autospam" .. players.get_name(pid) .. " on")
 			menu.trigger_commands("explospam" .. players.get_name(pid) .. " on")
 		else
 			menu.trigger_commands("ptfxspam" .. players.get_name(pid) .. " off")
-			menu.trigger_commands("autospam" .. players.get_name(pid) .. " off")
 			menu.trigger_commands("explospam" .. players.get_name(pid) .. " off")
 		end
     end)
@@ -135,11 +133,10 @@ local function player(pid)
     ptfx.lib = 'core'
 	end)
 
-	menu.toggle_loop(spam, "auto spam", {"autospam"}, "Blocked by most menus.", function(on_toggle)
-			menu.trigger_commands("as" .. players.get_name(pid) .. " spawn" .. " t20")
+	menu.toggle_loop(spam, "auto spam", {"autospam"}, "auto spawn spawnt viele t20", function(on_toggle)
 			menu.trigger_commands("as" .. players.get_name(pid) .. " spawn" .. " t20")
     end)
-	menu.toggle_loop(spam, "explosiv spam", {"explospam"}, "Blocked by most menus.", function(on_toggle)
+	menu.toggle_loop(spam, "explosiv spam", {"explospam"}, "lässt ihn die ganze zeit explodieren", function(on_toggle)
 		menu.trigger_commands("explode" .. players.get_name(pid))
 	end)
 
@@ -364,7 +361,7 @@ local chaos, gravity, speed = false, true, 100
         	local playerList = getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
         	for k, playerPid in ipairs(playerList) do
 			local playerPed = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(playerPid)
-			if (PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed)) and players.is_godmode(playerPid) then
+			if (PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed)) and players.is_godmode(playerPid) and notplayers.is_in_interior(playerped) then
 				util.trigger_script_event(1 << playerPid, {113023613, playerPid, 1771544554, math.random(0, 9999)})
            		end	   
 		end
@@ -387,7 +384,7 @@ menu.action(streamer, "add streamer (join)", {}, "streamer adden mit direkt join
 		util.toast("oben ist nichts drin", TOAST_ALL)
 	else
 		menu.trigger_commands("historyadd " .. tostring(streamer))
-		util.yield(500)
+		util.yield(800)
 		menu.trigger_commands("historynote " .. tostring(streamer) .. " Streamer")
 		util.yield(500)
 		menu.trigger_commands("join " .. tostring(streamer))
@@ -399,7 +396,7 @@ menu.action(streamer, "add streamer", {}, "streamer adden und öffnen in liste",
 		util.toast("oben ist nichts drin", TOAST_ALL)
 	else	
 		menu.trigger_commands("historyadd " .. tostring(streamer))
-		util.yield(500)
+		util.yield(800)
 		menu.trigger_commands("historynote " .. tostring(streamer) .. " Streamer")
 		util.yield(500)
 		menu.trigger_commands("findplayer " .. tostring(streamer))
