@@ -1040,4 +1040,11 @@ local multikick = menu.list(Permakick, "MultiPerma kick / Crash", {}, "")
     		util.yield(tostring(timetokick))
 	end)
 
+local settings = menu.list(menu.my_root(), "Settings", {}, "", function(); end)
+	
+	menu.action(settings, "update suchen", {}, "", function()
+		util.restart_script()
+	end)
+
+
 util.keep_running()
