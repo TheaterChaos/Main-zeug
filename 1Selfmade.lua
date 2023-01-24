@@ -104,8 +104,8 @@ players.on_leave(handle_player_list)
 -- player options
 
 local function player(pid)
-    menu.divider(menu.player_root(pid), "Notizen")
-	local main = menu.list(menu.player_root(pid), "Mein zeug", {"PlMein"}, "")
+    menu.divider(menu.player_root(pid), "Selfmade")
+	local main = menu.list(menu.player_root(pid), "Selfmade", {"PlMein"}, "")
     local bozo = menu.list(main, "Notizen", {"Notizen"}, "")
 	local anderes = menu.list(main, "anderes zeug", {"anderes"}, "")
 	local spam = menu.list(main, "spam zeug", {"spamzeug"}, "")
