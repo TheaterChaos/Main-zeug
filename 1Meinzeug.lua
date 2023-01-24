@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.1
+local localVer = 0.11
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -16,10 +16,23 @@ async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinz
                 local f = io.open(filesystem.scripts_dir()..SCRIPT_RELPATH, "wb")
                 f:write(a)
                 f:close()
-                util.toast("Successfully updated Mein zeug. Restarting Script... :)")
-                util.restart_script()
-            end)
-            async_http.dispatch()
+			end)
+			async_http.dispatch()
+			util.yield(1000)
+
+			async_http.init('raw.githubusercontent.com','/TheaterChaos/Mein-zeug/main/Alltabels.lua',function(b)
+				local err = select(2,load(b))
+				if err then
+					util.toast("ACJSTables.lua failed to download. Please try again later. If this continues to happen then manually update via github.")
+				return end
+				local f = io.open(filesystem.resources_dir() .. 'alltabels.lua', "wb")
+				f:write(b)
+				f:close()
+				util.toast("Successfully updated Mein zeug. Restarting Script... :)")
+				util.restart_script()
+			end)
+			async_http.dispatch()  
+			util.yield(1000)
         end)
     end
 end, function() response = true end) 
@@ -27,6 +40,8 @@ async_http.dispatch()
 repeat 
     util.yield()
 until response
+
+require ('resources/Alltabels')
 
 
 local function get_transition_state(pid)
@@ -75,6 +90,14 @@ local function get_frined_name(friendIndex)
     native_invoker.begin_call();native_invoker.push_arg_int(friendIndex);native_invoker.end_call("4164F227D052E293");return native_invoker.get_return_value_string();
 end
 
+function Streamptfx(lib)
+    STREAMING.REQUEST_NAMED_PTFX_ASSET(lib)
+    while not STREAMING.HAS_NAMED_PTFX_ASSET_LOADED(lib) do
+        util.yield()
+    end
+    GRAPHICS.USE_PARTICLE_FX_ASSET(lib)
+end
+
 players.on_join(player_list)
 players.on_leave(handle_player_list)
 
@@ -89,22 +112,29 @@ local function player(pid)
 
 	menu.toggle(spam, "alle loops", {}, "Blocked by most menus.", function(on_toggle)
 		if on_toggle then
-			menu.trigger_commands("pfx" .. players.get_name(pid) .. " on")
+			menu.trigger_commands("ptfxspam" .. players.get_name(pid) .. " on")
 			menu.trigger_commands("autospam" .. players.get_name(pid) .. " on")
 			menu.trigger_commands("explospam" .. players.get_name(pid) .. " on")
 		else
-			menu.trigger_commands("pfx" .. players.get_name(pid) .. " off")
+			menu.trigger_commands("ptfxspam" .. players.get_name(pid) .. " off")
 			menu.trigger_commands("autospam" .. players.get_name(pid) .. " off")
 			menu.trigger_commands("explospam" .. players.get_name(pid) .. " off")
 		end
     end)
-	menu.toggle(spam, "pfx loop", {"pfx"}, "Blocked by most menus.", function(on_toggle)
-		if on_toggle then
-			menu.trigger_commands("particlespam" .. players.get_name(pid) .. " on")
-		else
-			menu.trigger_commands("particlespam" .. players.get_name(pid) .. " off")
-		end
-    end)
+
+	local ptfx = {lib = 'scr_rcbarry2', sel = 'scr_clown_appears'}
+	menu.toggle_loop(spam, 'PTFX Spam', {"ptfxspam"}, 'PTFX Spam', function ()
+    local targets = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)
+    local tar1 = ENTITY.GET_ENTITY_COORDS(targets, true)
+    Streamptfx(ptfx.lib)
+    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD( ptfx.sel, tar1.x, tar1.y, tar1.z + 1, 0, 0, 0, 10.0, true, true, true)
+	end)
+
+	menu.list_action(spam, 'Ptfx List', {}, 'such dir hier aus was du für ein ptfx willst', Fxcorelist, function(fxsel)
+    ptfx.sel = Fxha[fxsel]
+    ptfx.lib = 'core'
+	end)
+
 	menu.toggle_loop(spam, "auto spam", {"autospam"}, "Blocked by most menus.", function(on_toggle)
 			menu.trigger_commands("as" .. players.get_name(pid) .. " spawn" .. " t20")
 			menu.trigger_commands("as" .. players.get_name(pid) .. " spawn" .. " t20")
