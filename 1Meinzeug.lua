@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.12
+local localVer = 0.13
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -28,7 +28,7 @@ async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinz
 				local f = io.open(filesystem.resources_dir() .. 'alltabels.lua', "wb")
 				f:write(b)
 				f:close()
-				util.toast("Successfully updated Mein zeug. Restarting Script... :)")
+				util.toast("Successfully updated Selfmade. Restarting Script... :)")
 				util.restart_script()
 			end)
 			async_http.dispatch()  
@@ -40,6 +40,8 @@ async_http.dispatch()
 repeat 
     util.yield()
 until response
+
+
 
 require ('resources/Alltabels')
 
@@ -357,15 +359,25 @@ local verschiedenes = menu.list(menu.my_root(), "Verschiedenes zeug", {}, "")
 
 local chaos, gravity, speed = false, true, 100
 
-	menu.toggle_loop(verschiedenes, 'Shoot gods', {}, 'Disables godmode for other players when aiming at them. Mostly works on trash menus.', function()
-        	local playerList = getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
-        	for k, playerPid in ipairs(playerList) do
-			local playerPed = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(playerPid)
-			if (PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed)) and players.is_godmode(playerPid) and notplayers.is_in_interior(playerped) then
-				util.trigger_script_event(1 << playerPid, {113023613, playerPid, 1771544554, math.random(0, 9999)})
-           		end	   
-		end
-    	end)
+local wpobjective = menu.ref_by_path("World>Places>Teleport To...")
+
+menu.action(verschiedenes, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein waypoint gesetzt ist geht er da hin wenn keiner da ist geht er zu missions punkt", function()
+	if HUD.IS_WAYPOINT_ACTIVE() then
+		menu.trigger_commands("tpwp")
+	else
+		menu.trigger_commands("tpobjective")
+	end
+end)
+
+menu.toggle_loop(verschiedenes, 'Shoot gods', {}, 'Disables godmode for other players when aiming at them. Mostly works on trash menus.', function()
+       	local playerList = getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
+       	for k, playerPid in ipairs(playerList) do
+		local playerPed = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(playerPid)
+		if (PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed)) and players.is_godmode(playerPid) and notplayers.is_in_interior(playerped) then
+			util.trigger_script_event(1 << playerPid, {113023613, playerPid, 1771544554, math.random(0, 9999)})
+       		end	   
+	end
+end)
 
 menu.toggle_loop(verschiedenes, "Script Host Addict", {}, "A faster version of script host kleptomaniac", function()
     if players.get_script_host() ~= players.user() and not util.is_session_transition_active(players.user) then
@@ -1024,14 +1036,9 @@ local multikick = menu.list(Permakick, "MultiPerma kick / Crash", {}, "")
 	end)
 
 	menu.toggle_loop(Permakick, "kicken", {"permakicktoggle"}, "", function(click_type)
-		if value == name then
-			util.toast("Du musst oben einen namen eingeben", TOAST_ALL)
-			menu.trigger_commands("permakicktoggle " .. "off")
-		else
-    				menu.trigger_commands("namekick " .. tostring(name))
-					util.toast("Kick wird gesendet", TOAST_ALL)
-    				util.yield(tostring(timetokick))
-		end
+    		menu.trigger_commands("namekick " .. tostring(name))
+			util.toast("Kick wird gesendet", TOAST_ALL)
+    		util.yield(tostring(timetokick))
 	end)
 	
 	menu.toggle_loop(Permakick, "crashen", {}, "er kann deine ip sehen wenn er mod menu hat das denn crash blockiert", function(click_type)
