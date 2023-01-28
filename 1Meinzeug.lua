@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.14
+local localVer = 0.15
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -106,7 +106,7 @@ function is_user_a_stand_user(pid)
     end
     if players.exists(pid) then
         for _, cmd in ipairs(menu.player_root(pid):getChildren()) do
-            if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand User"):isValid() or cmd:refByRelPath("Stand User (Co-Loading"):isValid()) then
+            if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand User"):isValid() or cmd:refByRelPath("Stand User (Co-Loading"):isValid() or cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load"):isValid()) then
                 return true
             end
         end
@@ -383,14 +383,14 @@ menu.action(verschiedenes, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein
 	end
 end)
 
-menu.action(verschiedenes, "Mark Stand user self", {}, "", function()
+menu.action(verschiedenes, "Mark Stand user self", {}, "Nicht möglich bei leuten die du schonmal anders gesehen hast", function()
 	for _, pid in players.list(false, true, true) do
 		if is_user_a_stand_user(pid) or pid == players.user() and not util.is_session_transition_active(players.user) then
 			if menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) then
 				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) == "" then
 					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note"), "Stand user")
 					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-			end
+				end
 			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note")) then
 				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note")) == "" then
 					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note"), "Stand user")
@@ -429,6 +429,11 @@ menu.action(verschiedenes, "Mark Stand user self", {}, "", function()
 			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) then
 				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) == "" then
 					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note"), "Stand user")
+					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
+				end
+			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) then
+				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) == "" then
+					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note"), "Stand user")
 					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
 				end
 			end
@@ -437,7 +442,7 @@ menu.action(verschiedenes, "Mark Stand user self", {}, "", function()
 end)
 
 
-menu.toggle(verschiedenes, "Mark Stand user auto", {}, "", function()
+menu.toggle(verschiedenes, "Mark Stand user auto", {}, "Nicht möglich bei leuten die du schonmal anders gesehen hast", function()
 	for _, pid in players.list(false, true, true) do
 		if is_user_a_stand_user(pid) or pid == players.user() and not util.is_session_transition_active(players.user) then
 			if menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) then
@@ -483,6 +488,11 @@ menu.toggle(verschiedenes, "Mark Stand user auto", {}, "", function()
 			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) then
 				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) == "" then
 					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note"), "Stand user")
+					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
+				end
+			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) then
+				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) == "" then
+					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note"), "Stand user")
 					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
 				end
 			end
@@ -491,7 +501,7 @@ menu.toggle(verschiedenes, "Mark Stand user auto", {}, "", function()
 end)
 
 local function standuser()
-	util.yield(30000)
+	util.yield(10000)
 	if menu.get_value(menu.ref_by_path("Stand>Lua Scripts>" ..SCRIPT_NAME.. ">Verschiedenes zeug>Mark Stand user auto")) == true then
 		for _, pid in players.list(false, true, true) do
 			if is_user_a_stand_user(pid) or pid == players.user() and not util.is_session_transition_active(players.user) then
@@ -538,6 +548,11 @@ local function standuser()
 				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) then
 					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) == "" then
 						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note"), "Stand user")
+						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
+					end
+				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) then
+					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) == "" then
+						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note"), "Stand user")
 						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
 					end
 				end
