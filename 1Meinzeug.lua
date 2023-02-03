@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.16
+local localVer = 0.17
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -95,7 +95,7 @@ function is_user_a_stand_user(pid)
     end
     if players.exists(pid) then
         for _, cmd in ipairs(menu.player_root(pid):getChildren()) do
-            if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand User"):isValid() or cmd:refByRelPath("Stand User (Co-Loading"):isValid() or cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load"):isValid()) then
+            if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand User"):isValid() or cmd:refByRelPath("Stand User (Co-Loading)"):isValid() or cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load"):isValid()) then
                 return true
             end
         end
@@ -1053,6 +1053,143 @@ end
 players.on_join(GenerateFeatures)
 players.on_leave(update_leave)
 players.on_join(update_join)
+
+-- namen kick und crash
+Permakick = menu.list(player_zeug, "Perma kick", {}, "", function(); end)
+
+	menu.text_input(Permakick, "player", {"Kickname"}, "", function(input)
+		name = input
+	end, '')
+
+	timetokick = 10000
+	menu.slider(Permakick, "Zeit bis kick", {}, "10000 = 10 sekunden, 600000 = 10 mintuten, 120000 = 2 Minuten", 10000, 600000, 10000, 10000, function(s)
+    	    timetokick = s
+  	 end)
+
+	menu.action(Permakick, "Spieler suchen", {}, "", function()
+		menu.trigger_commands("findplayer " .. tostring(name))
+	end)
+
+	menu.toggle(Permakick, "auto check if offline", {}, "das wird dein menu öffnen und nach dem spieler suchen ob er online ist (sehr nervig) manchmal weiß aber nicht einmal stand ob er online ist", function()
+	end)
+
+	menu.toggle_loop(Permakick, "kicken", {"permakicktoggle"}, "es gibt ein kleinen ruckler wenn er den kick macht", function()
+	if menu.get_value(menu.ref_by_path("Stand>Lua Scripts>" ..SCRIPT_NAME.. ">Player zeug>Perma kick>auto check if offline")) == true then
+		menu.trigger_commands("findplayer " .. tostring(name))
+		util.yield(6000)
+		if menu.is_ref_valid(menu.ref_by_path("Players>" ..name.. ">Kick>Smart")) then
+			menu.trigger_command(menu.ref_by_path("Players>" ..name.. ">Kick>Smart"))
+			util.toast(name.. " Wurde aus deiner lobby gekickt", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. ">Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. ">Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. ">Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. ">Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= keine", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Solo]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Solo]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Solo]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Solo]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Solo", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Invite]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invite]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invite]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invite]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Invite", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Friend]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Friend]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Friend]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Friend]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Closed Friend", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Crew]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Crew]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Crew]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Crew]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Closed Crew", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Crew]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Crew]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Crew]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Crew]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Crew", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Public]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Public]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Public]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Public]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Public", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Invalid]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invalid]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invalid]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invalid]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= invalid", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Story Mode]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Story Mode]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Story Mode]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Story Mode]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Story Mode", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Offline]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Offline]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Offline]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Offline]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Offline", TOAST_ALL)
+		end
+		util.yield(tostring(timetokick))
+	else
+		if menu.is_ref_valid(menu.ref_by_path("Players>" ..name.. ">Kick>Smart")) then
+			menu.trigger_command(menu.ref_by_path("Players>" ..name.. ">Kick>Smart"))
+			util.toast(name.. " Wurde aus deiner lobby gekickt", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. ">Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. ">Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. ">Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. ">Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= keinen", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Solo]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Solo]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Solo]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Solo]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Solo", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Invite]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invite]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invite]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invite]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Invite", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Friend]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Friend]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Friend]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Friend]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Clesed Friend", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Crew]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Crew]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Crew]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Closed Crew]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Clesed Crew", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Crew]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Crew]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Crew]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Crew]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Crew", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Public]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Public]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Public]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Public]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Public", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Invalid]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invalid]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invalid]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Invalid]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Invalid", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Story Mode]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Story Mode]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Story Mode]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Story Mode]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Story Mode", TOAST_ALL)
+		elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..name.. " [Offline]>Blind-Fire Kick>Breakup")) then
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Offline]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Offline]>Blind-Fire Kick>Breakup"))
+			menu.trigger_command(menu.ref_by_path("Online>Player History>" ..name.. " [Offline]>Blind-Fire Kick>Breakup"))
+			util.toast(name.. " Wurde aus seiner lobby gekickt Anzeige= Offline", TOAST_ALL)
+		end
+		util.yield(tostring(timetokick))
+	end
+	end)
 
 -- settings
 local settings = menu.list(menu.my_root(), "Settings", {}, "", function(); end)
