@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.17
+local localVer = 0.18
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -95,7 +95,7 @@ function is_user_a_stand_user(pid)
     end
     if players.exists(pid) then
         for _, cmd in ipairs(menu.player_root(pid):getChildren()) do
-            if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand User"):isValid() or cmd:refByRelPath("Stand User (Co-Loading)"):isValid() or cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load"):isValid()) then
+            if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand User"):isValid() or cmd:refByRelPath("Stand User (Co-Loading)"):isValid() or cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load)"):isValid()) then
                 return true
             end
         end
@@ -556,6 +556,85 @@ local friendly = menu.list(actionen, "Friendly stuff", {}, "")
 local kicken = menu.list(actionen, "Kick/crash stuff", {}, "")
 local tp = menu.list(actionen, "TP", {}, "")
 local trolling = menu.list(actionen, "Trolling", {}, "")
+menu.action(custselc, "seite reseten", {}, "passiert das bei mission ein fehler kommt einfach die seite hier mit reseten dann easy (wichtig pid 1 und 2 müssen existieren sonst geht es nicht)", function(pids)
+	for pids = 0, 31 do
+		if players.exists(pids) then
+		if menu.is_ref_valid(menu.ref_by_command_name("selected" ..pids)) then
+			menu.delete(cmd_id[pids])
+			util.yield(50)
+			if players.exists(pids) then
+				cmd_id[pids] = menu.toggle(custselc, tostring(players.get_name(pids)), {"selected" .. pids}, "PID - ".. pids, function(on_toggle)
+					if on_toggle then
+						selectedplayer[pids] = true
+						listfriendly[pids] = menu.action(friendly, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
+							if players.user() and players.exists(pids) then
+								menu.trigger_commands("selected" .. pids .. " " .. "off")
+							else
+								menu.delete(listfriendly[pids])
+								menu.delete(listkicken[pids])
+								menu.delete(listtp[pids])
+								menu.delete(listtrolling[pids])
+								menu.delete(listgenerel[pids])
+							end
+						end)
+						listkicken[pids] = menu.action(kicken, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
+							if players.user() and players.exists(pids) then
+								menu.trigger_commands("selected" .. pids .. " " .. "off")
+							else
+								menu.delete(listfriendly[pids])
+								menu.delete(listkicken[pids])
+								menu.delete(listtp[pids])
+								menu.delete(listtrolling[pids])
+								menu.delete(listgenerel[pids])
+							end
+						end)
+						listtp[pids] = menu.action(tp, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
+							if players.user() and players.exists(pids) then
+								menu.trigger_commands("selected" .. pids .. " " .. "off")
+							else
+								menu.delete(listfriendly[pids])
+								menu.delete(listkicken[pids])
+								menu.delete(listtp[pids])
+								menu.delete(listtrolling[pids])
+								menu.delete(listgenerel[pids])
+							end
+						end)
+						listtrolling[pids] = menu.action(trolling, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
+							if players.user() and players.exists(pids) then
+								menu.trigger_commands("selected" .. pids .. " " .. "off")
+							else
+								menu.delete(listfriendly[pids])
+								menu.delete(listkicken[pids])
+								menu.delete(listtp[pids])
+								menu.delete(listtrolling[pids])
+								menu.delete(listgenerel[pids])
+							end
+						end)
+						listgenerel[pids] = menu.action(actionen, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
+							if players.user() and players.exists(pids) then
+								menu.trigger_commands("selected" .. pids .. " " .. "off")
+							else
+								menu.delete(listfriendly[pids])
+								menu.delete(listkicken[pids])
+								menu.delete(listtp[pids])
+								menu.delete(listtrolling[pids])
+								menu.delete(listgenerel[pids])
+							end
+						end)
+					else
+						selectedplayer[pids] = false
+						menu.delete(listfriendly[pids])	
+						menu.delete(listkicken[pids])
+						menu.delete(listtp[pids])
+						menu.delete(listtrolling[pids])
+						menu.delete(listgenerel[pids])
+					end
+				end)
+			end
+		end
+		end
+	end
+end)
 
 menu.action(friendly, "automatisches healen ON", {}, "", function()
 	for pids = 0, 31 do
@@ -945,6 +1024,7 @@ for pids = 0, 31 do
 end
 
 local function update_join(pid)
+	util.yield(300)
 local name = players.get_name(pid)
 cmd_id[pid] = menu.toggle(custselc, name, {"selected" .. pid}, "PID - ".. pid, function(on_toggle)
 	if on_toggle then
@@ -1016,13 +1096,14 @@ end)
 end
 
 local function update_leave(pid)
-if pid ~= selectedplayer[pid] then
-	menu.trigger_commands("selected" .. pid .. " " .. "off")
-	util.yield(500)
-	menu.delete(cmd_id[pid])
-else
-	menu.delete(cmd_id[pid])
-end
+	if menu.get_value(menu.ref_by_command_name("selected" ..pid)) == true then
+		menu.trigger_commands("selected" .. pid .. " " .. "off")
+		util.toast("test", TOAST_ALL)
+		util.yield(200)
+		menu.delete(cmd_id[pid])
+	else
+		menu.delete(cmd_id[pid])
+	end
 end
 
 GenerateFeatures = function(pid)
