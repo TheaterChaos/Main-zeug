@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.19
+local localVer = 0.20
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -509,7 +509,7 @@ menu.toggle_loop(Self, 'Shoot gods', {}, 'Disables godmode for other players whe
 	local playerList = getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
 	for k, playerPid in ipairs(playerList) do
  local playerPed = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(playerPid)
- if (PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed)) and players.is_godmode(playerPid) and not players.is_in_interior(playerped) then
+ if (PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed)) and players.is_godmode(playerPid) and not players.is_in_interior(playerPed) then
 	 util.trigger_script_event(1 << playerPid, {-1428749433, playerPid, 448051697, math.random(0, 9999)})
 		end	   
 end
