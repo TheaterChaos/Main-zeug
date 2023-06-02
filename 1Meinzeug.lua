@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.20
+local localVer = 0.21
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -43,7 +43,6 @@ until response
 
 
 require ('resources/Alltabels')
-
 
 local resource_dir = filesystem.resources_dir()
 if not filesystem.exists(resource_dir) then
@@ -323,6 +322,78 @@ menu.action(Self, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein waypoint
 	end
 end)
 
+--shoot gods
+menu.toggle_loop(Self, 'Shoot gods', {}, 'Disables godmode for other players when aiming at them. Mostly works on trash menus.', function()
+	local playerList = getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
+	for k, playerPid in ipairs(playerList) do
+ local playerPed = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(playerPid)
+ if (PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed)) and players.is_godmode(playerPid) and not players.is_in_interior(playerPed) then
+	 util.trigger_script_event(1 << playerPid, {-1428749433, playerPid, 448051697, math.random(0, 9999)})
+		end	   
+end
+end)
+
+menu.toggle_loop(Self, "Script Host Addict", {}, "A faster version of script host kleptomaniac", function()
+    if players.get_script_host() ~= players.user() and not util.is_session_transition_active(players.user) then
+        menu.trigger_commands("scripthost")
+    end
+end)
+
+Lockweapons = menu.get_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"))
+Regionsmatch = menu.get_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"))
+poolOver = menu.get_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"))
+seamlessswitch = menu.get_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"))
+permissionspawn = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"))
+Lauchnermission = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"))
+Broadcastdata = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"))
+swoopdown = menu.get_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"))
+multiplierareas = menu.get_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"))
+Entityspamzeug = menu.get_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"))
+groopoverrite = menu.get_value(menu.ref_by_path("Online>Transitions>Join Group Override"))
+
+menu.toggle(Self, "Zeug für Job aus machen", {}, "Macht zeug aus damit im missionen weniger probleme kommen können", function(on_toggle)
+	if on_toggle then
+		menu.trigger_command(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), false)
+		menu.trigger_command(menu.ref_by_path("Online>Transitions>Join Group Override>Don't Override"), "Don't Override")
+	else
+		menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), poolOver)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), seamlessswitch)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"), Broadcastdata)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"), Lauchnermission)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"), permissionspawn)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), swoopdown)
+		menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
+		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Join Group Override"), groopoverrite)
+	end
+end)
+
+menu.action(Self, "was deactivite wurde drück hier", {}, "zeigt was alles bei zeug für job aus machen aus gemacht wird", function()
+	util.toast("Lock Weapons = false", TOAST_CONSOLE)
+	util.toast("Region Override = false", TOAST_CONSOLE)
+	util.toast("Pool Override = false", TOAST_CONSOLE)
+	util.toast("Seamless Session Switching = false", TOAST_CONSOLE)
+	util.toast("Don't Wait For Data Broadcast = false", TOAST_CONSOLE)
+	util.toast("Don't Wait For Mission Launcher = false", TOAST_CONSOLE)
+	util.toast("Don't Ask For Permission To Spawn = false", TOAST_CONSOLE)
+	util.toast("Skip Swoop Down = false", TOAST_CONSOLE)
+	util.toast("Delete Modded Pop Multiplier Areas = false", TOAST_CONSOLE)
+	util.toast("Block Entity Spam>Block Entity Spam = false", TOAST_CONSOLE)
+	util.toast("Join Group Override = Don't Override", TOAST_CONSOLE)
+	util.toast("Guck in deine console da steht alles wenn du keine hast fick dich", TOAST_DEFAULT)
+end)
+
 --auto stand user marker
 menu.action(player_zeug, "Mark Stand user self", {}, "Nicht möglich bei leuten die du schonmal anders gesehen hast", function()
 	for _, pid in players.list(false, true, true) do
@@ -503,23 +574,6 @@ local function standuser()
 end
 
 players.on_join(standuser)
-
---shoot gods
-menu.toggle_loop(Self, 'Shoot gods', {}, 'Disables godmode for other players when aiming at them. Mostly works on trash menus.', function()
-	local playerList = getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
-	for k, playerPid in ipairs(playerList) do
- local playerPed = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(playerPid)
- if (PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or PLAYER.IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed)) and players.is_godmode(playerPid) and not players.is_in_interior(playerPed) then
-	 util.trigger_script_event(1 << playerPid, {-1428749433, playerPid, 448051697, math.random(0, 9999)})
-		end	   
-end
-end)
-
-menu.toggle_loop(Self, "Script Host Addict", {}, "A faster version of script host kleptomaniac", function()
-    if players.get_script_host() ~= players.user() and not util.is_session_transition_active(players.user) then
-        menu.trigger_commands("scripthost")
-    end
-end)
 
 menu.text_input(streamer, "streamer", {"plstream"}, "streamer eingeben", function(input)
 	streamer = input
