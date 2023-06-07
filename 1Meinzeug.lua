@@ -1,6 +1,6 @@
 util.require_natives("natives-1672190175-uno")
 local response = false
-local localVer = 0.21
+local localVer = 0.22
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -339,21 +339,49 @@ menu.toggle_loop(Self, "Script Host Addict", {}, "A faster version of script hos
     end
 end)
 
-Lockweapons = menu.get_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"))
-Regionsmatch = menu.get_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"))
-poolOver = menu.get_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"))
-seamlessswitch = menu.get_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"))
-permissionspawn = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"))
-Lauchnermission = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"))
-Broadcastdata = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"))
-swoopdown = menu.get_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"))
-multiplierareas = menu.get_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"))
-Entityspamzeug = menu.get_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"))
-groopoverrite = menu.get_value(menu.ref_by_path("Online>Transitions>Join Group Override"))
+local Zeugforjob = menu.list(Self, "Zeug für jobs", {}, "")
+local auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "du kannst sagen was nicht aus gemacht werden soll weil das nicht muss ist würde ich aber trz bei machen missionen empfehlen")
 
-menu.toggle(Self, "Zeug für Job aus machen", {}, "Macht zeug aus damit im missionen weniger probleme kommen können", function(on_toggle)
+menu.toggle(auswahlauusmachen, "lockweapons", {}, "achte darauf das man es nicht an aus macht während man :zeug für job aus machen: an hat / wenn es an ist dann wird es nicht aus gemacht", function(on_toggle)
 	if on_toggle then
-		menu.trigger_command(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), false)
+		lockweapons1 = true
+	else
+		lockweapons1 = false
+	end
+end)
+
+menu.toggle(auswahlauusmachen, "Wantedlevel fixieren", {}, "achte darauf das man es nicht an aus macht während man :zeug für job aus machen: an hat / wenn es an ist dann wird es nicht aus gemacht", function(on_toggle)
+	if on_toggle then
+		wantedlevel1 = true
+	else
+		wantedlevel1 = false
+	end
+end)
+
+menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit im missionen weniger probleme kommen können", function(on_toggle)
+	if on_toggle then
+		Lockweapons = menu.get_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"))
+		Regionsmatch = menu.get_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"))
+		poolOver = menu.get_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"))
+		seamlessswitch = menu.get_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"))
+		permissionspawn = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"))
+		Lauchnermission = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"))
+		Broadcastdata = menu.get_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"))
+		swoopdown = menu.get_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"))
+		multiplierareas = menu.get_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"))
+		Entityspamzeug = menu.get_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"))
+		groopoverrite = menu.get_value(menu.ref_by_path("Online>Transitions>Join Group Override"))
+		restrictedareas = menu.get_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"))
+		wantedlevel = menu.get_value(menu.ref_by_path("Self>Lock Wanted Level"))
+		zeugforthejob = true
+		if lockweapons1 then
+		else
+			menu.trigger_command(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), false)
+		end
+		if wantedlevel1 then
+		else
+			menu.trigger_command(menu.ref_by_path("Self>Lock Wanted Level"), false)
+		end
 		menu.trigger_command(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), false)
@@ -364,8 +392,18 @@ menu.toggle(Self, "Zeug für Job aus machen", {}, "Macht zeug aus damit im missi
 		menu.trigger_command(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Transitions>Join Group Override>Don't Override"), "Don't Override")
+		menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), false)
+		util.toast("Das zeug wurde aus gemacht", TOAST_ALL)
 	else
-		menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
+		zeugforthejob = false
+		if lockweapons1 then
+		else
+			menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
+		end
+		if wantedlevel1 then
+		else
+			menu.trigger_command(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel)
+		end
 		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
 		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), poolOver)
 		menu.set_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), seamlessswitch)
@@ -376,10 +414,12 @@ menu.toggle(Self, "Zeug für Job aus machen", {}, "Macht zeug aus damit im missi
 		menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
 		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
 		menu.set_value(menu.ref_by_path("Online>Transitions>Join Group Override"), groopoverrite)
+		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
+		util.toast("das zeug wurde wieder an machen", TOAST_ALL)
 	end
 end)
 
-menu.action(Self, "was deactivite wurde drück hier", {}, "zeigt was alles bei zeug für job aus machen aus gemacht wird", function()
+menu.action(Zeugforjob, "was deactiviert wurde drück hier", {}, "zeigt was alles bei zeug für job aus machen aus gemacht wird", function()
 	util.toast("Lock Weapons = false", TOAST_CONSOLE)
 	util.toast("Region Override = false", TOAST_CONSOLE)
 	util.toast("Pool Override = false", TOAST_CONSOLE)
@@ -391,8 +431,30 @@ menu.action(Self, "was deactivite wurde drück hier", {}, "zeigt was alles bei z
 	util.toast("Delete Modded Pop Multiplier Areas = false", TOAST_CONSOLE)
 	util.toast("Block Entity Spam>Block Entity Spam = false", TOAST_CONSOLE)
 	util.toast("Join Group Override = Don't Override", TOAST_CONSOLE)
-	util.toast("Guck in deine console da steht alles wenn du keine hast fick dich", TOAST_DEFAULT)
+	util.toast("Disable Restricted Areas 0 false", TOAST_CONSOLE)
+	util.toast("Lock Wanted Level = false", TOAST_CONSOLE)
+	util.toast("Guck in deine console da steht alles. wenn du keine hast fick dich", TOAST_DEFAULT)
 end)
+
+local function zeugwiederan()
+	if zeugforthejob then
+		menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), poolOver)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), seamlessswitch)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"), Broadcastdata)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"), Lauchnermission)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"), permissionspawn)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), swoopdown)
+		menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
+		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
+		menu.set_value(menu.ref_by_path("Online>Transitions>Join Group Override"), groopoverrite)
+		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
+		menu.set_value(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel1)
+	end
+end
+
+util.on_stop(zeugwiederan)
 
 --auto stand user marker
 menu.action(player_zeug, "Mark Stand user self", {}, "Nicht möglich bei leuten die du schonmal anders gesehen hast", function()
@@ -615,7 +677,7 @@ menu.action(custselc, "seite reseten", {}, "passiert das bei mission ein fehler 
 		if players.exists(pids) then
 		if menu.is_ref_valid(menu.ref_by_command_name("selected" ..pids)) then
 			menu.delete(cmd_id[pids])
-			util.yield(50)
+			util.yield(10)
 			if players.exists(pids) then
 				cmd_id[pids] = menu.toggle(custselc, tostring(players.get_name(pids)), {"selected" .. pids}, "PID - ".. pids, function(on_toggle)
 					if on_toggle then
@@ -1152,7 +1214,6 @@ end
 local function update_leave(pid)
 	if menu.get_value(menu.ref_by_command_name("selected" ..pid)) == true then
 		menu.trigger_commands("selected" .. pid .. " " .. "off")
-		util.toast("test", TOAST_ALL)
 		util.yield(200)
 		menu.delete(cmd_id[pid])
 	else
