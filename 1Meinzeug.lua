@@ -1,6 +1,6 @@
 util.require_natives("natives-1681379138", "g-uno")
 local response = false
-local localVer = 0.23
+local localVer = 0.24
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -329,20 +329,23 @@ end)
 
 --shoot gods
 menu.toggle_loop(Self, 'Shoot gods', {}, 'Disables godmode for other players when aiming at them. Mostly works on trash menus.', function()
-	local playerList = getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
-	for k, playerPid in ipairs(playerList) do
- local playerPed = GET_PLAYER_PED_SCRIPT_INDEX(playerPid)
- if IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) or IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), playerPed) and players.is_godmode(playerPid) and not players.is_in_interior(playerPed) then
-	 util.trigger_script_event(1 << playerPid, {-1428749433, playerPid, 448051697, math.random(0, 9999)})
-		end	   
+	for players.list_except(true) as pid do
+		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+ if IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), ped) or IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), ped) and not players.is_in_interior(ped) then
+	if players.is_godmode(pid) then
+	 util.trigger_script_event(1 << pid, {800157557, pid, 225624744, math.random(0, 9999)})
+		end
+	end
 end
 end)
 
 menu.toggle_loop(Self, "Ghost Armed Players", {}, "macht godmode spieler zum geist für dich wenn sie auf jemanden ziehlen", function()
 for players.list_except(true) as pid do
 	local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
-	if IS_PED_ARMED(ped, 7) and players.is_godmode(pid) and IS_PLAYER_FREE_AIMING(pid) and IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) and not players.is_in_interior(players.user) then
-		SET_REMOTE_PLAYER_AS_GHOST(pid, true)
+	if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) and not players.is_in_interior(pid) then
+		if players.is_godmode(pid) then
+			SET_REMOTE_PLAYER_AS_GHOST(pid, true)
+		end
 	else
 		SET_REMOTE_PLAYER_AS_GHOST(pid, false)
 	end
@@ -361,12 +364,13 @@ menu.toggle_loop(Self, "Script Host Addict", {}, "A faster version of script hos
     end
 end)
 
-menu.toggle_loop(Self, "Tempo anzeige nur im auto", {}, "macht die anzeige an wenn du im auto bist", function(on_toggle)
+menu.toggle_loop(Self, "Tempo anzeige nur im auto", {}, "macht die anzeige an wenn du im auto bist", function()
 	if IS_PED_IN_ANY_VEHICLE(players.user_ped(), true) then
 		menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), true)
 	else
 		menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
 	end
+	on_stop = menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
 end)
 
 local auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "du kannst sagen was nicht aus gemacht werden soll weil das nicht muss ist würde ich aber trz bei machen missionen empfehlen")
