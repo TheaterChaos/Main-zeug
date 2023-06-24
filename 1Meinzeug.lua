@@ -1,6 +1,6 @@
 util.require_natives("natives-1681379138", "g-uno")
 local response = false
-local localVer = 0.24
+local localVer = 0.25
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -80,9 +80,16 @@ local function get_frined_name(friendIndex)
     native_invoker.begin_call();native_invoker.push_arg_int(friendIndex);native_invoker.end_call("4164F227D052E293");return native_invoker.get_return_value_string();
 end
 
-local function IS_PLAYER_USING_GUIDED_MISSILE(player)
-    return (memory.read_int(memory.script_global(2657589 + 1 + (player * 466) + 321 + 10)) != -1 and IS_PLAYER_FLYING_ANY_DRONE(player)) -- Global_2657589[PLAYER::PLAYER_ID() /*466*/].f_321.f_10 
-end
+function reclaimVehicles()
+	for k, v in menu.get_children(menu.ref_by_path("Vehicle>Personal Vehicles")) do
+			for k1, v1 in v.command_names do
+				if (v1 ~= "findpv")
+				then
+					menu.trigger_commands(v1.."request")
+				end
+			end
+		end
+	end
 
 function Streamptfx(lib)
     STREAMING.REQUEST_NAMED_PTFX_ASSET(lib)
@@ -93,11 +100,8 @@ function Streamptfx(lib)
 end
 
 function is_user_a_stand_user(pid)
-    if pid == players.user() then
-        return true
-    end
-    if players.exists(pid) then
-        for _, cmd in ipairs(menu.player_root(pid):getChildren()) do
+    if players.exists(pid) and pid != players.user() then
+        for menu.player_root(pid):getChildren() as cmd do
             if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand User"):isValid() or cmd:refByRelPath("Stand User (Co-Loading)"):isValid() or cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load)"):isValid()) then
                 return true
             end
@@ -205,7 +209,7 @@ local function player(pid)
 	end)
 
 	menu.toggle_loop(anderes, "Remove Player Godmode", {}, "Blocked by most menus.", function()
-		util.trigger_script_event(1 << pid, {-1428749433, pid, 448051697, math.random(0, 9999)})
+		util.trigger_script_event(1 << pid, {800157557, pid, 225624744, math.random(0, 9999)})
     end)
 
     menu.action(bozo, "kicken", {"notekick"}, "kickt ihn aus der lobby", function()
@@ -318,7 +322,6 @@ for pids = 0, 31 do
 	end
 end
 
-
 menu.action(Self, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein waypoint gesetzt ist geht er da hin wenn keiner da ist geht er zu missions punkt", function()
 	if IS_WAYPOINT_ACTIVE() then
 		menu.trigger_commands("tpwp")
@@ -339,11 +342,12 @@ menu.toggle_loop(Self, 'Shoot gods', {}, 'Disables godmode for other players whe
 end
 end)
 
-menu.toggle_loop(Self, "Ghost Armed Players", {}, "macht godmode spieler zum geist für dich wenn sie auf jemanden ziehlen", function()
+menu.toggle_loop(Self, "Ghost Armed Players", {}, "macht godmode spieler zum geist für dich wenn sie auf dich ziehlen. \nwird nicht gehen wenn du godmode an hast weil du da ja eh unsterblich bist", function()
 for players.list_except(true) as pid do
 	local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+	godmodeon = menu.get_value(menu.ref_by_path("Self>Immortality"))
 	if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) and not players.is_in_interior(pid) then
-		if players.is_godmode(pid) then
+		if players.is_godmode(pid) and not godmodeon then
 			SET_REMOTE_PLAYER_AS_GHOST(pid, true)
 		end
 	else
@@ -364,6 +368,15 @@ menu.toggle_loop(Self, "Script Host Addict", {}, "A faster version of script hos
     end
 end)
 
+menu.toggle_loop(Self, "Anti modder scripthost", {}, "gibt dir script host wenn ein spieler der modder ist script host ist/wird", function()
+	local modderding = players.get_script_host()
+    if players.get_script_host() ~= players.user() and not util.is_session_transition_active(players.user) then
+		if players.is_marked_as_modder(modderding) then
+        	menu.trigger_commands("scripthost")
+		end
+    end
+end)
+
 menu.toggle_loop(Self, "Tempo anzeige nur im auto", {}, "macht die anzeige an wenn du im auto bist", function()
 	if IS_PED_IN_ANY_VEHICLE(players.user_ped(), true) then
 		menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), true)
@@ -373,7 +386,7 @@ menu.toggle_loop(Self, "Tempo anzeige nur im auto", {}, "macht die anzeige an we
 	on_stop = menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
 end)
 
-local auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "du kannst sagen was nicht aus gemacht werden soll weil das nicht muss ist würde ich aber trz bei machen missionen empfehlen")
+local auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "du kannst sagen was nicht aus gemacht werden soll weil das nicht gemacht werden muss. Ist aber würde ich sagen trz bei manchen missionen zu empfehlen")
 
 menu.toggle(auswahlauusmachen, "lockweapons", {}, "achte darauf das man es nicht an aus macht während man :zeug für job aus machen: an hat / wenn es an ist dann wird es nicht aus gemacht", function(on_toggle)
 	if on_toggle then
@@ -469,21 +482,6 @@ menu.action(Zeugforjob, "was deactiviert wurde drück hier", {}, "zeigt was alle
 	util.toast("Guck in deine console da steht alles. wenn du keine hast fick dich", TOAST_DEFAULT)
 end)
 
-menu.action(Zeugforjob, "Teleport Pickups To Me", {}, "teleportiert sachen zum aufheben zu dir", function()
-    local counter = 0
-    local pos = players.get_position(players.user())
-    for entities.get_all_pickups_as_handles() as pickup do
-        SET_ENTITY_COORDS(pickup, pos, false, false, false, false)
-        counter += 1
-        util.yield()
-    end
-    if counter == 0 then
-        util.toast("No Pickups Found. :/")
-    else
-        util.toast("Teleported ".. tostring(counter) .." Pickups.")
-    end
-end)
-
 local function zeugwiederan()
 	if zeugforthejob then
 		menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
@@ -503,6 +501,32 @@ local function zeugwiederan()
 end
 
 util.on_stop(zeugwiederan)
+
+menu.action(Zeugforjob, "Teleport Pickups To Me", {}, "teleportiert sachen zum aufheben zu dir", function()
+    local counter = 0
+    local pos = players.get_position(players.user())
+    for entities.get_all_pickups_as_handles() as pickup do
+        SET_ENTITY_COORDS(pickup, pos, false, false, false, false)
+        counter += 1
+        util.yield()
+    end
+    if counter == 0 then
+        util.toast("No Pickups Found. :/")
+    else
+        util.toast("Teleported ".. tostring(counter) .." Pickups.")
+    end
+end)
+
+menu.text_input(Self, "Claim auto", {"claimautoinput"}, "Schreib die zahl rein von dem auto das spawnen soll.\nsiehst du wenn du den command pvs benutzt dann kannst dein auto suchen und als befehlt steht dann welche zahl da ist", function(input)
+	name = input
+end, '')
+
+menu.action(Self, "Claim all vehicles", {"claimallvehicles"}, "Claims all vehicles destroyed from Mors Mutual.\nEs werden einfach alle autos durch stand angefordert und das letzte was angefordert wurde steht dann halt als persönliches auto da", function ()
+	reclaimVehicles()
+	if name ~= number then
+		menu.trigger_commands("pv".. name .."request")
+	end
+end)
 
 --auto stand user marker
 menu.action(player_zeug, "Mark Stand user self", {}, "Nicht möglich bei leuten die du schonmal anders gesehen hast", function()
@@ -740,7 +764,7 @@ menu.toggle(custselc, "Exclude Selected", {"Excludeselected"}, "", function(on_t
 	end
 end)
 
-menu.action(custselc, "seite reseten", {}, "passiert das bei mission ein fehler kommt einfach die seite hier mit reseten dann easy (wichtig pid 1 und 2 müssen existieren sonst geht es nicht)", function(pids)
+menu.action(custselc, "seite reseten", {}, "passiert das bei mission ein fehler kommt einfach die seite hier mit reseten dann easy", function(pids)
 	for pids = 0, 31 do
 		if players.exists(pids) then
 		if menu.is_ref_valid(menu.ref_by_command_name("selected" ..pids)) then
@@ -1096,13 +1120,11 @@ menu.action(trolling, "Freeze on", {}, "", function()
 		if excludeselected then
 			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
 				menu.trigger_commands("freeze" .. GET_PLAYER_NAME(pids) .. " " .. "on")
-				menu.trigger_commands("hardfreeze" .. GET_PLAYER_NAME(pids) .. " " .. "on")
 				util.toast("Freeze ist jetzt an " .. GET_PLAYER_NAME(pids), TOAST_ALL)
 			end
 		else
 			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
 				menu.trigger_commands("freeze" .. GET_PLAYER_NAME(pids) .. " " .. "on")
-				menu.trigger_commands("hardfreeze" .. GET_PLAYER_NAME(pids) .. " " .. "on")
 				util.toast("Freeze ist jetzt an " .. GET_PLAYER_NAME(pids), TOAST_ALL)
 			end
 		end
@@ -1115,13 +1137,11 @@ menu.action(trolling, "Freeze off", {}, "", function()
 		if excludeselected then
 			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
 				menu.trigger_commands("freeze" .. GET_PLAYER_NAME(pids) .. " " .. "off")
-				menu.trigger_commands("hardfreeze" .. GET_PLAYER_NAME(pids) .. " " .. "off")
 				util.toast("Freeze ist jetzt aus für " .. GET_PLAYER_NAME(pids), TOAST_ALL)
 			end
 		else
 			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
 				menu.trigger_commands("freeze" .. GET_PLAYER_NAME(pids) .. " " .. "off")
-				menu.trigger_commands("hardfreeze" .. GET_PLAYER_NAME(pids) .. " " .. "off")
 				util.toast("Freeze ist jetzt aus für " .. GET_PLAYER_NAME(pids), TOAST_ALL)
 			end
 		end
