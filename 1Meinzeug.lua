@@ -1,6 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
+util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.26
+local localVer = 0.27
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -23,7 +24,7 @@ async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinz
 			async_http.init('raw.githubusercontent.com','/TheaterChaos/Mein-zeug/main/Alltabels.lua',function(b)
 				local err = select(2,load(b))
 				if err then
-					util.toast("ACJSTables.lua failed to download. Please try again later. If this continues to happen then manually update via github.")
+					util.toast("ALLtabels.lua failed to download. Please try again later. If this continues to happen then manually update via github.")
 				return end
 				local f = io.open(filesystem.resources_dir() .. 'alltabels.lua', "wb")
 				f:write(b)
@@ -62,6 +63,9 @@ end
 
 local int_min = -2147483647
 local int_max = 2147483647
+
+vehenterstealnpc = false
+vehentersteal = false
 
 local menus = {}
 
@@ -114,15 +118,23 @@ function Streamptfx(lib)
     GRAPHICS.USE_PARTICLE_FX_ASSET(lib)
 end
 
-function is_user_a_stand_user(pid)
+--[[
+local function is_user_a_stand_user(pid)
     if players.exists(pid) and pid != players.user() then
         for menu.player_root(pid):getChildren() as cmd do
-            if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand User"):isValid() or cmd:refByRelPath("Stand User (Co-Loading)"):isValid() or cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load)"):isValid()) then
-                return true
+            if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand User (Co-Loading)"):isValid() or cmd:refByRelPath("Stand user"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load)"):isValid()) then
+				return true
             end
         end
     end
     return false
+end
+]]
+
+function levideaktivate()
+	if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
+	end
 end
 
 function PlayerisFriend(player)
@@ -438,6 +450,17 @@ function is_key_just_down(string_or_int)
     return false
 end
 
+local function get_ground_z(coords)
+    local start_time = os.time()
+    while true do
+        local success, est = util.get_ground_z(coords['x'], coords['y'], coords['z'])
+        if success then
+            return est
+        end
+        util.yield()
+    end
+end
+
 function get_ms_since_last_press(string_or_int)
     local keyCode = getKeyCode(string_or_int)
     local isDown = util.is_key_down(keyCode)
@@ -453,6 +476,36 @@ function get_ms_since_last_press(string_or_int)
         return prevPress != nil and util.current_time_millis() - prevPress or -1
     end
     return util.current_time_millis() - lastPressMS[keyCode]
+end
+
+function getseatofplayer(vehicle)
+	local getseatofdriver00 = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, false)
+	local getseatofdriver0 = GET_PED_IN_VEHICLE_SEAT(vehicle, 0, false)
+	local getseatofdriver1 = GET_PED_IN_VEHICLE_SEAT(vehicle, 1, false)
+	local getseatofdriver2 = GET_PED_IN_VEHICLE_SEAT(vehicle, 2, false)
+	local getseatofdriver3 = GET_PED_IN_VEHICLE_SEAT(vehicle, 3, false)
+	local getseatofdriver4 = GET_PED_IN_VEHICLE_SEAT(vehicle, 4, false)
+	local getseatofdriver5 = GET_PED_IN_VEHICLE_SEAT(vehicle, 5, false)
+	local getseatofdriver6 = GET_PED_IN_VEHICLE_SEAT(vehicle, 6, false)
+	if getseatofdriver00 == players.user_ped() then
+		return -1
+	elseif getseatofdriver0 == players.user_ped() then
+		return 0
+	elseif getseatofdriver1 == players.user_ped() then
+		return 1
+	elseif getseatofdriver2 == players.user_ped() then
+		return 2
+	elseif getseatofdriver3 == players.user_ped() then
+		return 3
+	elseif getseatofdriver4 == players.user_ped() then
+		return 4
+	elseif getseatofdriver5 == players.user_ped() then
+		return 5
+	elseif getseatofdriver6 == players.user_ped() then
+		return 6
+	else
+		return 7
+	end
 end
 
 timer1 = 0
@@ -622,6 +675,7 @@ players.dispatch_on_join()
 
 --local parents
 local Self = menu.list(menu.my_root(), "Self zeug", {}, "")
+local vehicle = menu.list(menu.my_root(), "Vehicle zeug", {}, "")
 local Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
 local player_zeug = menu.list(menu.my_root(), "Player zeug", {}, "")
 --local streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
@@ -709,7 +763,13 @@ for players.list_except(true) as pid do
 	godmodeon = menu.get_value(menu.ref_by_path("Self>Immortality"))
 	vehiclegodmode = menu.get_value(menu.ref_by_path("Vehicle>Indestructible"))
 	local vehicleped = GET_VEHICLE_PED_IS_IN(players.user_ped())
+	local pc = players.get_position(players.user())
+	local cc = players.get_position(pid)
 		if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) or IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, vehicleped) and not players.is_in_interior(pid) then
+			if players.is_godmode(pid) and not godmodeon then
+				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
+			end
+		elseif IS_PED_ARMED(ped, 7) and (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 10) then
 			if players.is_godmode(pid) and not godmodeon then
 				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
 			end
@@ -782,6 +842,14 @@ menu.toggle(auswahlauusmachen, "Wantedlevel fixieren", {}, "achte darauf das man
 	end
 end)
 
+menu.toggle(auswahlauusmachen, "alle waffen haben", {}, "achte darauf das man es nicht an aus macht während man :zeug für job aus machen: an hat / wenn es an ist dann wird es nicht aus gemacht", function(on_toggle)
+	if on_toggle then
+		allweapons1 = true
+	else
+		allweapons1 = false
+	end
+end)
+
 menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in missionen weniger probleme kommen können", function(on_toggle)
 	if on_toggle then
 		Lockweapons = menu.get_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"))
@@ -794,11 +862,11 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		swoopdown = menu.get_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"))
 		multiplierareas = menu.get_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"))
 		Entityspamzeug = menu.get_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"))
-		groopoverrite = menu.get_value(menu.ref_by_path("Online>Transitions>Join Group Override"))
 		restrictedareas = menu.get_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"))
 		wantedlevel = menu.get_value(menu.ref_by_path("Self>Lock Wanted Level"))
 		disynckarma = menu.get_value(menu.ref_by_path("Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma"))
 		hosttokenspoof = menu.get_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"))
+		allweapons = menu.get_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"))
 		
 		zeugforthejob = true
 		if lockweapons1 then
@@ -809,6 +877,10 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		else
 			menu.trigger_command(menu.ref_by_path("Self>Lock Wanted Level"), false)
 		end
+		if allweapons1 then
+		else
+			menu.trigger_command(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), false)
+		end
 		menu.trigger_command(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), false)
@@ -818,7 +890,6 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		menu.trigger_command(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Transitions>Join Group Override>Don't Override"), "Don't Override")
 		menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), false)
@@ -832,6 +903,10 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		else
 			menu.trigger_command(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel)
 		end
+		if allweapons1 then
+		else
+			menu.trigger_command(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), allweapons)
+		end
 		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
 		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), poolOver)
 		menu.set_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), seamlessswitch)
@@ -841,7 +916,6 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		menu.set_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), swoopdown)
 		menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
 		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Join Group Override"), groopoverrite)
 		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
 		menu.set_value(menu.ref_by_path("Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma"), disynckarma)
 		menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
@@ -879,11 +953,11 @@ local function zeugwiederan()
 		menu.set_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), swoopdown)
 		menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
 		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Join Group Override"), groopoverrite)
 		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
 		menu.set_value(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel1)
 		menu.set_value(menu.ref_by_path("Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma"), disynckarma)
 		menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
+		menu.set_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), allweapons)
 	end
 end
 
@@ -893,9 +967,13 @@ menu.action(Zeugforjob, "Teleport Pickups To Me", {}, "teleportiert sachen zum a
     local counter = 0
     local pos = players.get_position(players.user())
     for entities.get_all_pickups_as_handles() as pickup do
-        SET_ENTITY_COORDS(pickup, pos, false, false, false, false)
-        counter += 1
-        util.yield()
+		if getcontrole(pickup) then
+        	SET_ENTITY_COORDS(pickup, pos, false, false, false, false)
+        	counter += 1
+        	util.yield()
+		else
+			util.toast("cant get control")
+		end
     end
     if counter == 0 then
         util.toast("No Pickups Found. :/")
@@ -903,6 +981,20 @@ menu.action(Zeugforjob, "Teleport Pickups To Me", {}, "teleportiert sachen zum a
         util.toast("Teleported ".. tostring(counter) .." Pickups.")
     end
 end)
+
+menu.action(Zeugforjob, "Spawn object", {}, "spawned das object mit dem hash bei has number", function()
+	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, 5, 0)
+	playeroffset.y -= 3
+	if hashnumber == nill then
+	else
+		util.toast(hashnumber)
+		entities.create_object(hashnumber, playeroffset)
+	end
+end)
+
+menu.text_input(Zeugforjob, "hash number", {"hashnumber"}, "", function(input)
+	hashnumber = input
+end, '')
 
 menu.text_input(Self, "Claim auto", {"claimautoinput"}, "Schreib die zahl rein von dem auto das spawnen soll.\nsiehst du wenn du den command pvs benutzt dann kannst dein auto suchen und als befehlt steht dann welche zahl da ist", function(input)
 	name = input
@@ -921,6 +1013,8 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 	local handle = memory.read_int(entpointer)
 	local lightattack = menu.get_value(menu.ref_by_path("Game>Disables>Disable Game Inputs>MELEE_ATTACK_LIGHT"))
 	local grenade = menu.get_value(menu.ref_by_path("Game>Disables>Disable Game Inputs>THROW_GRENADE"))
+	local vehexit = menu.get_value(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"))
+	local vehenter = menu.get_value(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"))
 	if schwerkraftan then
 		if is_key_just_down('VK_E') and IS_PLAYER_FREE_AIMING(players.user()) then
 			menu.trigger_command(menu.ref_by_path("Self>Weapons>Gravity Gun>Gravity Gun"), false)
@@ -928,7 +1022,13 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 	end
 	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>MELEE_ATTACK_LIGHT"), true)
 	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>THROW_GRENADE"), true)
+	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 	if GET_ENTITY_PLAYER_IS_FREE_AIMING_AT(players.user(), entpointer) then
+		if GET_ENTITY_PLAYER_IS_FREE_AIMING_AT(players.user(), entpointer) and IS_ENTITY_A_VEHICLE(handle) or IS_PED_IN_ANY_VEHICLE(handle,true) then
+			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
+			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), true)
+		end
 	local godmodeentity = GET_ENTITY_CAN_BE_DAMAGED(handle) if godmodeentity then godmodeentity1 = false else godmodeentity1 = true end
 	local visibleentitiy = IS_ENTITY_VISIBLE(handle)
 	local deadentity = IS_ENTITY_DEAD(handle)
@@ -966,6 +1066,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				local vehiclemodelentity1 = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(modelhashentity1)
 				local ownerentity1 = entities.get_owner(vehicleding)
 				local namefromplayer1 = players.get_name(ownerentity1)
+				--npc in einem auto
 				if not informationpedveh then
 					directx.draw_text(x, y, "VEHICLE: ".. vehiclemodelentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					directx.draw_text(x, y1, "GOD: ".. godmodeentity3, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
@@ -986,53 +1087,53 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 					directx.draw_text(x, y7, "OWNERPED: ".. namefromplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 				end
 				--directx.draw_text(x, y6, "MODEL HASH: ".. modelhashentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=10}, true)
+				directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
 				if is_key_just_down("VK_F") and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 					if not vehenterstealnpc then
 						if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 							menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
 							entities.delete(handle)
-							TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, -1, 16, 24)
+							SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, -1)
 						else
 							entities.delete(handle)
-							TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, -1, 16, 24)
+							SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, -1)
 						end
 					else
 						if ARE_ANY_VEHICLE_SEATS_FREE(vehicleding) then
 							if IS_VEHICLE_SEAT_FREE(vehicleding, 0) then
 								if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 									menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 0, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 0)
 								else
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 0, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 0)
 								end
 							elseif  IS_VEHICLE_SEAT_FREE(vehicleding, 1) then
 								if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 									menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 1, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 1)
 								else
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 1, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 1)
 								end
 							elseif  IS_VEHICLE_SEAT_FREE(vehicleding, 2) then
 								if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 									menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 2, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 2)
 								else
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 2, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 2)
 								end
 							elseif  IS_VEHICLE_SEAT_FREE(vehicleding, 3) then
 								if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 									menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 3, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 3)
 								else
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 3, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 3)
 								end
 							elseif  IS_VEHICLE_SEAT_FREE(vehicleding, 4) then
 								if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 									menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 4, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 4)
 								else
-									TASK_ENTER_VEHICLE(players.user_ped(), vehicleding, -1, 4, 16, 24)
+									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleding, 4)
 								end
 							else
 								util.toast("konnte dich in keinen sitz setzen")
@@ -1108,9 +1209,10 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				local nearestplayer = GET_NEAREST_PLAYER_TO_ENTITY(handle)
 				local nameplayer = players.get_name(nearestplayer)
 				local tagsofplayer = players.get_tags_string(nearestplayer)
+				local vehmodel = players.get_vehicle_model(nearestplayer)
 				if IS_PED_IN_ANY_VEHICLE(handle,true) then
-					directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  C = KICKEN  /  B = PLAYER WINDOW  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=10}, true)
-					local vehicleplayer1 = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(handle)
+					directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  C = KICKEN  /  B = PLAYER WINDOW  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
+					local vehicleplayer1 = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(vehmodel)
 					local vehicleplayer = GET_VEHICLE_PED_IS_IN(handle)
 					local ownerentity2 = entities.get_owner(vehicleplayer)
 					local namefromplayer2 = players.get_name(ownerentity2)
@@ -1137,46 +1239,46 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 							until not IS_PED_IN_ANY_VEHICLE(handle,true)
 							if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 								menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-								TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, -1, 16, 24)
+								SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, -1)
 							else
-								TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, -1, 16, 24)
+								SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, -1)
 							end
 						else
 							if ARE_ANY_VEHICLE_SEATS_FREE(vehicleplayer) then
 								if IS_VEHICLE_SEAT_FREE(vehicleplayer, 0) then
 									if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 										menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 0, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 0)
 									else
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 0, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 0)
 									end
 								elseif  IS_VEHICLE_SEAT_FREE(vehicleplayer, 1) then
 									if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 										menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 1, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 1)
 									else
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 1, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 1)
 									end
 								elseif  IS_VEHICLE_SEAT_FREE(vehicleplayer, 2) then
 									if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 										menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 2, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 2)
 									else
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 2, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 2)
 									end
 								elseif  IS_VEHICLE_SEAT_FREE(vehicleplayer, 3) then
 									if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 										menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 3, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 3)
 									else
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 3, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 3)
 									end
 								elseif  IS_VEHICLE_SEAT_FREE(vehicleplayer, 4) then
 									if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 										menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 4, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 4)
 									else
-										TASK_ENTER_VEHICLE(players.user_ped(), vehicleplayer, -1, 4, 16, 24)
+										SET_PED_INTO_VEHICLE(players.user_ped(), vehicleplayer, 4)
 									end
 								else
 									util.toast("konnte dich in keinen sitz setzen")
@@ -1206,22 +1308,43 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 						end
 					end
 				else
-					directx.draw_text(0.5, y10, "C = KICKEN  /  B = PLAYER WINDOW", 5, 0.8, {r=1,g=1,b=1,a=10}, true)
+					if tagsofplayer == "" then
+						freezeonoroff = menu.get_value(menu.ref_by_path("Players>".. nameplayer ..">Trolling>Freeze"))
+					else
+						freezeonoroff = menu.get_value(menu.ref_by_path("Players>".. nameplayer .. " [" ..tagsofplayer .."]>Trolling>Freeze"))
+					end
+					directx.draw_text(0.5, y10, "C = KICKEN  /  R = Freeze  /  B = PLAYER WINDOW", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
 					directx.draw_text(x, y, "PLAYER: ".. nameplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					directx.draw_text(x, y1, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					--directx.draw_text(x, y2, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					directx.draw_text(x, y2, "SPEED: ".. speedentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					directx.draw_text(x, y3, "HEALTH: ".. healthentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y4, "TAGS: ".. tagsofplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+					directx.draw_text(x, y4, "Freeze: ".. freezeonoroff, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+					directx.draw_text(x, y5, "TAGS: ".. tagsofplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					if is_key_just_down('VK_C') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 						menu.trigger_commands("kick ".. nameplayer)
 					end
 					if is_key_just_down('VK_B') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 						menu.trigger_commands("p ".. nameplayer)
 					end
+					if is_key_just_down('VK_R') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
+						if tagsofplayer == "" then
+							if freezeonoroff then
+								menu.trigger_command(menu.ref_by_path("Players>".. nameplayer ..">Trolling>Freeze"), false)
+							else 
+								menu.trigger_command(menu.ref_by_path("Players>".. nameplayer ..">Trolling>Freeze"), true)
+							end
+						else
+							if freezeonoroff then
+								menu.trigger_command(menu.ref_by_path("Players>".. nameplayer .. " [" ..tagsofplayer .."]>Trolling>Freeze"), false)
+							else 
+								menu.trigger_command(menu.ref_by_path("Players>".. nameplayer .. " [" ..tagsofplayer .."]>Trolling>Freeze"), true)
+							end
+						end
+					end
 				end
 			else
-				directx.draw_text(0.5, y10, "R = Delete  /  C = CLEAR TASKS ", 5, 0.8, {r=1,g=1,b=1,a=10}, true)
+				directx.draw_text(0.5, y10, "R = Delete  /  C = CLEAR TASKS ", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
 				directx.draw_text(x, y, "PED", 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 				directx.draw_text(x, y1, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 				--directx.draw_text(x, y2, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
@@ -1241,7 +1364,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				end
 			end
 		elseif IS_ENTITY_A_VEHICLE(handle) then
-			directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=10}, true)
+			directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
 			local vehiclemodelentity3 = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(modelhashentity)
 			directx.draw_text(x, y, "VEHICLE: ".. vehiclemodelentity3, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			directx.draw_text(x, y1, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
@@ -1257,9 +1380,9 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 			if is_key_just_down("VK_F") and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 				if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
 					menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Levitation"), false)
-					TASK_ENTER_VEHICLE(players.user_ped(), handle, -1, -1, 16, 24)
+					SET_PED_INTO_VEHICLE(players.user_ped(), handle, -1)
 				else
-					TASK_ENTER_VEHICLE(players.user_ped(), handle, -1, -1, 16, 24)
+					SET_PED_INTO_VEHICLE(players.user_ped(), handle, -1)
 				end
 			end
 			if is_key_just_down('VK_G') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
@@ -1273,7 +1396,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				end
 			end
 		elseif IS_ENTITY_AN_OBJECT(handle) then
-			directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN", 5, 0.8, {r=1,g=1,b=1,a=10}, true)
+			directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  C = COPY HASH", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
 			directx.draw_text(x, y, "OBJECT", 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			directx.draw_text(x, y1, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			directx.draw_text(x, y2, "FOR MISSION: ".. missionentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
@@ -1281,6 +1404,9 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 			directx.draw_text(x, y4, "OWNEROBJECT: ".. namefromplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			if is_key_just_down('VK_R') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 				entities.delete(handle)
+			end
+			if is_key_just_down('VK_C') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
+				util.copy_to_clipboard(modelhashentity, true)
 			end
 			if not schwerkraftan then
 				if is_key_just_down('VK_E') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
@@ -1291,6 +1417,8 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 	end
 	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>THROW_GRENADE"), grenade)
 	on_stop = menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>MELEE_ATTACK_LIGHT"), lightattack)
+	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 	if menu.get_value(menu.ref_by_path("Self>Weapons>Gravity Gun>Gravity Gun")) then
 		util.draw_debug_text("Gravity Gun ist AN")
 	end
@@ -1402,7 +1530,7 @@ menu.toggle_loop(Entitymanager, "Delete all", {"deleteall"}, "", function ()
 	clearAreaOfEntities("obj", CLEAR_AREA_RANGE)
 	clearAreaOfEntities("pickup", CLEAR_AREA_RANGE)
 end)
-menu.action(Entitymanager, "Clear ALL Ropes", {"clearropes"}, "", function() 
+menu.action(Entitymanager, "Clear ALL Ropes", {"clearropes"}, "", function()
     for i = 0, 100 do
         DELETE_CHILD_ROPE(i)
     end
@@ -1495,7 +1623,7 @@ menu.toggle_loop(Entitymanager, "veh testen ding selber", {}, "", function()
 	end	
 end)]]
 
---auto stand user marker
+--[[auto stand user marker geht nicht mehr
 menu.action(player_zeug, "Mark Stand user self", {}, "Nicht möglich bei leuten die du schonmal anders gesehen hast", function()
 	for _, pid in players.list(false, true, true) do
 		if is_user_a_stand_user(pid) or pid == players.user() and not util.is_session_transition_active(players.user) then
@@ -1549,6 +1677,8 @@ menu.action(player_zeug, "Mark Stand user self", {}, "Nicht möglich bei leuten 
 					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note"), "Stand user")
 					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
 				end
+			else
+				util.toast("hab nichts gefunden")
 			end
 		end
 	end
@@ -1675,6 +1805,7 @@ local function standuser()
 end
 
 players.on_join(standuser)
+]]
 
 --[[menu.text_input(streamer, "streamer", {"plstream"}, "streamer eingeben", function(input)
 	streamer = input
@@ -1703,6 +1834,54 @@ menu.toggle(player_zeug, "player join nachricht", {}, "", function(on_toggle)
 		player_join = false
 	end
 end)
+
+menu.toggle(player_zeug, "Kick leute mit host token spoof", {}, "geht nur auf leute die nach dir in eine sitzung joinen und nicht auf leute wo du gerade rein joinst", function(on_toggle)
+	if on_toggle then
+		kickhosttokenspoof = true
+	else 
+		kickhosttokenspoof = false
+	end
+end)
+
+timer6 = 1
+local function kickhosttoken(pid)
+	if kickhosttokenspoof then
+	if not util.is_session_transition_active() then
+		util.yield(5)
+		local hostqueue = players.get_host_queue_position(pid)
+		if hostkickfriends then
+			local pidname = players.get_name(pid)
+			--util.toast(pidname.. " test 2 ".. hostqueue)
+			timer6 = 1
+			if hostqueue == 1 then
+				if players.is_marked_as_modder(pid) then
+					menu.trigger_commands("kick ".. pidname)
+					menu.trigger_commands("kick ".. pidname)
+					util.toast(pidname.. " wurde gekicked Grund: Host Token Spoof", TOAST_ALL)
+				end
+			end
+		else
+			if not PlayerisFriend(pid) then
+				local pidname = players.get_name(pid)
+				--util.toast(pidname.. " test 2 ".. hostqueue)
+				timer6 = 1
+				if hostqueue == 1 then
+					if players.is_marked_as_modder(pid) then
+						menu.trigger_commands("kick ".. pidname)
+						menu.trigger_commands("kick ".. pidname)
+						menu.trigger_commands("kick ".. pidname)
+						menu.trigger_commands("kick ".. pidname)
+						menu.trigger_commands("kick ".. pidname)
+						util.toast(pidname.. " wurde gekicked Grund: Host Token Spoof", TOAST_ALL)
+					end
+				end
+			end
+		end
+	end
+	end
+end
+
+players.on_join(kickhosttoken)
 
 local function playerjoinmassge(pid)
 	if player_join then
@@ -2461,20 +2640,7 @@ menu.toggle(Zeug_für_mich, "schnell laufen", {}, "", function(on_toggle)
 	end
 end)
 
-menu.toggle(Zeug_für_mich, "schnell Fahren Mit Stand", {}, "", function(on_toggle)
-	if on_toggle then
-		menu.trigger_command(menu.ref_by_path("Vehicle>Movement>Engine Power Multiplier"), "20")
-		repeat
-			util.yield()
-		until GET_IS_TASK_ACTIVE(players.user_ped(),2) or not IS_PED_IN_ANY_VEHICLE(players.user_ped(),true)
-		menu.trigger_command(menu.ref_by_path("Stand>Lua Scripts>".. SCRIPT_NAME ..">Zeug für mich angepasst>schnell Fahren"), false)
-		util.toast("schnell fahren wurde ausgeschaltet")
-	else
-		menu.trigger_command(menu.ref_by_path("Vehicle>Movement>Engine Power Multiplier"), "0")
-	end
-end)
-
-menu.toggle_loop(Zeug_für_mich, "Schnell fahren V2 (besser)", {}, "", function()
+menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 	local keyCode = getKeyCode('VK_W')
 	local keyCode1 = getKeyCode('VK_S')
 	local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
@@ -2487,11 +2653,11 @@ menu.toggle_loop(Zeug_für_mich, "Schnell fahren V2 (besser)", {}, "", function(
 	end
 end)
 
-menu.slider(Zeug_für_mich, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 50]\ngib die kmh an auf die es boosten soll", 1,50, 1, 1, function(boost)
+menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 50]\ngib die kmh an auf die es boosten soll", 1,50, 1, 1, function(boost)
 	a = boost
 end)
 
-menu.click_slider(Zeug_für_mich, "speed boost", {"selfboostsset"}, "[50 - 10000]\ngib die kmh an auf die es boosten soll", 50 ,10000, 0, 50, function(s)
+menu.click_slider(vehicle, "speed boost", {"selfboostsset"}, "[50 - 10000]\ngib die kmh an auf die es boosten soll", 50 ,10000, 0, 50, function(s)
 	speed = s
 	speedset = s / 3.6
 	local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
@@ -2500,7 +2666,7 @@ menu.click_slider(Zeug_für_mich, "speed boost", {"selfboostsset"}, "[50 - 10000
 	end
 end)
 
-menu.action(Zeug_für_mich, "sofort anhalten", {}, "", function()
+menu.action(vehicle, "sofort anhalten", {}, "", function()
 	local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
 	if IS_PED_IN_ANY_VEHICLE(players.user_ped(),true) then
 		FREEZE_ENTITY_POSITION(vehicle, true)
@@ -2511,44 +2677,104 @@ menu.action(Zeug_für_mich, "sofort anhalten", {}, "", function()
 	end
 end)
 
-menu.action(Zeug_für_mich,"Auto Reparieren", {}, "", function()
-	if IS_PED_IN_ANY_VEHICLE(players.user_ped(),true) then
-		local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
+menu.action(vehicle,"Auto Reparieren", {}, "", function()
+		local vehicle = entities.get_user_vehicle_as_handle(players.user(), true)
 		local currentSpeed = GET_ENTITY_SPEED(vehicle)
 		local seatplayer = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
-		if seatplayer == players.user_ped() then
+		local pid = GET_NEAREST_PLAYER_TO_ENTITY(seatplayer)
+		local playername = players.get_name(pid)
+		if seatplayer == players.user_ped() or seatplayer == 0 then
 			SET_VEHICLE_FIXED(vehicle)
-			if currentSpeed > 80 then
+			SET_VEHICLE_DIRT_LEVEL(vehicle, 0)
+			--SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+			if currentSpeed >= 80 then
 				SET_VEHICLE_FORWARD_SPEED(vehicle, currentSpeed)
 			end
 		else
-			SET_VEHICLE_FIXED(vehicle)
+			menu.trigger_commands("repairveh".. playername)
 		end
-	end
 end)
 
-menu.action(Zeug_für_mich,"test ding", {}, "", function()
+--[[menu.action(Zeug_für_mich,"test ding", {}, "", function()
 	local myposition = players.get_position(players.user())
 	local playerveh = GET_VEHICLE_PED_IS_IN(players.user_ped())
 	local positionveh = GET_WORLD_POSITION_OF_ENTITY_BONE(playerveh)
 	TASK_LEAVE_VEHICLE(players.user_ped(), playerveh, 16)
 	START_PLAYER_TELEPORT(players.user(),positionveh,false,true,false)
 	util.toast(positionveh)
-end)
+end)]]
+
+local function getvehtype(hashveh)
+	if IS_THIS_MODEL_A_BOAT(hashveh) then
+		return "BOAT"
+	elseif IS_THIS_MODEL_A_PLANE(hashveh) then
+		return "PLANE"
+	elseif IS_THIS_MODEL_A_HELI(hashveh) then
+		return "HELI"
+	elseif IS_THIS_MODEL_A_CAR(hashveh) then
+		return "CAR"
+	elseif IS_THIS_MODEL_A_TRAIN(hashveh) then
+		return "TRAIN"
+	elseif IS_THIS_MODEL_A_BIKE(hashveh) then
+		return "BIKE"
+	elseif IS_THIS_MODEL_A_BICYCLE(hashveh) then
+		return "BICYCLE"
+	elseif IS_THIS_MODEL_A_QUADBIKE(hashveh) then
+		return "QUADBIKE"
+	else
+		return "NOT FOUND"
+	end
+end
+
+
 
 timer2 = 0
-menu.toggle_loop(Zeug_für_mich, "instant veh enter/exit", {}, "halte F gedrückt dann setzt du dich in das auto was dir am nächsten ist in den settings kann man auswählen wie lange man drücken soll", function()
+menu.toggle_loop(vehicle, "instant veh enter/exit", {}, "halte F gedrückt dann setzt du dich in das auto was dir am nächsten ist in den settings kann man auswählen wie lange man drücken soll", function()
+if not util.is_session_transition_active() then
 	local keyCode = getKeyCode("VK_F")
+	local playernameself = players.get_name(players.user())
+	local myposition = players.get_position(players.user())
+	local mypositionvehicle = getClosestVehicle(myposition)
+	local vehhash = entities.get_model_hash(mypositionvehicle)
+	local ped = GET_PED_IN_VEHICLE_SEAT(mypositionvehicle, -1, true)
+	local missionped = IS_ENTITY_A_MISSION_ENTITY(ped)
+	local speedofvehicle = GET_ENTITY_SPEED(mypositionvehicle)
+	local flyingvehicle = IS_PED_IN_FLYING_VEHICLE(players.user_ped())
+	local doorindex = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_dside_f")
+	local doorindex2 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_dside_r")
+	local doorindex3 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_pside_f")
+	local doorindex4 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_pside_r")
+	local positionoffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(mypositionvehicle, -2, 0, 0)
+	local doorpositionleftfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex)
+	local doorpositionleftback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex2)
+	local doorpositionrightfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex3)
+	local doorpositionrightback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex4)
+	local seatofplayer = getseatofplayer(mypositionvehicle)
+	local vehiclename = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(vehhash)
+	local personalveh = entities.get_user_personal_vehicle_as_handle(players.user())
 	timer1 = 0
-	if not IS_PED_IN_ANY_VEHICLE(players.user_ped(), false) then
+	if not IS_PED_IN_ANY_VEHICLE(players.user_ped(), false) then --and not (GET_IS_TASK_ACTIVE(ped, 160)) then
+		if infoofveh then
+			util.draw_debug_text(vehiclename)
+			util.draw_debug_text(getvehtype(vehhash))
+			if personalveh == mypositionvehicle then
+				util.draw_debug_text("PERSONALVEHICLE")
+			end
+		end
 	while util.is_key_down(keyCode) do
+		if infoofveh then
+			util.draw_debug_text(vehiclename)
+			util.draw_debug_text(getvehtype(vehhash))
+			if personalveh == mypositionvehicle then
+				util.draw_debug_text("PERSONALVEHICLE")
+			end
+		end
 		timer1 += 1
 		if timer1 == abb and util.is_key_down(keyCode) then
 			util.toast("enter vehicle")
+			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), true)
+			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
 			timer1 = 0
-			local myposition = players.get_position(players.user())
-			local mypositionvehicle = getClosestVehicle(myposition)
-			local ped = GET_PED_IN_VEHICLE_SEAT(mypositionvehicle, -1, true)
 		if IS_PED_A_PLAYER(ped) and not (ped == players.user_ped()) then
 			local pid = GET_NEAREST_PLAYER_TO_ENTITY(ped)
 			local getplayername = players.get_name(pid)
@@ -2556,30 +2782,41 @@ menu.toggle_loop(Zeug_für_mich, "instant veh enter/exit", {}, "halte F gedrück
 				if ARE_ANY_VEHICLE_SEATS_FREE(mypositionvehicle) then
 					if IS_VEHICLE_SEAT_FREE(mypositionvehicle, 0) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 0)
+						levideaktivate()
 					elseif  IS_VEHICLE_SEAT_FREE(mypositionvehicle, 1) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 1)
+						levideaktivate()
 					elseif  IS_VEHICLE_SEAT_FREE(mypositionvehicle, 2) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 2)
+						levideaktivate()
 					elseif  IS_VEHICLE_SEAT_FREE(mypositionvehicle, 3) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 3)
+						levideaktivate()
 					elseif  IS_VEHICLE_SEAT_FREE(mypositionvehicle, 4) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 4)
+						levideaktivate()
 					else
 						util.toast("konnte dich in keinen sitz setzen")
 						repeat
 							util.yield()
 						until not util.is_key_down(keyCode)
+						menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+						menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 						break
 					end
 					repeat
 						util.yield()
 					until not util.is_key_down(keyCode)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 					break
 				else
 					util.toast("es sind keine sitze frei")
 					repeat
 						util.yield()
 					until not util.is_key_down(keyCode)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 					break
 				end
 			else
@@ -2591,57 +2828,88 @@ menu.toggle_loop(Zeug_für_mich, "instant veh enter/exit", {}, "halte F gedrück
 								if timer2 == 100 then
 									util.toast("er konnte nicht aus dem auto gekickt werden")
 									timer2 = 0
+									menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+									menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 									break
 								end
 						until IS_VEHICLE_SEAT_FREE(mypositionvehicle, -1)
 							SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, -1)
+							levideaktivate()
 							repeat
 								util.yield()
 							until not util.is_key_down(keyCode)
+							menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+							menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 							break
 						end
 					end
 		else
 			if not ifnpcincar then
 				if not (ped == 0) and not (players.user_ped() == ped) then
-		   			entities.delete_by_handle(ped)
+					if missionnpc then
+						if missionped then
+							SET_ENTITY_COORDS_NO_OFFSET(ped, doorpositionleftfront, false, false, false)
+							local pedpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(ped, -3, 0, 0)
+							SET_ENTITY_COORDS_NO_OFFSET(ped, pedpos.x, pedpos.y, pedpos.z, false, false, false)
+						else
+		   					entities.delete_by_handle(ped)
+						end
+					end
 					SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, -1)
+					levideaktivate()
 				else
 					SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, -1)
+					levideaktivate()
 					SET_VEHICLE_ENGINE_ON(mypositionvehicle, true, true, true)
 				end
 				repeat
 					util.yield()
 				until not util.is_key_down(keyCode)
+				menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+				menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 				break
 			else
 				if ARE_ANY_VEHICLE_SEATS_FREE(mypositionvehicle) then
-					if IS_VEHICLE_SEAT_FREE(mypositionvehicle, 0) then
-							SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 0)
+					if IS_VEHICLE_SEAT_FREE(mypositionvehicle, -1) then
+						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, -1)
+						levideaktivate()
+					elseif IS_VEHICLE_SEAT_FREE(mypositionvehicle, 0) then
+						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 0)
+						levideaktivate()
 					elseif  IS_VEHICLE_SEAT_FREE(mypositionvehicle, 1) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 1)
+						levideaktivate()
 					elseif  IS_VEHICLE_SEAT_FREE(mypositionvehicle, 2) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 2)
+						levideaktivate()
 					elseif  IS_VEHICLE_SEAT_FREE(mypositionvehicle, 3) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 3)
+						levideaktivate()
 					elseif  IS_VEHICLE_SEAT_FREE(mypositionvehicle, 4) then
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, 4)
+						levideaktivate()
 					else
 						util.toast("konnte dich in keinen sitz setzen")
 						repeat
 							util.yield()
 						until not util.is_key_down(keyCode)
+						menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+						menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 						break
 					end
 					repeat
 						util.yield()
 					until not util.is_key_down(keyCode)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 					break
 				else
 					util.toast("es sind keine sitze frei")
 					repeat
 						util.yield()
 					until not util.is_key_down(keyCode)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 					break
 				end
 			end
@@ -2650,36 +2918,131 @@ menu.toggle_loop(Zeug_für_mich, "instant veh enter/exit", {}, "halte F gedrück
 		util.yield()
 	end
 	else
-		local playernameself = players.get_name(players.user())
-		local myposition = players.get_position(players.user())
-		local mypositionvehicle = getClosestVehicle(myposition)
-		local positionvehicleding = GET_WORLD_POSITION_OF_ENTITY_BONE(mypositionvehicle)
 		timer1 = 0
 		while util.is_key_down(keyCode) do
 			timer1 += 1
 			util.yield()
 			if timer1 == bba and util.is_key_down(keyCode) then
+				menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), true)
+				menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
 				util.toast("exit vehicle")
-				menu.trigger_commands("freeze"..playernameself.." on")
-				util.yield(20)
-				menu.trigger_commands("freeze"..playernameself.." off")
+				--util.toast(doorindex .."        /     "..doorindex2.. "  /   "..doorindex3.."  /   "..doorindex4.."   /  "..seatofplayer)
+				if not engineoff then
+					SET_VEHICLE_ENGINE_ON(mypositionvehicle, false, true, true)
+				end
+				if doorindex == -1 and doorindex2 == -1 then
+					SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), positionoffset.x, positionoffset.y, positionoffset.z, false, false, false)
+				else
+					if seatofplayer == -1 then
+						if stoponexit and not flyingvehicle then
+							BRING_VEHICLE_TO_HALT(mypositionvehicle, 0, 1, false)
+						end
+							SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), doorpositionleftfront, false, false, false)
+							local posminus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), -0.5, 0, 0)
+							if groundspawn and not IS_PED_IN_ANY_BOAT(players.user_ped()) then
+								local groundposminus = get_ground_z(posminus) + 1
+								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posminus.x, posminus.y, groundposminus, false, false, false)
+							else
+								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posminus.x, posminus.y, posminus.z, false, false, false)
+							end
+					else
+						if doorindex3 > -1 then
+							SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), doorpositionrightfront, false, false, false)
+							local posplus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0.5, 0, 0)
+							if groundspawn and not IS_PED_IN_ANY_BOAT(players.user_ped()) then
+								local groundposplus = get_ground_z(posplus) + 1
+								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posplus.x, posplus.y, groundposplus, false, false, false)
+							else
+								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posplus.x, posplus.y, posplus.z, false, false, false)
+							end
+						elseif doorindex > -1 then
+							SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), doorpositionleftfront, false, false, false)
+							local posminus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), -0.5, 0, 0)
+							if groundspawn and not IS_PED_IN_ANY_BOAT(players.user_ped()) then
+								local groundposminus = get_ground_z(posminus) + 1
+								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posminus.x, posminus.y, groundposminus, false, false, false)
+							else
+								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posminus.x, posminus.y, posminus.z, false, false, false)
+							end
+						else
+							SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), positionoffset.x, positionoffset.y, positionoffset.z, false, false, false)
+						end
+					end
+				end
 				repeat
 					util.yield()
 				until not util.is_key_down(keyCode)
+				menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+				menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
 				break
 				--TASK_LEAVE_VEHICLE(players.user_ped(), mypositionvehicle, 16)
 			end
 		end
 	end
+end
 end)
 
 --[[menu.slider(Zeug_für_mich, "Schnell fahren boost einstellen", {"selfspeedboost"}, "[0 - 20]\ngib die kmh an auf die es boosten soll", 0 ,20, 0, 1, function(a)
 	boost = a
 end)]]
 
-menu.toggle_loop(Zeug_für_mich, "radio immer aus", {}, "", function()
+menu.toggle_loop(vehicle, "radio immer aus", {}, "", function()
 	if IS_PED_IN_ANY_VEHICLE(players.user_ped(), true) then
 		SET_RADIO_TO_STATION_NAME("OFF")
+	end
+end)
+
+menu.toggle_loop(Zeug_für_mich, "nach loaden auto spawnen", {}, "", function()
+	if util.is_session_transition_active() then
+		repeat 
+			util.yield()
+		until not util.is_session_transition_active()
+		util.yield(3000)
+		local persoveh = entities.get_user_personal_vehicle_as_handle()
+		if persoveh == -1 then
+			menu.trigger_commands("claimallvehicles")
+		end
+	end
+end)
+
+menu.toggle_loop(Zeug_für_mich, "alle waffen immer", {}, "", function()
+	if not util.is_session_transition_active() then
+		util.yield(5000)
+		if not HAS_PED_GOT_WEAPON(players.user_ped(),911657153,false) then
+			util.toast("alle waffen wurden gegeben")
+			menu.trigger_commands("allguns")
+		end
+	end
+end)
+
+timer5 = 1
+menu.toggle_loop(Zeug_für_mich, "legit wanted level remove", {}, "", function()
+	if IS_PLAYER_WANTED_LEVEL_GREATER(players.user(), 0) then
+		repeat
+			util.yield()
+			if not IS_PLAYER_WANTED_LEVEL_GREATER(players.user(), 0) then
+				timer5 = 1
+				break
+			end
+			timer5 += 1
+		until timer5 == 300
+			timer5 = 1
+			players.set_wanted_level(players.user(), 0)
+			util.toast("Die Fahndungslevel wurden entfernt")
+	end
+end)
+
+--[[menu.toggle_loop(vehicle, "immer persönliches auto da", {}, "", function()
+	local persoveh = entities.get_user_personal_vehicle_as_handle()
+	local interioding = GET_INTERIOR_FROM_ENTITY(players.user_ped())
+	if persoveh == -1 and interioding == 0 and not IS_CUTSCENE_ACTIVE() then
+		util.yield(10000)
+		local persoveh = entities.get_user_personal_vehicle_as_handle()
+		if persoveh == -1 and interioding == 0 and not IS_CUTSCENE_ACTIVE() then
+			menu.trigger_command(menu.ref_by_path("Stand>Lua Scripts>".. SCRIPT_NAME ..">Self zeug>Claim all vehicles"))
+			util.toast("fahrzeug wird geliefert")
+			util.yield(5000)
+		end
 	end
 end)
 
@@ -2693,9 +3056,17 @@ menu.action(settings, "update suchen", {}, "", function()
 end)
 
 local entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
-local anderesettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
+local enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
 
-menu.toggle(anderesettings, "npc auto klauen oder beifahrer", {}, "AN = beifahrer\nAUS = klauen", function(on_toggle)
+menu.toggle(settings, "host kick freunde", {}, "AN = kickt auch freunde\nAUS = kickt keine freunde", function(on_toggle)
+	if on_toggle then
+		hostkickfriends = true
+	else
+		hostkickfriends = false
+	end
+end)
+
+menu.toggle(enterexitsettings, "npc auto klauen oder beifahrer", {}, "AN = beifahrer\nAUS = klauen", function(on_toggle)
 	if on_toggle then
 		ifnpcincar = true
 	else
@@ -2703,7 +3074,7 @@ menu.toggle(anderesettings, "npc auto klauen oder beifahrer", {}, "AN = beifahre
 	end
 end)
 
-menu.toggle(anderesettings, "spieler auto klauen oder beifahrer", {}, "AUS = beifahrer\nAN = klauen", function(on_toggle)
+menu.toggle(enterexitsettings, "spieler auto klauen oder beifahrer", {}, "AUS = beifahrer\nAN = klauen", function(on_toggle)
 	if on_toggle then
 		ifplayerincar = true
 	else
@@ -2711,11 +3082,51 @@ menu.toggle(anderesettings, "spieler auto klauen oder beifahrer", {}, "AUS = bei
 	end
 end)
 
-menu.slider(anderesettings, "auto einsteigen settings", {"entertimer"}, "[5 - 100]\nwie lang es warten soll bis du einsteigst", 5,100, 10, 5, function(boost1)
+menu.toggle(enterexitsettings, "Stop on exit", {}, "AUS = auto fährt weiter\nAN = auto bleibt stehen nach dem austeigen", function(on_toggle)
+	if on_toggle then
+		stoponexit = true
+	else
+		stoponexit = false
+	end
+end)
+
+menu.toggle(enterexitsettings, "Motor bei austeigen an lassen", {}, "AUS = beim austeigen geht der motor normal aus\nAN = beim verlassen bleibt der motor an", function(on_toggle)
+	if on_toggle then
+		engineoff = true
+	else
+		engineoff = false
+	end
+end)
+
+menu.toggle(enterexitsettings, "Missions npc nicht löschen", {}, "AUS = mission npc wird gelöscht\nAN = mission npc wird nicht gelöscht", function(on_toggle)
+	if on_toggle then
+		missionnpc = true
+	else
+		missionnpc = false
+	end
+end)
+
+menu.toggle(enterexitsettings, "immer am boden aussteigen", {}, "AUS = spawned dich neben der tür\nAN = spawned dich auf den boden", function(on_toggle)
+	if on_toggle then
+		groundspawn = true
+	else
+		groundspawn = false
+	end
+end)
+
+menu.toggle(enterexitsettings, "Veh info as debug", {}, "AUS = keine infos\nAN = rechts oben infos über das veh", function(on_toggle)
+	if on_toggle then
+		infoofveh = true
+	else
+		infoofveh = false
+	end
+end)
+
+menu.slider(enterexitsettings, "auto einsteigen settings", {"entertimer"}, "[5 - 100]\nwie lang es warten soll bis du einsteigst", 5,100, 10, 5, function(boost1)
 	abb = boost1
 end)
 
-menu.slider(anderesettings, "auto aussteigen settings", {"exittimer"}, "[5 - 100]\nwie lang es warten soll bis du aussteigst", 5,100, 10, 5, function(boost2)
+menu.slider(enterexitsettings, "auto aussteigen settings", {"exittimer"}, "[5 - 100]\nwie lang es warten soll bis du aussteigst", 5,100, 10, 5, function(boost2)
 	bba = boost2
 end)
 
