@@ -599,7 +599,7 @@ local function russenkick(pid)
 			if pidlanguage(pid) == "Russisch" then
 				menu.trigger_commands("kick".. playername)
 				menu.trigger_commands("kick".. playername)
-				util.toast(playername .."test2", TOAST_ALL)
+				--util.toast(playername .."test2", TOAST_ALL)
 				repeat
 					util.yield()
 					russentimer += 1
