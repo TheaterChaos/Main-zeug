@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.27
+local localVer = 0.28
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -524,6 +524,91 @@ function getClosestVehicle(myPos)
     if closestVeh ~= nil then
         return entities.pointer_to_handle(closestVeh)
     end
+end
+
+local function pidlanguage(pid)
+	languages = players.get_language(pid)
+	if languages == 0 then
+		return "Englisch"
+	elseif languages == 1 then
+		return "Französisch"
+	elseif languages == 2 then
+		return "Deutsch"
+	elseif languages == 3 then
+		return "Italienisch"
+	elseif languages == 4 then
+		return "Spanisch"
+	elseif languages == 5 then
+		return "Brasilien"
+	elseif languages == 6 then
+		return "Polnisch"
+	elseif languages == 7 then
+		return "Russisch"
+	elseif languages == 8 then
+		return "Koreanisch"
+	elseif languages == 9 then
+		return "Chinesisch"
+	elseif languages == 10 then
+		return "Japanisch"
+	elseif languages == 11 then
+		return "Mexikanisch"
+	elseif languages == 12 then
+		return "Chinesisch"
+	else 
+		return "Keine Sprache dazu gefunden"
+	end
+end
+
+local function playerjoinmassge(pid)
+	if player_join then
+		playername = players.get_name(pid)
+		rockstarid = players.get_rockstar_id(pid)
+		connectetip = players.get_connect_port(pid)
+		ranklevel = players.get_rank(pid)
+		money = players.get_money(pid)
+		languagesname = pidlanguage(pid)
+		if util.is_session_transition_active() then
+			if ranklevel == 0 or money == 0 then
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_CONSOLE)
+			elseif PlayerisFriend(pid) then
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.."\nGeld: "..money, TOAST_CONSOLE)
+			elseif PlayerisFriend(pid) and ranklevel == 0 or money == 0 then
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_CONSOLE)
+			else
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_CONSOLE)
+			end
+		else
+			if ranklevel == 0 or money == 0 then
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_ALL)
+			elseif PlayerisFriend(pid) then
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
+			elseif PlayerisFriend(pid) and ranklevel == 0 or money == 0 then
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_ALL)
+			else
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
+			end
+		end
+	end
+end
+
+russentimer = 1
+local function russenkick(pid)
+	if kickrussen then
+		playername = players.get_name(pid)
+		if not util.is_session_transition_active() then
+			if pidlanguage(pid) == "Russisch" then
+				menu.trigger_commands("kick".. playername)
+				menu.trigger_commands("kick".. playername)
+				util.toast(playername .."test2", TOAST_ALL)
+				repeat
+					util.yield()
+					russentimer += 1
+				until (players.exists(pid) == false) or (russentimer == 3000)
+				russentimer = 1
+				util.toast(playername.. " wurde gekickt grund: Russe ", TOAST_ALL)
+			end
+		end
+	end
 end
 
 selectedplayer = {}
@@ -1843,6 +1928,47 @@ menu.toggle(player_zeug, "Kick leute mit host token spoof", {}, "geht nur auf le
 	end
 end)
 
+menu.toggle(player_zeug, "Kick Russen", {}, "kickt russen die nachjoinen", function(on_toggle)
+	if on_toggle then
+		kickrussen = true
+	else 
+		kickrussen = false
+	end
+end)
+
+menu.action(player_zeug, "russen aus lobby kicken", {}, "kickt aus deiner lobby jeden russen", function()
+	for players.list(false, false, true) as pid do 
+		if pidlanguage(pid) == "Russisch" then
+			playername = players.get_name(pid)
+			menu.trigger_commands("kick".. playername)
+			menu.trigger_commands("kick".. playername)
+			util.toast(playername.. " wird gekickt grund: Russe")
+		end
+	end
+end)
+
+menu.action(player_zeug, "wie viele russen sind in der lobby", {}, "sagt wie viele russen in der lobby sind", function()
+	local russencounter = 0
+ 	local hostrusse = false
+	local hostpid = players.get_host()
+	for players.list(false, false, true) as pid do 
+		if pidlanguage(pid) == "Russisch" then
+			if hostpid == pid then
+				hostrusse = true
+			end
+			russencounter += 1
+			util.yield()
+		end
+	end
+	if russencounter == 0 then
+		util.toast("keine russen in dieser lobby")
+	elseif hostrusse then
+		util.toast(tostring(russencounter).. " Russen, host ist auch ein russe")
+	else
+		util.toast(tostring(russencounter).. " Russen")
+	end
+end)
+
 timer6 = 1
 local function kickhosttoken(pid)
 	if kickhosttokenspoof then
@@ -1882,68 +2008,7 @@ local function kickhosttoken(pid)
 end
 
 players.on_join(kickhosttoken)
-
-local function playerjoinmassge(pid)
-	if player_join then
-		playername = players.get_name(pid)
-		languages = players.get_language(pid)
-		rockstarid = players.get_rockstar_id(pid)
-		connectetip = players.get_connect_port(pid)
-		ranklevel = players.get_rank(pid)
-		money = players.get_money(pid)
-		if languages == 0 then
-			languagesname = "Englisch"
-		elseif languages == 1 then
-			languagesname = "Französisch"
-		elseif languages == 2 then
-			languagesname = "Deutsch"
-		elseif languages == 3 then
-			languagesname = "Italienisch"
-		elseif languages == 4 then
-			languagesname = "Spanisch"
-		elseif languages == 5 then
-			languagesname = "Brasilien"
-		elseif languages == 6 then
-			languagesname = "Polnisch"
-		elseif languages == 7 then
-			languagesname = "Russisch"
-		elseif languages == 8 then
-			languagesname = "Koreanisch"
-		elseif languages == 9 then
-			languagesname = "Chinesisch"
-		elseif languages == 10 then
-			languagesname = "Japanisch"
-		elseif languages == 11 then
-			languagesname = "Mexikanisch"
-		elseif languages == 12 then
-			languagesname = "Chinesisch"
-		else 
-			languagesname = "Keine Sprache dazu gefunden"
-		end
-		if util.is_session_transition_active() then
-			if ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_CONSOLE)
-			elseif PlayerisFriend(pid) then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.."\nGeld: "..money, TOAST_CONSOLE)
-			elseif PlayerisFriend(pid) and ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_CONSOLE)
-			else
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_CONSOLE)
-			end
-		else
-			if ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_ALL)
-			elseif PlayerisFriend(pid) then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
-			elseif PlayerisFriend(pid) and ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_ALL)
-			else
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
-			end
-		end
-	end
-end
-
+players.on_join(russenkick)
 players.on_join(playerjoinmassge)
 
 local actionen = menu.list(custselc, "actionen", {}, "")
