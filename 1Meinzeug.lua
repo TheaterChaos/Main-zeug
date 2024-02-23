@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.28
+local localVer = 0.29
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -183,51 +183,6 @@ local function roundDecimals(float, decimals)
 	decimals = 10 ^ decimals
 	return math.floor(float * decimals) / decimals
 end
-
---[[local function getnumber(number)
-	if number == 1 then
-		speedboost = 0.1
-	elseif number == 2 then
-		speedboost = 0.2
-	elseif number == 3 then
-		speedboost = 0.3
-	elseif number == 4 then
-		speedboost = 0.4
-	elseif number == 5 then
-		speedboost = 0.5
-	elseif number == 6 then
-		speedboost = 0.6
-	elseif number == 7 then
-		speedboost = 0.7
-	elseif number == 8 then
-		speedboost = 0.8
-	elseif number == 9 then
-		speedboost = 0.9
-	elseif number == 10 then
-		speedboost = 1.0
-	elseif number == 11 then
-		speedboost = 1.1
-	elseif number == 12 then
-		speedboost = 1.2
-	elseif number == 13 then
-		speedboost = 1.3
-	elseif number == 14 then
-		speedboost = 1.4
-	elseif number == 15 then
-		speedboost = 1.5
-	elseif number == 16 then
-		speedboost = 1.6
-	elseif number == 17 then
-		speedboost = 1.7
-	elseif number == 18 then
-		speedboost = 1.8
-	elseif number == 19 then
-		speedboost = 1.9
-	elseif number == 20 then
-		speedboost = 2.0
-	end
-	return speedboost
-end]]
 
 local keyLookupTable = {
     ['VK_LBUTTON']              =  0x01,	--Left mouse button
@@ -508,6 +463,18 @@ function getseatofplayer(vehicle)
 	end
 end
 
+local function get_ip_data(ip)
+    local data = {city = "unknown", state = "unknown", country = "unknown"}
+    if util.is_soup_netintel_inited() then
+        if (loc := soup.netIntel.getLocationByIp(ip)):isValid() then
+            --data.city = loc.city
+            --data.state = loc.state
+            data.country = soup.getCountryName(loc.country_code, "EN")
+        end
+    end
+    return data
+end
+
 timer1 = 0
 
 function getClosestVehicle(myPos)
@@ -527,7 +494,17 @@ function getClosestVehicle(myPos)
 end
 
 local function pidlanguage(pid)
+	local IP = tostring(soup.IpAddr(players.get_connect_ip(pid)))
+	local ip_data = get_ip_data(tostring(IP))
+	languages = ip_data.country
+	return languages
+end
+
+--[[local function pidlanguage(pid)
+	local IP = tostring(soup.IpAddr(players.get_connect_ip(pid)))
+	local ip_data = get_ip_data(tostring(IP))
 	languages = players.get_language(pid)
+	util.toast(ip_data.country)
 	if languages == 0 then
 		return "Englisch"
 	elseif languages == 1 then
@@ -542,8 +519,6 @@ local function pidlanguage(pid)
 		return "Brasilien"
 	elseif languages == 6 then
 		return "Polnisch"
-	elseif languages == 7 then
-		return "Russisch"
 	elseif languages == 8 then
 		return "Koreanisch"
 	elseif languages == 9 then
@@ -552,12 +527,14 @@ local function pidlanguage(pid)
 		return "Japanisch"
 	elseif languages == 11 then
 		return "Mexikanisch"
+	elseif languages == 7 then
+		return "Russisch"
 	elseif languages == 12 then
 		return "Chinesisch"
 	else 
 		return "Keine Sprache dazu gefunden"
 	end
-end
+end]]
 
 local function playerjoinmassge(pid)
 	if player_join then
@@ -569,45 +546,47 @@ local function playerjoinmassge(pid)
 		languagesname = pidlanguage(pid)
 		if util.is_session_transition_active() then
 			if ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_CONSOLE)
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_CONSOLE)
 			elseif PlayerisFriend(pid) then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.."\nGeld: "..money, TOAST_CONSOLE)
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.."\nGeld: "..money, TOAST_CONSOLE)
 			elseif PlayerisFriend(pid) and ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_CONSOLE)
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_CONSOLE)
 			else
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_CONSOLE)
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_CONSOLE)
 			end
 		else
 			if ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_ALL)
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_ALL)
 			elseif PlayerisFriend(pid) then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
 			elseif PlayerisFriend(pid) and ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname, TOAST_ALL)
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_ALL)
 			else
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Sprache: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
+				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
 			end
 		end
 	end
 end
 
-russentimer = 1
-local function russenkick(pid)
-	if kickrussen then
-		playername = players.get_name(pid)
-		if not util.is_session_transition_active() then
-			if pidlanguage(pid) == "Russisch" then
-				menu.trigger_commands("kick".. playername)
-				menu.trigger_commands("kick".. playername)
-				--util.toast(playername .."test2", TOAST_ALL)
-				repeat
-					util.yield()
-					russentimer += 1
-				until (players.exists(pid) == false) or (russentimer == 3000)
-				russentimer = 1
-				util.toast(playername.. " wurde gekickt grund: Russe ", TOAST_ALL)
-			end
-		end
+local function getvehtype(hashveh)
+	if IS_THIS_MODEL_A_BOAT(hashveh) then
+		return "BOAT"
+	elseif IS_THIS_MODEL_A_PLANE(hashveh) then
+		return "PLANE"
+	elseif IS_THIS_MODEL_A_HELI(hashveh) then
+		return "HELI"
+	elseif IS_THIS_MODEL_A_CAR(hashveh) then
+		return "CAR"
+	elseif IS_THIS_MODEL_A_TRAIN(hashveh) then
+		return "TRAIN"
+	elseif IS_THIS_MODEL_A_BIKE(hashveh) then
+		return "BIKE"
+	elseif IS_THIS_MODEL_A_BICYCLE(hashveh) then
+		return "BICYCLE"
+	elseif IS_THIS_MODEL_A_QUADBIKE(hashveh) then
+		return "QUADBIKE"
+	else
+		return "NOT FOUND"
 	end
 end
 
@@ -1624,294 +1603,6 @@ menu.slider(Entitymanager, "Clear Area Range", {"cleararearange"}, "", 0, 10000,
     CLEAR_AREA_RANGE = value
 end)
 
---[[local entitymanagerlist = menu.list(Entitymanager, "list", {}, "")
-
-menu.action(Entitymanager, "list of pickups", {}, "", function()
-    local counter = 0
-    local pos = players.get_position(players.user())
-    for entities.get_all_pickups_as_handles() as pickup do
-        --SET_ENTITY_COORDS(pickup, pos, false, false, false, false)
-		local coords = GET_ENTITY_COORDS(pickup)
-		local info = util.get_model_info(pickup)
-		util.toast(info)
-        counter += 1
-		listpickups[a] = menu.action(entitymanagerlist, "pickup "..counter, {}, "", function()
-			util.toast("test")
-			START_PLAYER_TELEPORT(players.user(), coords,false,true,false)
-			menu.delete(listpickups[a])
-		end)
-        util.yield()
-    end
-    if counter == 0 then
-        util.toast("No Pickups Found. :/")
-    else
-        util.toast("Teleported ".. tostring(counter) .." Pickups.")
-    end
-end)]]
-
---[[menu.toggle_loop(Entitymanager, "toggle für auto anzeige", {}, "", function()
-	local tbl = entities.get_all_vehicles_as_pointers()
-	local range = CLEAR_AREA_RANGE
-	local rangesq = range*range
-    local pc = GET_ENTITY_COORDS(players.user_ped())
-	for a = 0, 200 do
-    for _, v in pairs(tbl) do
-        local cc = entities.get_position(v)
-        if (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) then
-            local h = entities.pointer_to_handle(v)
-			local x = entities.get_model_hash(h)
-			local playervehicle = entities.get_user_vehicle_as_handle(true)
-			--util.toast(v.."  //  "..h.."  //  "..x.."   //   "..playervehicle)
-            if (IS_ENTITY_A_PED(h) and not IS_PED_A_PLAYER(h)) or (not IS_ENTITY_A_PED(h)) and not (playervehicle == h) then
-					local vehiclemodelname = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(x)
-					local isvehiclethere = menu.is_ref_valid(menu.ref_by_path("Stand>Lua Scripts>".. SCRIPT_NAME ..">Entity Manager>list vehicles>".. vehiclemodelname))
-					if not isvehiclethere then
-						allvehicles[a] = menu.list(entitymanagerlist, vehiclemodelname, {}, "", function(on_click)
-								
-						end)
-					else
-						break
-					end
-				
-			end
-		end
-	end
-	end
-end)
-
-menu.toggle_loop(Entitymanager, "veh testen ding selber", {}, "", function()
-	local tbl = entities.get_all_vehicles_as_pointers()
-	local range = CLEAR_AREA_RANGE
-	local rangesq = range*range
-    local pc = GET_ENTITY_COORDS(players.user_ped())
-	for _, v in pairs(tbl) do
-		local cc = entities.get_position(v)
-		local h = entities.pointer_to_handle(v)
-		local x = entities.get_model_hash(h)
-		local distance = (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z))
-		local playervehicle = entities.get_user_vehicle_as_handle(true)
-		local vehiclemodelname = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(x)
-		local isvehiclethere = menu.is_ref_valid(menu.ref_by_path("Stand>Lua Scripts>".. SCRIPT_NAME ..">Entity Manager>list vehicles>".. vehiclemodelname))
-			if not isvehiclethere then
-				if not isvehiclethere and (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) then
-						allvehicles[a] = menu.list(entitymanagerlist, vehiclemodelname, {}, "", function()
-								action1 = menu.action(allvehicles[a], "get distance", {}, "", function()
-									util.toast(distance)
-								end)
-						end)
-				--else
-					--if menu.is_ref_valid(allvehicles[a]) and isvehiclethere then
-					--	menu.delete(allvehicles[a])
-					--end
-				end
-			end
-	end	
-end)]]
-
---[[auto stand user marker geht nicht mehr
-menu.action(player_zeug, "Mark Stand user self", {}, "Nicht möglich bei leuten die du schonmal anders gesehen hast", function()
-	for _, pid in players.list(false, true, true) do
-		if is_user_a_stand_user(pid) or pid == players.user() and not util.is_session_transition_active(players.user) then
-			if menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			else
-				util.toast("hab nichts gefunden")
-			end
-		end
-	end
-end)
-
-
-menu.toggle(player_zeug, "Mark Stand user auto", {}, "Nicht möglich bei leuten die du schonmal anders gesehen hast", function()
-	for _, pid in players.list(false, true, true) do
-		if is_user_a_stand_user(pid) or pid == players.user() and not util.is_session_transition_active(players.user) then
-			if menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-			end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) then
-				if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) == "" then
-					menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note"), "Stand user")
-					util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-			end
-		end
-	end
-end)
-
-local function standuser()
-	util.yield(10000)
-	if menu.get_value(menu.ref_by_path("Stand>Lua Scripts>" ..SCRIPT_NAME.. ">Player zeug>Mark Stand user auto")) == true then
-		for _, pid in players.list(false, true, true) do
-			if is_user_a_stand_user(pid) or pid == players.user() and not util.is_session_transition_active(players.user) then
-				if menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. ">Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-				end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Solo]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invite]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Friend]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Closed Crew]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Crew]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Public]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Invalid]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Story Mode]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				elseif menu.is_ref_valid(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) then
-					if menu.get_value(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note")) == "" then
-						menu.trigger_command(menu.ref_by_path("Online>Player History>" ..players.get_name(pid).. " [Offline]>Note"), "Stand user")
-						util.toast(players.get_name(pid).. " Wurde als Stand user Makiert", TOAST_ALL)
-					end
-				end
-			end
-		end
-	end
-end
-
-players.on_join(standuser)
-]]
-
---[[menu.text_input(streamer, "streamer", {"plstream"}, "streamer eingeben", function(input)
-	streamer = input
-end, '')
-
-menu.action(streamer, "add streamer (join)", {}, "streamer adden mit direkt join", function()
-		menu.trigger_commands("historyadd " .. tostring(streamer))
-		util.yield(800)
-		menu.trigger_commands("historynote " .. tostring(streamer) .. " Streamer")
-		util.yield(500)
-		menu.trigger_commands("join " .. tostring(streamer))
-end)
-
-menu.action(streamer, "add streamer", {}, "streamer adden und öffnen in liste", function()
-		menu.trigger_commands("historyadd " .. tostring(streamer))
-		util.yield(800)
-		menu.trigger_commands("historynote " .. tostring(streamer) .. " Streamer")
-		util.yield(500)
-		menu.trigger_commands("findplayer " .. tostring(streamer))
-end)]]
-
 menu.toggle(player_zeug, "player join nachricht", {}, "", function(on_toggle)
 	if on_toggle then
 		player_join = true
@@ -1928,7 +1619,145 @@ menu.toggle(player_zeug, "Kick leute mit host token spoof", {}, "geht nur auf le
 	end
 end)
 
-menu.toggle(player_zeug, "Kick Russen", {}, "kickt russen die nachjoinen", function(on_toggle)
+local anti_russen_zeug = menu.list(player_zeug, "Anti Länder zeug", {}, "")
+local leanderauswahl = menu.list(anti_russen_zeug, "länder auswahl", {}, "")
+
+local function getplayertokick(pid)
+	if Russian_Federation then
+		if pidlanguage(pid) == "Russian Federation" then
+			return pid
+		end
+	end
+	if Ukraine then
+		if pidlanguage(pid) == "Ukraine" then
+			return pid
+		end
+	end
+	if Poland then
+		if pidlanguage(pid) == "Poland" then
+			return pid
+		end
+	end
+	if France then
+		if pidlanguage(pid) == "France" then
+			return pid
+		end
+	end
+	if Italy then
+		if pidlanguage(pid) == "Italy" then
+			return pid
+		end
+	end
+	if Romania then
+		if pidlanguage(pid) == "Romania" then
+			return pid
+		end
+	end
+	if Czech_Republic then
+		if pidlanguage(pid) == "Czech_Republic" then
+			return pid
+		end
+	end
+	if Germany then
+		if pidlanguage(pid) == "Germany" then
+			return pid
+		end
+	end
+	return "false"
+end
+
+russentimer = 1
+local function russenkick(pid)
+	if kickrussen then
+		if not util.is_session_transition_active() then
+			local pidtokick = getplayertokick(pid)
+			if pidtokick == "false" then
+			else
+				if PlayerisFriend(pidtokick) then
+				else
+					local playername = players.get_name(pidtokick)
+					menu.trigger_commands("kick".. playername)
+					menu.trigger_commands("kick".. playername)
+					--util.toast(playername .."test2", TOAST_ALL)
+					repeat
+						util.yield()
+						russentimer += 1
+					until (players.exists(pidtokick) == false) or (russentimer == 3000)
+					russentimer = 1
+					util.toast(playername.. " wurde gekickt grund: Russe ", TOAST_ALL)
+				end
+			end
+		end
+	end
+end
+
+players.on_join(russenkick)
+
+menu.toggle(leanderauswahl, "Russian Federation", {}, "", function(on_toggle)
+	if on_toggle then
+		Russian_Federation = true
+	else 
+		Russian_Federation = false
+	end
+end)
+
+menu.toggle(leanderauswahl, "Ukraine", {}, "", function(on_toggle)
+	if on_toggle then
+		Ukraine = true
+	else 
+		Ukraine = false
+	end
+end)
+
+menu.toggle(leanderauswahl, "Poland", {}, "", function(on_toggle)
+	if on_toggle then
+		Poland = true
+	else 
+		Poland = false
+	end
+end)
+
+menu.toggle(leanderauswahl, "France", {}, "", function(on_toggle)
+	if on_toggle then
+		France = true
+	else 
+		France = false
+	end
+end)
+
+menu.toggle(leanderauswahl, "Italy", {}, "", function(on_toggle)
+	if on_toggle then
+		Italy = true
+	else 
+		Italy = false
+	end
+end)
+
+menu.toggle(leanderauswahl, "Romania", {}, "", function(on_toggle)
+	if on_toggle then
+		Romania = true
+	else 
+		Romania = false
+	end
+end)
+
+menu.toggle(leanderauswahl, "Czech Republic", {}, "", function(on_toggle)
+	if on_toggle then
+		Czech_Republic = true
+	else 
+		Czech_Republic = false
+	end
+end)
+
+menu.toggle(leanderauswahl, "Germany", {}, "", function(on_toggle)
+	if on_toggle then
+		Germany = true
+	else 
+		Germany = false
+	end
+end)
+
+menu.toggle(anti_russen_zeug, "Kick Länder", {}, "kickt Länder die nachjoinen", function(on_toggle)
 	if on_toggle then
 		kickrussen = true
 	else 
@@ -1936,36 +1765,134 @@ menu.toggle(player_zeug, "Kick Russen", {}, "kickt russen die nachjoinen", funct
 	end
 end)
 
-menu.action(player_zeug, "russen aus lobby kicken", {}, "kickt aus deiner lobby jeden russen", function()
-	for players.list(false, false, true) as pid do 
-		if pidlanguage(pid) == "Russisch" then
-			playername = players.get_name(pid)
-			menu.trigger_commands("kick".. playername)
-			menu.trigger_commands("kick".. playername)
-			util.toast(playername.. " wird gekickt grund: Russe")
+menu.action(anti_russen_zeug, "Länder aus lobby kicken", {}, "kickt aus deiner lobby jeden der ausgewählten länder", function()
+	for players.list(false, false, true) as pid do
+		local pidtokick = getplayertokick(pid)
+		if pidtokick == "false" then
+		else
+			if PlayerisFriend(pidtokick) then
+			else
+				playername = players.get_name(pidtokick)
+				menu.trigger_commands("kick".. playername)
+				menu.trigger_commands("kick".. playername)
+				util.toast(playername.. " wird gekickt grund: einer der ausgewählten länder", TOAST_ALL)
+			end
 		end
 	end
 end)
 
-menu.action(player_zeug, "wie viele russen sind in der lobby", {}, "sagt wie viele russen in der lobby sind", function()
+menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie viele spieler von den ausgewählten ländern in der lobby sind", function()
 	local russencounter = 0
- 	local hostrusse = false
+	local ukrainecounter = 0
+	local polandcounter = 0
+	local francecounter = 0
+	local italycounter = 0
+	local romaniacounter = 0
+	local czechcounter = 0
+	local germanycoutner = 0
+	local notselectet = false
 	local hostpid = players.get_host()
-	for players.list(false, false, true) as pid do 
-		if pidlanguage(pid) == "Russisch" then
-			if hostpid == pid then
-				hostrusse = true
+	for players.list(false, false, true) as pid do
+		if Russian_Federation then
+			if pidlanguage(pid) == "Russian Federation" then
+				russencounter += 1
 			end
-			russencounter += 1
-			util.yield()
+		end
+		if Ukraine then
+			if pidlanguage(pid) == "Ukraine" then
+				ukrainecounter += 1
+			end
+		end
+		if Poland then
+			if pidlanguage(pid) == "Poland" then
+				polandcounter += 1
+			end
+		end
+		if France then
+			if pidlanguage(pid) == "France" then
+				francecounter += 1
+			end
+		end
+		if Italy then
+			if pidlanguage(pid) == "Italy" then
+				italycounter += 1
+			end
+		end
+		if Romania then
+			if pidlanguage(pid) == "Romania" then
+				romaniacounter += 1
+			end
+		end
+		if Czech_Republic then
+			if pidlanguage(pid) == "Czech_Republic" then
+				czechcounter += 1
+			end
+		end
+		if Germany then
+			if pidlanguage(pid) == "Germany" then
+				germanycoutner += 1
+			end
 		end
 	end
-	if russencounter == 0 then
-		util.toast("keine russen in dieser lobby")
-	elseif hostrusse then
-		util.toast(tostring(russencounter).. " Russen, host ist auch ein russe")
-	else
-		util.toast(tostring(russencounter).. " Russen")
+	if (not Czech_Republic) and (not Romania) and (not Italy) and (not France) and (not Poland) and (not Ukraine) and (not Russian_Federation) and (not Germany) then
+		notselectet = true
+		util.toast("keine länder ausgewählt")
+	end
+	if Russian_Federation then
+		if russencounter != 0 then
+			util.toast(tostring(russencounter).. " Russian")
+		else
+			util.toast("Keine Russian")
+		end
+	end
+	if Ukraine then
+		if ukrainecounter != 0 then
+			util.toast(tostring(ukrainecounter).. " Ukraine")
+		else
+			util.toast("Keine Ukraine")
+		end
+	end
+	if Poland then
+		if polandcounter != 0 then
+			util.toast(tostring(polandcounter).. " Poland")
+		else
+			util.toast("Keine Poland")
+		end
+	end
+	if France then
+		if francecounter != 0 then
+			util.toast(tostring(francecounter).. " France")
+		else
+			util.toast("Keine France")
+		end
+	end
+	if Italy then
+		if italycounter != 0 then
+			util.toast(tostring(italycounter).. " Italy")
+		else
+			util.toast("Keine Italy")
+		end
+	end
+	if Romania then
+		if romaniacounter != 0 then
+			util.toast(tostring(romaniacounter).. " Romania")
+		else
+			util.toast("Keine Romania")
+		end
+	end
+	if Czech_Republic then
+		if czechcounter != 0 then
+			util.toast(tostring(czechcounter).. " Czech_Republic")
+		else
+			util.toast("Keine Czech_Republic")
+		end
+	end
+	if Germany then
+		if germanycoutner != 0 then
+			util.toast(tostring(germanycoutner).. " Germany")
+		else
+			util.toast("Keine Germany")
+		end
 	end
 end)
 
@@ -2008,7 +1935,6 @@ local function kickhosttoken(pid)
 end
 
 players.on_join(kickhosttoken)
-players.on_join(russenkick)
 players.on_join(playerjoinmassge)
 
 local actionen = menu.list(custselc, "actionen", {}, "")
@@ -2768,28 +2694,6 @@ end)
 	START_PLAYER_TELEPORT(players.user(),positionveh,false,true,false)
 	util.toast(positionveh)
 end)]]
-
-local function getvehtype(hashveh)
-	if IS_THIS_MODEL_A_BOAT(hashveh) then
-		return "BOAT"
-	elseif IS_THIS_MODEL_A_PLANE(hashveh) then
-		return "PLANE"
-	elseif IS_THIS_MODEL_A_HELI(hashveh) then
-		return "HELI"
-	elseif IS_THIS_MODEL_A_CAR(hashveh) then
-		return "CAR"
-	elseif IS_THIS_MODEL_A_TRAIN(hashveh) then
-		return "TRAIN"
-	elseif IS_THIS_MODEL_A_BIKE(hashveh) then
-		return "BIKE"
-	elseif IS_THIS_MODEL_A_BICYCLE(hashveh) then
-		return "BICYCLE"
-	elseif IS_THIS_MODEL_A_QUADBIKE(hashveh) then
-		return "QUADBIKE"
-	else
-		return "NOT FOUND"
-	end
-end
 
 
 
