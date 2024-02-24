@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.30
+local localVer = 0.31
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -1130,7 +1130,7 @@ local function player(pid)
 			end
 		end
  	end)
-	menu.action(orgthingstrolling, "Kick Vom CEO/MC", {}, "", function()
+	menu.action(orgthingstrolling, "Kick Vom CEO/MC", {}, "kickt den boss raus damit ist die org aufgelöst", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
 		else
@@ -1140,9 +1140,9 @@ local function player(pid)
 					util.toast("du kickst dich damit selber du depp")
 				else
 					if bossofceo == pid1 then
-						local playername = players.get_name(pid1)
+						local playername = players.get_name(bossofceo)
 						menu.trigger_commands("ceokick".. playername)
-						util.toast("Kick Vom CEO/MC wurde für"..bossofceo.. "angewendet")
+						util.toast("Kick Vom CEO/MC wurde für "..playername.. " angewendet")
 					end
 				end
 			end
