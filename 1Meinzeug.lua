@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.29
+local localVer = 0.30
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -500,42 +500,6 @@ local function pidlanguage(pid)
 	return languages
 end
 
---[[local function pidlanguage(pid)
-	local IP = tostring(soup.IpAddr(players.get_connect_ip(pid)))
-	local ip_data = get_ip_data(tostring(IP))
-	languages = players.get_language(pid)
-	util.toast(ip_data.country)
-	if languages == 0 then
-		return "Englisch"
-	elseif languages == 1 then
-		return "Französisch"
-	elseif languages == 2 then
-		return "Deutsch"
-	elseif languages == 3 then
-		return "Italienisch"
-	elseif languages == 4 then
-		return "Spanisch"
-	elseif languages == 5 then
-		return "Brasilien"
-	elseif languages == 6 then
-		return "Polnisch"
-	elseif languages == 8 then
-		return "Koreanisch"
-	elseif languages == 9 then
-		return "Chinesisch"
-	elseif languages == 10 then
-		return "Japanisch"
-	elseif languages == 11 then
-		return "Mexikanisch"
-	elseif languages == 7 then
-		return "Russisch"
-	elseif languages == 12 then
-		return "Chinesisch"
-	else 
-		return "Keine Sprache dazu gefunden"
-	end
-end]]
-
 local function playerjoinmassge(pid)
 	if player_join then
 		playername = players.get_name(pid)
@@ -588,6 +552,24 @@ local function getvehtype(hashveh)
 	else
 		return "NOT FOUND"
 	end
+end
+
+local function getorganisationplayers(pid)
+	local orgmembers = {}
+	local bossofpid = players.get_boss(pid)
+	if bossofpid == -1 then
+		util.toast("spieler ist in keiner organisation")
+		return "false"
+	end
+		for players.list(false, true, true) as pid1 do
+			local bossofpid1 = players.get_boss(pid1)
+			if bossofpid1 != -1 then
+				if bossofpid == bossofpid1 then
+					table.insert(orgmembers,pid1)
+				end
+			end
+		end
+		return orgmembers
 end
 
 selectedplayer = {}
@@ -652,6 +634,14 @@ local function player(pid)
 	local main = menu.list(menu.player_root(pid), "Selfmade", {"PlMein"}, "")
     local bozo = menu.list(main, "Notizen", {"Notizen"}, "")
 	local anderes = menu.list(main, "anderes zeug", {"anderes"}, "")
+	local orgthings = menu.list(main, "org zeug", {"orgthings"}, "wenn du im org bist wird nichts davon auf dich gemacht")
+	local orgthingsteleport = menu.list(orgthings, "Teleportieren", {"orgtele"}, "")
+	local orgthingsfriendly = menu.list(orgthings, "Freundlich", {"orgfriendlys"}, "")
+	local orgthingsfriendlyvehicle = menu.list(orgthingsfriendly, "Vehicle", {"orgfriendlysvehicle"}, "")
+	local orgthingsweapons = menu.list(orgthings, "Waffen", {"orgweapons"}, "")
+	local orgthingstrolling = menu.list(orgthings, "Trolling", {"orgtrolling"}, "")
+	local orgthingstrollingvehicle = menu.list(orgthingstrolling, "Vehicle", {"orgtrollingvehicle"}, "")
+	local orgthingscrash = menu.list(orgthings, "Crash", {"orgcrash"}, "")
 	--local spam = menu.list(main, "spam zeug", {"spamzeug"}, "")
 
 	--[[menu.toggle(spam, "alle loops", {}, "auto spam besser selber an machen sonst kaka", function(on_toggle)
@@ -683,6 +673,561 @@ local function player(pid)
 	menu.toggle_loop(spam, "explosiv spam", {"explospam"}, "lässt ihn die ganze zeit explodieren", function(on_toggle)
 		menu.trigger_commands("explode" .. players.get_name(pid))
 	end)]]
+
+	-- org teleport menu
+	menu.action(orgthingsteleport, "Zu Mir Teleportieren", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("summon".. playername)
+				util.toast("org wird zu dir teleportiert")
+			end
+		end
+ 	end)
+	menu.action(orgthingsteleport, "Zu Meinem Wegpunkt Teleportieren", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("wpsummon".. playername)
+				util.toast("org wird zum wegpunkt teleportiert")
+			end
+		end
+ 	end)
+	menu.action(orgthingsteleport, "Zu Meinem Missionsziel Teleportieren", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("summonobj".. playername)
+				util.toast("org wird zum Missionziehl teleportiert")
+			end
+		end
+ 	end)
+
+	--org Freundlich menu vehicle
+	menu.action(orgthingsfriendlyvehicle, "Komplett Verbessern", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("upgradeveh".. playername)
+				util.toast("Fahrzeuge wurde upgegraded")
+			end
+		end
+ 	end)
+	menu.action(orgthingsfriendlyvehicle, "Fahrzeug Reparieren", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("repairveh".. playername)
+				util.toast("org Fahrzeuge wurde Repariert")
+			end
+		end
+ 	end)
+	menu.action(orgthingsfriendlyvehicle, "Unzerstörbar", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("givevehgod".. playername))
+				if check then
+					menu.trigger_commands("givevehgod".. playername.. " off")
+					util.toast("Godmode vehicle wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("givevehgod".. playername.. " on")
+					util.toast("Godmode vehicle für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+
+	--freundlich menu main
+	menu.action(orgthingsfriendly, "CEO Geld-Schleife", {}, "wird nicht dem boss gegeben\nAN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local bossofceo = players.get_boss(pid1)
+				if bossofceo == pid1 then
+				else
+					local playername = players.get_name(pid1)
+					local check = menu.get_value(menu.ref_by_command_name("ceopay".. playername))
+					if check then
+						menu.trigger_commands("ceopay".. playername.. " off")
+						util.toast("CEO Geld-Schleife wurde für org mitglieder ausgeschaltet")
+					else
+						menu.trigger_commands("ceopay".. playername.. " on")
+						util.toast("CEO Geld-Schleife wurde für org mitglieder eingeschaltet")
+					end
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingsfriendly, "Kasino-Figuren Geben", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("figurines".. playername))
+				if check then
+					menu.trigger_commands("figurines".. playername.. " off")
+					util.toast("Kasino-Figuren wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("figurines".. playername.. " on")
+					util.toast("Kasino-Figuren wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingsfriendly, "Spielkarten Geben", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("cards".. playername))
+				if check then
+					menu.trigger_commands("cards".. playername.. " off")
+					util.toast("Spielkarten wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("cards".. playername.. " on")
+					util.toast("Spielkarten wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingsfriendly, "Automatische Heilung", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("autoheal".. playername))
+				if check then
+					menu.trigger_commands("autoheal".. playername.. " off")
+					util.toast("autoheal wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("autoheal".. playername.. " on")
+					util.toast("autoheal wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingsfriendly, "Nie Gefahndet", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("bail".. playername))
+				if check then
+					menu.trigger_commands("bail".. playername.. " off")
+					util.toast("Nie Gefahndet wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("bail".. playername.. " on")
+					util.toast("Nie Gefahndet wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingsfriendly, "Vom Radar Verschwinden", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("giveotr".. playername))
+				if check then
+					menu.trigger_commands("giveotr".. playername.. " off")
+					util.toast("Vom Radar Verschwinden für org ausgeschaltet")
+				else
+					menu.trigger_commands("giveotr".. playername.. " on")
+					util.toast("Vom Radar Verschwinden wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingsfriendly, "P's & Q's Geben", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("snack".. playername))
+				if check then
+					menu.trigger_commands("snack".. playername.. " off")
+					util.toast("P's & Q's für org ausgeschaltet")
+				else
+					menu.trigger_commands("snack".. playername.. " on")
+					util.toast("P's & Q's wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+
+	--org weapons
+	menu.action(orgthingsweapons, "Alle Waffen Geben", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("arm".. playername)
+				util.toast("alle Waffen wurde an org gegeben")
+			end
+		end
+ 	end)
+	menu.action(orgthingsweapons, "Munition Geben", {}, "gibt nur für die ausgerüstete waffe munition", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				menu.trigger_commands("ammo".. playername)
+				util.toast("Munition wurde allen gegeben")
+			end
+		end
+ 	end)
+	menu.action(orgthingsweapons, "Fallschirm Geben", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("paragive".. playername)
+				util.toast("Fallschirm wurde an org gegeben")
+			end
+		end
+ 	end)
+	menu.action(orgthingsweapons, "Unbewaffnen", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("disarm".. playername))
+				if check then
+					menu.trigger_commands("disarm".. playername.. " off")
+					util.toast("Unbewaffnen für org ausgeschaltet")
+				else
+					menu.trigger_commands("disarm".. playername.. " on")
+					util.toast("Unbewaffnen wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+
+	--org trolling vehicle
+	menu.action(orgthingstrollingvehicle, "Töten", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("killveh".. playername)
+				util.toast("autos von org wurden getötet")
+			end
+		end
+ 	end)
+	menu.action(orgthingstrollingvehicle, "EMP", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("empveh".. playername)
+				util.toast("autos von org wurden mit emp versetzt")
+			end
+		end
+ 	end)
+	menu.action(orgthingstrollingvehicle, "Löschen", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("delveh".. playername)
+				util.toast("autos von org wurden gelöscht")
+			end
+		end
+ 	end)
+
+	--org trolling
+	menu.click_slider(orgthingstrolling, "Fahndungslevel Setzen", {}, "", 0 ,5, 0, 1, function(s)
+		local level = s
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				if level == 0 then
+					menu.trigger_commands("pwanted".. playername.. " " ..level)
+					util.toast("Fahnungslevel von org wurde auf ".. level.. " gesetzt")
+				elseif level == 1 then
+					menu.trigger_commands("pwanted".. playername.. " " ..level)
+					util.toast("Fahnungslevel von org wurde auf ".. level.. " gesetzt")
+				elseif level == 2 then
+					menu.trigger_commands("pwanted".. playername.. " " ..level)
+					util.toast("Fahnungslevel von org wurde auf ".. level.. " gesetzt")
+				elseif level == 3 then
+					menu.trigger_commands("pwanted".. playername.. " " ..level)
+					util.toast("Fahnungslevel von org wurde auf ".. level.. " gesetzt")
+				elseif level == 4 then
+					menu.trigger_commands("pwanted".. playername.. " " ..level)
+					util.toast("Fahnungslevel von org wurde auf ".. level.. " gesetzt")
+				elseif level == 5 then
+					menu.trigger_commands("pwanted".. playername.. " " ..level)
+					util.toast("Fahnungslevel von org wurde auf ".. level.. " gesetzt")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Einfrieren", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("freeze".. playername))
+				if check then
+					menu.trigger_commands("freeze".. playername.. " off")
+					util.toast("Einfrieren wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("freeze".. playername.. " on")
+					util.toast("Einfrieren wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Kamera Nach Vorne Zwingen", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("confuse".. playername))
+				if check then
+					menu.trigger_commands("confuse".. playername.. " off")
+					util.toast("Kamera Nach Vorne Zwingen wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("confuse".. playername.. " on")
+					util.toast("Kamera Nach Vorne Zwingen wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Ragdoll", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("ragdoll".. playername))
+				if check then
+					menu.trigger_commands("ragdoll".. playername.. " off")
+					util.toast("Ragdoll wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("ragdoll".. playername.. " on")
+					util.toast("Ragdoll wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Kamera Verwackeln", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("shakecam".. playername))
+				if check then
+					menu.trigger_commands("shakecam".. playername.. " off")
+					util.toast("Kamera Verwackeln wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("shakecam".. playername.. " on")
+					util.toast("Kamera Verwackeln wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Töten", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("kill".. playername)
+				util.toast("Töten wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Explodieren", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("explode".. playername)
+				util.toast("Explodieren wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Benachrichtigungs-Spam", {}, "AN / AUS", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				local check = menu.get_value(menu.ref_by_command_name("notifyspam".. playername))
+				if check then
+					menu.trigger_commands("notifyspam".. playername.. " off")
+					util.toast("Benachrichtigungs-Spam wurde für org ausgeschaltet")
+				else
+					menu.trigger_commands("notifyspam".. playername.. " on")
+					util.toast("Benachrichtigungs-Spam wurde für org eingeschaltet")
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Kick Vom Fahrzeug", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("vehkick".. playername)
+				util.toast("Kick Vom Fahrzeug wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Kick Vom Innenraum", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("interiorkick".. playername)
+				util.toast("Kick Vom Innenraum wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Kick Vom CEO/MC", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local bossofceo = players.get_boss(pid1)
+				if bossofceo == players.user() then
+					util.toast("du kickst dich damit selber du depp")
+				else
+					if bossofceo == pid1 then
+						local playername = players.get_name(pid1)
+						menu.trigger_commands("ceokick".. playername)
+						util.toast("Kick Vom CEO/MC wurde für"..bossofceo.. "angewendet")
+					end
+				end
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "Unedlicher Ladebildschirm", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("infiniteloading".. playername)
+				util.toast("Unedlicher Ladebildschirm wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthingstrolling, "In Freemode-Mission Zwingen", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("mission".. playername)
+				util.toast("In Freemode-Mission Zwingen wurde für og angewendet")
+			end
+		end
+ 	end)
+
+	--org crashen
+	menu.action(orgthingscrash, "Elegant", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("crash".. playername)
+				util.toast("Elegant (crash) wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthingscrash, "Burger King Fußsalat", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("footlettuce".. playername)
+				util.toast("Burger King Fußsalat (crash) wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthingscrash, "Fahrzeug Totschlag", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("slaughter".. playername)
+				util.toast("Fahrzeug Totschlag (crash) wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthingscrash, "Dampfwalze", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("steamroll".. playername)
+				util.toast("Dampfwalze (crash) wurde für og angewendet")
+			end
+		end
+ 	end)
+	menu.action(orgthings, "Kick", {}, "", function()
+		local orgmembers = getorganisationplayers(pid)
+		if orgmembers == "false" then
+		else
+			for orgmembers as pid1 do
+				local playername = players.get_name(pid1)
+				menu.trigger_commands("kick".. playername)
+				util.toast("Kick wurde für og angewendet")
+			end
+		end
+ 	end)
+	
 
 	menu.toggle_loop(anderes, "Remove Player Godmode", {}, "Blocked by most menus.", function()
 		util.trigger_script_event(1 << pid, {800157557, pid, 225624744, math.random(0, 9999)})
@@ -1894,6 +2439,41 @@ menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie
 			util.toast("Keine Germany")
 		end
 	end
+end)
+
+menu.action(player_zeug, "alle sache bei spielern ausssachlten", {}, "wenn du bei dem org ding wa angemacht hast und es bei allen spieler wieder aus machen willst drück einfach hier", function()
+	for players.list(false, true, true) as pid do
+		local playername = players.get_name(pid)
+		menu.trigger_commands("givevehgod".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("ceopay".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("figurines".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("cards".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("autoheal".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("bail".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("giveotr".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("snack".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("disarm".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("freeze".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("confuse".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("ragdoll".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("shakecam".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("notifyspam".. playername.. " off")
+		util.yield(20)
+	end
+	util.toast("es wurde alles aus gemacht")
 end)
 
 timer6 = 1
