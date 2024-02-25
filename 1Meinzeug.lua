@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.31
+local localVer = 0.32
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -57,9 +57,6 @@ local abb = 10
 local bba = 10
 
 -- Functions and infos
-local function get_transition_state(pid)
-    return memory.read_int(memory.script_global(((0x2908D3 + 1) + (pid * 0x1C5)) + 230))
-end
 
 local int_min = -2147483647
 local int_max = 2147483647
@@ -673,6 +670,28 @@ local function player(pid)
 	menu.toggle_loop(spam, "explosiv spam", {"explospam"}, "lässt ihn die ganze zeit explodieren", function(on_toggle)
 		menu.trigger_commands("explode" .. players.get_name(pid))
 	end)]]
+
+	local OrbitalCannon = require "wiriscript.orbital_cannon"
+	menu.action(main, "Kill With Orbital Cannon", {}, "", function()
+		if players.is_in_interior(pid) then
+			util.toast("ist im gebäude")
+		elseif is_player_passive(pid) then
+			util.toast("ist im passive")
+		elseif not OrbitalCannon.exists() and IS_PLAYER_PLAYING(pid) then
+			OrbitalCannon.create(pid)
+		end
+	end)
+	util.on_stop(function()
+		if OrbitalCannon.exists() then
+			OrbitalCannon.destroy()
+		end
+	end)
+	
+	
+	while true do
+		OrbitalCannon.mainLoop()
+		util.yield_once()
+	end
 
 	-- org teleport menu
 	menu.action(orgthingsteleport, "Zu Mir Teleportieren", {}, "", function()
