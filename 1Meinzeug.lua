@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.32
+local localVer = 0.33
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -64,6 +64,231 @@ local int_max = 2147483647
 vehenterstealnpc = false
 vehentersteal = false
 
+INTERIOR_IDS = {
+	pentGarage = 275457,
+	casino = 275201,
+	casinoGarage = 274945,
+	beeker = 179457,
+	lsCarMeet = 285697,
+	lsCarMeet2 = 286209,
+	benny = 196609,
+	barber = 165377,
+	barber2 = 198657,
+	barber3 = 171009,
+	barber4 = 199937,
+	barber5 = 140545,
+	barber6 = 180225,
+	barber7 = 155905,
+	vehWarehouse = 290817,
+	ammuNation = 248065,
+	ammuNation2 = 153857,
+	ammuNation3 = 168193,
+	ammuNation4 = 200961,
+	ammuNation5 = 164609,
+	ammuNation6 = 137729,
+	ammuNation7 = 140289,
+	ammuNation8 = 180481,
+	ammuNation9 = 178689,
+	ammuNation10 = 176385,
+	ammuNation11 = 175617,
+	lsc = 234753,
+	lsc2 = 164353,
+	lsc3 = 201729,
+	lsc4 = 153601,
+	twoCarGarage = 149249,
+	sixCarGarage = 148737,
+	tenCarGarage = 146433,
+	fiftyCarGarage = 290561,
+	eclipseTowers = 230657,
+	lombank = 255745,
+	lombank2 = 255489,
+	lombank3 = 256001,
+	lombank4 = 241921,
+	lombank5 = 256257,
+	arcadius = 253441,
+	arcadius2 = 237313,
+	arcadius3 = 253697,
+	arcadius4 = 253953,
+	arcadius5 = 254209,
+	mazeTower = 239617,
+	mazeTower2 = 254465,
+	mazeTower3 = 254721,
+	mazeTower4 = 254977,
+	mazeTower5 = 255233,
+	mazeBuilding = 244225,
+	mazeBuilding2 = 256513,
+	mazeBuilding3 = 256769,
+	mazeBuilding4 = 257025,
+	mazeBuilding5 = 257281,
+	apart = 206081,
+	apart2 = 206337,
+	apart3 = 206593,
+	apart4 = 149761,
+	apart5 = 148225,
+	delPerro = 145409,
+	delPerro2 = 145921,
+	delPerro3 = 145665,
+	fourWay = 147201,
+	fourWay2 = 141313,
+	fourWay3 = 147969,
+	docForgery = 246785,
+	methLab = 247041,
+	weedFarm = 247297,
+	counterfeitCash = 247809,
+	cocaineLockup = 247553,
+	yacht = 213249,
+	yacht2 = 212737,
+	yacht3 = 212225,
+	hangar = 260353,
+	strip = 197121,
+	tattoo = 199425,
+	tattoo2 = 140033,
+	tattoo3 = 180737,
+	tattoo4 = 180737,
+	tattoo5 = 251137,
+	tattoo6 = 176897,
+	alta = 141825,
+	alta2 = 141569,	            richards = 142849,
+	richards2 = 143361,
+	richards3 = 146177,
+	weazel = 143617,
+	weazel2 = 143105,
+	weazel3 = 142593,
+	clothes = 165633,
+	clothes2 = 235265,
+	clothes3 = 166145,
+	clothes4 = 140801,
+	clothes5 = 176129,
+	clothes6 = 169217,
+	clothes7 = 201473,
+	clothes8 = 171265,
+	clothes9 = 137217,
+	clothes10 = 198145,
+	clothes11 = 183553,
+	clothes12 = 175361,
+	clothes13 = 179713,
+	clothes14 = 202497
+}
+INTERIOR_COORDS = {	            kosatkaMissile = {1558.553, 1558.653, 387.213, 388.713, -200, 0},
+	kosatka = {1553, 1568, 361, 452, -200, 0},
+	pentGarage = {1248, 1315, 2218, 264, -200, 0},
+	musicLocker = {1537, 1583, 233, 263, -200, 0},
+	casino = {1082, 1168, 191, 286, -200, 0},
+	casinoGarage = {1333, 1413, 178, 259, -200, 0},
+	eclipseTowers = {-824, -738, 295, 363, 107, 230},
+	autoShop = {-1369, -1318.5, 134.5, 170.5, -200, 0},
+	subMission = {511, 517, 4816, 4906, -200, 0},
+	facility = {310, 511, 4755, 4885, -200, 0},
+	avenger = {504, 535, 4744, 4756, -200, 0},
+	beeker = {98, 115, 6613, 6631, 0, 35},
+	penthouse = {932, 994, -3, 84, 0, 120},
+	arcade = {2673, 2744, -403, -348, -200, 0},
+	docForgery = {1155, 1175, -3201, -3188, -200, 0},
+	mcClub = {1093, 1128, -3180, -3137, -200, 0},
+	counterfeitCash = {1113, 1141, -3200, -3191, -200, 0},
+	vehWarehouse = {926.5, 1014.5, -3039.5, -2985, -200, 0},
+	vehWarehouse2 = {553, 576.51, -456.60, -402.20, -200, 0},
+	methLab = {995, 1019, -3204, -3191, -200, 0},
+	cocaineLockup = {1084, 1104, -3201, -3185, -200, 0},
+	weedFarm = {1029, 1068, -3210, -3178, -200, 0},
+	moc = {1097, 1109, -3014, -2990, -200, 0},
+	twoCarGarage = {168, 180, -1009, -999, -200, -90},
+	sixCarGarage = {189, 208, -1008, -993, -200, -90},
+	tenCarGarage = {216, 242, -1010, -961, -200, 0},
+	fiftyCarGarage = {510, 533, -2640, -2599, -200, 0},
+	bunker = {822, 955, -3253, -3061, -200, 0},
+	fib = {74, 193, -797, -699, 40, 262},
+	agency = {345, 407, -98, -32, 70, 122},
+	agency2 = {-1047, -987, -795, -708, 26, 76},
+	agency3 = {-1042, -992, -447, -404, 42, 77},
+	agency4 = {-610, -568, -727, -704, 37, 129},
+	agencyGarage = {-1084, -1058, -93, -60, -200, 40},
+	lsc = {1172, 1189, 2635, 2644, 0, 43},
+	lsc2 = {723, 738, -1094, -1064, 0, 30},
+	lsc3 = {-355, -319, -147, -121, 0, 44},
+	lsc4 = {-1170, -1139, -2026, -2007, 0, 18},
+	mazeTower = {-118, -29, -868, -773, 0, 320},
+	hangar = {-1308, -1225, -3073, -2956, -200, 0},
+	nightclub = {-1648, -1564, -3022, -2983, -200, 0},
+	nightclubBasement = {-1526, -1480, -3048, -2960, -200, 0},
+	mazeBuilding = {-1421, -1328, -511, -440, 0, 84},
+	terrorbyte = {-1426, -1416, -3019, -3006, -200, 0},
+	benny = {-228.2, -195.2, -1334.2, -1314.1, 0, 39},
+	lombank = {-1595, -1549, -592, -550, 0, 114},
+	arcadius = {-200, -118, -650, -560, 34, 176},
+	apart = {323, 347, 420, 445, 0, 152},
+	apart2 = {323, 381, 400, 445, 0, 150},
+	apart3 = {112, 127, 540, 572, 0, 188},
+	apart4 = {254, 267, -1005, -994, -200, 0},
+	apart5 = {337, 353, -1004, -992, -200, 0},
+	ammuNation = {807, 828, -2165, -2148, 0, 35},
+	ammuNation2 = {838, 847, -1036, -1024, 0, 33},
+	ammuNation3 = {-667, -658, -945, -931, 0, 25},
+	ammuNation4 = {1688, 1702, 3751.5, 3764, 0, 39},
+	ammuNation5 = {-1315, -1302, -398, -387, 0, 38},
+	ammuNation6 = {3, 25, -1116, -1095, 0, 38},
+	ammuNation7 = {243, 256, -54, -43, 0, 74},
+	ammuNation8 = {-336, -322, 6075, 6088, 0, 34},
+	ammuNation9 = {2565, 2573, 290, 304, 0, 114},
+	ammuNation10 = {-3176, -3163, 1081, 1091, 0, 25},
+	ammuNation11 = {-1123, -1110, 2690, 2702, 0, 22},
+	delPerro = {-1483, -1434, -573, -509, 40, 84},
+	fourWay = {-52, -2, -607, -569, 40, 106},
+	lsCarMeet = {-2224, -2140, 1071, 1161, -200, 0},
+	lsCarMeet2 = {-2224, -1835, 970, 1250, 24, 30},
+	strip = {92, 138, -1307, -1277, 28, 32},
+	barber = {-825.1, -807, -191.3, -179, 37, 40},
+	barber2 = {132.5, 142, -1714.1, -1703, 29, 35},
+	barber3 = {-1289, -1277, -1120, -1115, 6, 10},
+	barber4 = {1928, 1937, 3725, 3736, 32, 36},
+	barber5 = {-37, -29, -157, -146, 57, 66},
+	barber6 = {-284.2, -274, 6223, 6233, 31, 37},
+	barber7 = {1206, 1217, -477, -469, 66, 78},
+	tattoo = {1860, 1867, 3744, 3752, 32, 36},
+	tattoo2 = {319, 327, 178, 187, 103, 127},
+	tattoo3 = {-297, -289, 6196, 6203, 31, 34},
+	tattoo4 = {-1158, -1148, -1430, -1422, 4, 11},
+	tattoo5 = {1319, 1329, -1657, -1649, 52, 57},
+	tattoo6 = {-3176, -3167, 1072, 1080, 20, 25},
+	alta = {-291, -252, -971, -937, 70, 100},
+	tinsel = {-630, -571, 36, 72, 50, 115},
+	richards = {-937, -893, -392, -359, 75, 116},
+	weazel = {-923, -875, -469, -420, 85, 128},
+	clothes = {-721, -699, -165, -145, 37, 40},
+	clothes2 = {-172, -154, -315, -293, 39, 43},
+	clothes3 = {-1462, -1443, -247, -225, 49, 52},
+	clothes4 = {116, 133, -235, -206, 54, 57},
+	clothes5 = {-3181, -3161, 1033, 1061, 20, 23},
+	clothes6 = {-1207, -1180, -784, -763, 17, 20},
+	clothes7 = {612, 624, 2747, 2776, 41, 45},
+	clothes8 = {-832, -814, -1084, -1066, 11, 15},
+	clothes9 = {418, 432, -813, -798, 29, 35},
+	clothes10 = {69, 83, -1401, -1386, 29, 34},
+	clothes11 = {1686, 1700, 4716, 4831, 41, 45},
+	clothes12 = {-1111, -1093, 2700, 2718, 18, 22},
+	clothes13 = {-4, 14, 6505, 6523, 31, 36},
+	clothes14 = {1188, 1203, 2703, 2716, 38, 41},
+	masks = {-1340.5, -1334, -1284, -1274, 4, 5},
+	cayoPerico = {3500, 5950, -6300, -3990},
+	ussLex = {2990, 3130, -4830, -4510},
+	arena = {147, 233, 5155, 5218}
+}
+LANGUAGES = {
+	[0] = "EN",
+	[1] = "FR",
+	[2] = "DE",
+	[3] = "IT",
+	[4] = "ES",
+	[5] = "BR",
+	[6] = "PL",
+	[7] = "RU",
+	[8] = "KR",
+	[9] = "CN",
+	[10] = "JP",
+	[11] = "MX",
+	[12] = "CN"
+}
+
 local menus = {}
 
     local function getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
@@ -82,7 +307,11 @@ local function get_friend_count()
     return native_invoker.get_return_value_int();
 end
 local function get_frined_name(friendIndex)
-    native_invoker.begin_call();native_invoker.push_arg_int(friendIndex);native_invoker.end_call("4164F227D052E293");return native_invoker.get_return_value_string();
+   native_invoker.begin_call();native_invoker.push_arg_int(friendIndex);native_invoker.end_call("4164F227D052E293");return native_invoker.get_return_value_string();
+end
+
+function getVehicle(ped)
+	return IS_PED_SITTING_IN_ANY_VEHICLE(ped) and GET_VEHICLE_PED_IS_IN(ped, false)
 end
 
 function getTargetVehicleData(entity)
@@ -569,6 +798,91 @@ local function getorganisationplayers(pid)
 		return orgmembers
 end
 
+function getHealth(ped)
+	local hp = ENTITY.GET_ENTITY_HEALTH(ped)
+	local maxHp = PED.GET_PED_MAX_HEALTH(ped)
+	local armor = PED.GET_PED_ARMOUR(ped)
+	local total = hp
+	if maxHp == 0 then
+		total = 0
+	elseif armor > 0 then
+		total = math.floor((total + armor) / (maxHp + 50) * 100)
+	else
+		total = math.floor(total / maxHp * 100)
+	end
+	return {
+		health = hp,
+		armor = armor,
+		maxHealth = maxHp,
+		total = total .. "%"
+	}
+end
+
+function getKD(pid)
+    pid = pid or players.user()
+    return math.floor(players.get_kd(pid) * 100) / 100	
+end
+
+function getMoney(pid, shorten)
+	pid = pid or players.user()
+	local money = players.get_money(pid)
+	if not shorten then
+		return money
+	end
+	local length = string.len(tostring(money))
+	if length < 4 then
+		return money
+	elseif length < 7 then
+		return string.format("%.2fK", money / 1000)
+	elseif length < 10 then
+		return string.format("%.2fM", money / 1000000)
+	end
+	return string.format("%.2fB", money / 1000000000)
+end
+
+
+local weapons = util.get_weapons()
+local weaponHash = memory.alloc_int()
+function getWeapon(ped)
+	GET_CURRENT_PED_WEAPON(ped, weaponHash, true)
+	local readWeaponHash = memory.read_int(weaponHash)
+	local weaponName
+	for _, wep in weapons do
+		if wep.hash == readWeaponHash then
+			weaponName = util.get_label_text(wep.label_key)
+			break
+		end
+	end
+	return weaponName
+end
+
+function getSpeed(entity, onlyValue)
+	local speed = GET_ENTITY_SPEED(entity)
+	local localSpeed
+	localSpeed = math.floor(speed * 3.6)
+	if onlyValue then
+		return localSpeed
+	end
+	return localSpeed .. " " .. "kmh"
+end
+
+function getPlayerPosition(pid)
+    pid = pid or players.user()
+    return players.get_position(pid)
+end
+
+function getvehName(hash)
+	if util.get_label_text(hash) ~= "NULL" then
+		return util.get_label_text(hash)
+	end
+	return util.reverse_joaat(hash)
+end
+
+function getLanguage(pid)
+	pid = pid or Player.getUserPlayer()
+	return LANGUAGES[players.get_language(pid)]
+end
+
 selectedplayer = {}
 for b = 0, 31 do
     selectedplayer[b] = false
@@ -622,9 +936,51 @@ purple = 49,
 blue = 11
 }
 
+function getInterior(pid)
+	pid = pid or players.user()
+	local pos = players.get_position(pid)
+	local interior = GET_INTERIOR_FROM_COLLISION(pos.x, pos.y, pos.z)
+	if interior > 0 then
+		for name, val in INTERIOR_IDS do
+			if val == interior then
+				local hasNumber = string.find(name, "%d")
+				if hasNumber then
+					return name:gsub('%d', '')
+				end
+				return name
+			end
+		end
+	end	    local function checkCoordsFor(name)
+		if name == "kosatka" and checkCoordsFor("kosatkaMissile") then
+			return "kosatkaMissile"
+		end
+		local coords = INTERIOR_COORDS[name]
+		if pos.x >= coords[1] and pos.x <= coords[2] and pos.y >= coords[3] and pos.y <= coords[4] then
+			if not coords[5] or (pos.z >= coords[5] and pos.z <= coords[6]) then
+				local hasNumber = string.find(name, "%d")
+				if hasNumber then
+					return name:gsub('%d', '')
+				end
+				return name
+			end
+		end
+	end
+	for name in INTERIOR_COORDS do
+		local interiorName = checkCoordsFor(name)
+		if interiorName then
+			return interiorName
+		end
+	end
+	if players.is_in_interior(pid) then
+		return "interior"
+	end
+	return nil
+end
+
 local options <const> = {"zu Meinem", "zu Seinem"}
 
 -- player options
+local OrbitalCannon = require "wiriscript.orbital_cannon"
 
 local function player(pid)
     menu.divider(menu.player_root(pid), "Selfmade")
@@ -671,7 +1027,6 @@ local function player(pid)
 		menu.trigger_commands("explode" .. players.get_name(pid))
 	end)]]
 
-	local OrbitalCannon = require "wiriscript.orbital_cannon"
 	menu.action(main, "Kill With Orbital Cannon", {}, "", function()
 		if players.is_in_interior(pid) then
 			util.toast("ist im gebäude")
@@ -681,17 +1036,6 @@ local function player(pid)
 			OrbitalCannon.create(pid)
 		end
 	end)
-	util.on_stop(function()
-		if OrbitalCannon.exists() then
-			OrbitalCannon.destroy()
-		end
-	end)
-	
-	
-	while true do
-		OrbitalCannon.mainLoop()
-		util.yield_once()
-	end
 
 	-- org teleport menu
 	menu.action(orgthingsteleport, "Zu Mir Teleportieren", {}, "", function()
@@ -1305,6 +1649,9 @@ players.dispatch_on_join()
 local Self = menu.list(menu.my_root(), "Self zeug", {}, "")
 local vehicle = menu.list(menu.my_root(), "Vehicle zeug", {}, "")
 local Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
+local Entitymanagercleararea = menu.list(Entitymanager, "Clear Area", {}, "")
+local Entitymanagergetarea = menu.list(Entitymanager, "Auto in der nähe", {}, "das ist test zeug nichts für dich")
+local Entitymanagergetareavehicles = menu.list(Entitymanagergetarea, "Vehicles", {}, "")
 local player_zeug = menu.list(menu.my_root(), "Player zeug", {}, "")
 --local streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
 local Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
@@ -2140,30 +2487,30 @@ local function getAreaOfEntities(tbl, range)
 end
 
 --local x = entities.get_model_hash(h)
-menu.toggle_loop(Entitymanager, "Clear Area of Peds", {"clearpeds"}, "", function ()
+menu.toggle_loop(Entitymanagercleararea, "Clear Area of Peds", {"clearpeds"}, "", function ()
 	clearAreaOfEntities("ped", CLEAR_AREA_RANGE)
 end)
-menu.toggle_loop(Entitymanager, "Clear Area of Vehicles", {"clearvehs"}, "", function ()
+menu.toggle_loop(Entitymanagercleararea, "Clear Area of Vehicles", {"clearvehs"}, "", function ()
     clearAreaOfEntities("veh", CLEAR_AREA_RANGE)
 end)
-menu.toggle_loop(Entitymanager, "Clear Area of Objects", {"clearobjs"}, "", function ()
+menu.toggle_loop(Entitymanagercleararea, "Clear Area of Objects", {"clearobjs"}, "", function ()
     clearAreaOfEntities("obj", CLEAR_AREA_RANGE)
 end)
-menu.action(Entitymanager, "Clear Area of Pickups", {"clearpickups"}, "", function ()
+menu.action(Entitymanagercleararea, "Clear Area of Pickups", {"clearpickups"}, "", function ()
     clearAreaOfEntities("pickup", CLEAR_AREA_RANGE)
 end)
-menu.toggle_loop(Entitymanager, "Delete all", {"deleteall"}, "", function ()
+menu.toggle_loop(Entitymanagercleararea, "Delete all", {"deleteall"}, "", function ()
     clearAreaOfEntities("ped",CLEAR_AREA_RANGE)
 	clearAreaOfEntities("veh", CLEAR_AREA_RANGE)
 	clearAreaOfEntities("obj", CLEAR_AREA_RANGE)
 	clearAreaOfEntities("pickup", CLEAR_AREA_RANGE)
 end)
-menu.action(Entitymanager, "Clear ALL Ropes", {"clearropes"}, "", function()
+menu.action(Entitymanagercleararea, "Clear ALL Ropes", {"clearropes"}, "", function()
     for i = 0, 100 do
         DELETE_CHILD_ROPE(i)
     end
 end)
-menu.slider(Entitymanager, "Clear Area Range", {"cleararearange"}, "", 0, 10000, 100, 50, function (value)
+menu.slider(Entitymanagercleararea, "Clear Area Range", {"cleararearange"}, "", 0, 10000, 100, 50, function (value)
     CLEAR_AREA_RANGE = value
 end)
 
@@ -2183,8 +2530,284 @@ menu.toggle(player_zeug, "Kick leute mit host token spoof", {}, "geht nur auf le
 	end
 end)
 
+menu.toggle_loop(Entitymanagergetarea, "enable auto scanner", {}, "", function ()
+	local vehiclenames = {}
+	local handlevehicles = entities.get_all_vehicles_as_handles()
+	for handlevehicles as h do 
+		local vehhash = entities.get_model_hash(h)
+		local vehiclename = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(vehhash)
+		local vehpos = entities.get_position(h)
+		local dist = myPos:distance(vehpos)
+			vehiclename = menu.list(Entitymanagergetareavehicles, vehiclename.. "  " ..dist , {}, "", function()
+			end)
+	end
+end)
+
 local anti_russen_zeug = menu.list(player_zeug, "Anti Länder zeug", {}, "")
 local leanderauswahl = menu.list(anti_russen_zeug, "länder auswahl", {}, "")
+local ESP = menu.list(player_zeug, "ESP", {}, "")
+
+
+local enabled, enableOnAim = false, false
+local xValue, yValue, scaleValue, fovset = 0, 0, 35, 10
+local color = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
+local maxDistance = 400
+local showDistance, showWanted, showRank, showLanguage, showName, showTags, showHealth, showArmor, showKD, showMoney, showWeapon, showInMyVehicle, showVehicle, showSpeed,
+	hideInterior, showBounty = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false
+
+	local function getName(pid, inVehicle)
+	    local value = ""
+	    if showName or inVehicle then
+	        value = players.get_name(pid)
+	    end
+	    local tags = ""
+	    if showTags then
+	        tags = players.get_tags_string(pid)
+	    end
+	    if (showTags or inVehicle) and tags:len() > 0 then
+	        value = value .. " [" .. tags .. "]"
+	    end
+	    local preName = ""
+	    if not inVehicle then
+	        if showWanted then
+	            local wanted = GET_PLAYER_WANTED_LEVEL(pid)
+	            if wanted > 0 then
+	                preName = wanted .. "* "
+	            end
+	        end
+	        if showRank then
+	            preName = preName .. "(" .. players.get_rank(pid) .. ") "
+	        end
+	    end
+	    if showLanguage then
+	        preName = preName .. "[" .. getLanguage(pid) .. "] "
+	    end
+	    return preName .. value
+	end
+
+	local function renderESP()
+		if not enabled then
+	        return
+	    end
+	    if not enabled and not util.is_session_started() then
+	        return
+	    end
+	    if enableOnAim and not IS_PLAYER_FREE_AIMING(players.user()) then
+	        return
+	    end
+		local gameX, gameY = memory.alloc(1), memory.alloc(1)
+	    local myPed = players.user_ped()
+	    local myPos = getPlayerPosition()
+	    for _, pid in players.list(false) do
+	        local ped = GET_PLAYER_PED(pid)
+			if deactivateOnAim and IS_PLAYER_FREE_AIMING(players.user()) then
+				if IS_PED_FACING_PED(myPed, ped, fovset) then
+					goto continue
+				end
+			end
+	        if IS_PLAYER_DEAD(pid) and not ENTITY.IS_ENTITY_ON_SCREEN(ped) or
+	            (hideInterior and getInterior(pid) and not table.contains({"cayoPerico", "ussLex"}, getInterior(pid))) then
+	            goto continue
+	        end
+	        local pPos = getPlayerPosition(pid)
+	        local dist = myPos:distance(pPos)
+	        if dist > maxDistance then
+	            goto continue
+	        end
+	        local vehicle = getVehicle(ped)
+	        local isMyVehicle = false
+	        if vehicle then
+	            local driver = GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+	            if driver ~= ped and driver ~= myPed and IS_PED_A_PLAYER(driver) then
+	                goto continue
+	            elseif driver == myPed then
+	                if not showInMyVehicle then
+	                    goto continue
+	                end
+	                isMyVehicle = true
+	            end
+	        end
+	        local posToUse = pPos
+	        if vehicle and not isMyVehicle then
+	            posToUse = GET_ENTITY_COORDS(vehicle)
+	        end
+	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
+	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
+	        local valuesToDisplay = {}
+	        local playersInVehicle = ""
+	        if vehicle and not isMyVehicle then
+	            local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehicle)
+	            for i = 0, maxPassengers do
+	                if not IS_VEHICLE_SEAT_FREE(vehicle, i, false) then
+	                    local vehPed = GET_PED_IN_VEHICLE_SEAT(vehicle, i)
+	                    if IS_PED_A_PLAYER(vehPed) then
+	                        playersInVehicle = playersInVehicle .. getName(NETWORK_GET_PLAYER_INDEX_FROM_PED(vehPed), true) .. ", "
+	                    end
+	                end
+	            end
+	        end
+	        if showDistance then
+	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
+	        end
+	        local nameLine = getName(pid)
+	        if nameLine:len() > 0 then
+	            valuesToDisplay[#valuesToDisplay + 1] = nameLine
+	        end
+	        if playersInVehicle:len() > 0 then
+	            valuesToDisplay[#valuesToDisplay + 1] = "in Vehicle" .. ": " .. playersInVehicle:gsub(", $", "")
+	        end
+	        local hpData = getHealth(ped)
+	        if showHealth or showArmor then
+	            local textLine = ""
+	            if showHealth then
+	                textLine = "H: " .. hpData.health .. "/" .. hpData.maxHealth .. " "
+	            end
+	            if showArmor then
+	                textLine = textLine .. "A: " .. hpData.armor .. "/50"
+	            end
+	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	        end
+	        if showBounty and players.get_bounty(pid) then
+	            valuesToDisplay[#valuesToDisplay + 1] = "$$" .. players.get_bounty(pid)
+	        end
+	        if showMoney or showKD then
+	            local textLine = ""
+	            if showKD then
+	                textLine = "KD" .. getKD(pid) .. " "
+	            end
+	            if showMoney then
+	                textLine = textLine .. "$" .. getMoney(pid, true)
+	            end
+	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	        end
+	        if showWeapon then
+	            local weapon = getWeapon(ped)
+	            if weapon then
+	                valuesToDisplay[#valuesToDisplay + 1] = weapon
+	            end
+	        end
+	        if (showVehicle or showSpeed) and vehicle then
+	            local textLine = ""
+	            if showVehicle then
+	                textLine = getvehName(players.get_vehicle_model(pid)) .. " "
+	            end
+	            if showSpeed and getSpeed(vehicle, true) > 0 then
+	                textLine = textLine .. getSpeed(vehicle)
+	            end
+	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	        end
+	        local text = table.concat(valuesToDisplay, "\n")
+	        directx.draw_text(screenX + xValue, screenY + yValue, text, 5, scaleValue, color, false)
+	        ::continue::
+	    end
+	end
+	util.create_tick_handler(renderESP)
+	
+local enabledToggle = menu.toggle(ESP, "Enable ESP", {"ESP"}, "", function(on_toggle)
+	if on_toggle then
+		enabled = true
+	else
+		enabled = false
+	end
+end)
+local ESPSettings = menu.list(ESP, "Settings", {}, "")
+
+local enableOnAimToggle = menu.toggle(ESPSettings, "enableOnAimOnly", {}, "", function(on)
+	enableOnAim = on
+end, enableOnAim)
+enableOnAim = menu.get_value(enableOnAimToggle)
+local deactivateOnAimToggle = menu.toggle(ESPSettings, "DeactivateOnAim", {}, "", function(on)
+	deactivateOnAim = on
+end, deactivateOnAim)
+deactivateOnAim = menu.get_value(deactivateOnAimToggle)
+local fovslider = menu.slider(ESPSettings, "FOV", {}, "", 1, 30, fovset, 1, function(val)
+	fovset = val
+end)
+local hideInteriorToggle = menu.toggle(ESPSettings, "hideInterior", {}, "", function(on)
+	hideInterior = on
+end, hideInterior)
+hideInterior = menu.get_value(hideInteriorToggle)
+local positionSubmenu = menu.list(ESPSettings, "position", {}, "")
+local xSlider = menu.slider(positionSubmenu, "XPos", {}, "", -10, 10, xValue, 1, function(val)
+	xValue = val / 200
+end)
+--xValue = menu.get_value(xSlider) / 100
+local ySlider = menu.slider(positionSubmenu, "YPos", {}, "", -10, 10, yValue, 1, function(val)
+	yValue = val / 200
+end)
+--yValue = menu.get_value(ySlider) / 100
+local scaleSlider = menu.slider(positionSubmenu, "scale", {}, "", 1, 200, scaleValue, 1, function(val)
+	scaleValue = val / 100
+end)
+scaleValue = menu.get_value(scaleSlider) / 100
+local colorRef = menu.colour(ESPSettings, "color", {}, "", color, true, function(c)
+	color = c
+end)
+local maxDistSlider = menu.slider(ESPSettings, "maxDist", {}, "", 10, 10000, maxDistance, 10, function(val)
+	maxDistance = val
+end)
+maxDistance = menu.get_value(maxDistSlider)
+
+local distToggle = menu.toggle(ESP, "showDistance", {}, "", function(on)
+	showDistance = on
+end, showDistance)
+showDistance = menu.get_value(distToggle)
+local wantedToggle = menu.toggle(ESP, "showWanted", {}, "", function(on)
+	showWanted = on
+end, showWanted)
+showWanted = menu.get_value(wantedToggle)
+local rankToggle = menu.toggle(ESP, "showRank", {}, "", function(on)
+	showRank = on
+end, showRank)
+showRank = menu.get_value(rankToggle)
+local langToggle = menu.toggle(ESP, "showLanguage", {}, "", function(on)
+	showLanguage = on
+end, showLanguage)
+showLanguage = menu.get_value(langToggle)
+local nameToggle = menu.toggle(ESP, "showName", {}, "", function(on)
+	showName = on
+end, showName)
+showName = menu.get_value(nameToggle)
+local tagsToggle = menu.toggle(ESP, "showTags", {}, "", function(on)
+	showTags = on
+end, showTags)
+showTags = menu.get_value(tagsToggle)
+local hpToggle = menu.toggle(ESP, "showHealth", {}, "", function(on)
+	showHealth = on
+end, showHealth)
+showHealth = menu.get_value(hpToggle)
+local armorToggle = menu.toggle(ESP, "showArmor", {}, "", function(on)
+	showArmor = on
+end, showArmor)
+showArmor = menu.get_value(armorToggle)
+local kdToggle = menu.toggle(ESP, "showKD", {}, "", function(on)
+	showKD = on
+end, showKD)
+showKD = menu.get_value(kdToggle)
+local bountyToggle = menu.toggle(ESP, "showBounty", {}, "", function(on)
+	showBounty = on
+end, showBounty)
+showBounty = menu.get_value(bountyToggle)
+local moneyToggle = menu.toggle(ESP, "showMoney", {}, "", function(on)
+	showMoney = on
+end, showMoney)
+showMoney = menu.get_value(moneyToggle)
+local weaponToggle = menu.toggle(ESP, "showWeapon", {}, "", function(on)
+	showWeapon = on
+end, showWeapon)
+showWeapon = menu.get_value(weaponToggle)
+local myVehicleToggle = menu.toggle(ESP, "showInMyVehicle", {}, "", function(on)
+		showInMyVehicle = on
+	end, showInMyVehicle)
+showInMyVehicle = menu.get_value(myVehicleToggle)
+local vehicleToggle = menu.toggle(ESP, "showVehicle", {}, "", function(on)
+	showVehicle = on
+end, showVehicle)
+showVehicle = menu.get_value(vehicleToggle)
+local speedToggle = menu.toggle(ESP, "showSpeed", {}, "", function(on)
+	showSpeed = on
+end, showSpeed)
+showSpeed = menu.get_value(speedToggle)
 
 local function getplayertokick(pid)
 	if Russian_Federation then
@@ -2458,41 +3081,6 @@ menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie
 			util.toast("Keine Germany")
 		end
 	end
-end)
-
-menu.action(player_zeug, "alle sache bei spielern ausssachlten", {}, "wenn du bei dem org ding wa angemacht hast und es bei allen spieler wieder aus machen willst drück einfach hier", function()
-	for players.list(false, true, true) as pid do
-		local playername = players.get_name(pid)
-		menu.trigger_commands("givevehgod".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("ceopay".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("figurines".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("cards".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("autoheal".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("bail".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("giveotr".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("snack".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("disarm".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("freeze".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("confuse".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("ragdoll".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("shakecam".. playername.. " off")
-		util.yield(20)
-		menu.trigger_commands("notifyspam".. playername.. " off")
-		util.yield(20)
-	end
-	util.toast("es wurde alles aus gemacht")
 end)
 
 timer6 = 1
@@ -3634,6 +4222,41 @@ menu.toggle(settings, "host kick freunde", {}, "AN = kickt auch freunde\nAUS = k
 	end
 end)
 
+menu.action(settings, "alle sachen bei spielern ausssachlten", {}, "wenn du bei dem org ding was angemacht hast und es bei allen spieler wieder aus machen willst drück einfach hier", function()
+	for players.list(false, true, true) as pid do
+		local playername = players.get_name(pid)
+		menu.trigger_commands("givevehgod".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("ceopay".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("figurines".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("cards".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("autoheal".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("bail".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("giveotr".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("snack".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("disarm".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("freeze".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("confuse".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("ragdoll".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("shakecam".. playername.. " off")
+		util.yield(20)
+		menu.trigger_commands("notifyspam".. playername.. " off")
+		util.yield(20)
+	end
+	util.toast("es wurde alles aus gemacht")
+end)
+
 menu.toggle(enterexitsettings, "npc auto klauen oder beifahrer", {}, "AN = beifahrer\nAUS = klauen", function(on_toggle)
 	if on_toggle then
 		ifnpcincar = true
@@ -3741,5 +4364,17 @@ menu.toggle(entitymanagersettings, "platz klauen oder dazu setzen NPC", {}, "wen
 		vehenterstealnpc = false
 	end
 end)
+
+util.on_stop(function()
+	if OrbitalCannon.exists() then
+		OrbitalCannon.destroy()
+	end
+end)
+
+
+while true do
+	OrbitalCannon.mainLoop()
+	util.yield_once()
+end
 
 util.keep_running()
