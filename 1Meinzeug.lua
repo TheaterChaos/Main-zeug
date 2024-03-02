@@ -1,14 +1,14 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.33
+local localVer = 0.34
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
     response = true
     if localVer ~= currentVer then
-        util.toast("Neue version ist verfügbar lad sie dir mit Update lua runter.")
-        menu.action(menu.my_root(), "Update Lua", {}, "wenn update lua immer noch angezeigt wird dann einfach 2-3 minuten warten dann noch einmal probieren", function()
+        util.toast("Neue version ist verfügbar lad sie dir mit Update lua runter. Deine Version: "..localVer.." Neue Version: ".. currentVer )
+        menu.action(menu.my_root(), "Update Lua", {}, "", function()
             async_http.init('raw.githubusercontent.com','/TheaterChaos/Mein-zeug/main/1Meinzeug.lua',function(a)
                 local err = select(2,load(a))
                 if err then
@@ -799,9 +799,9 @@ local function getorganisationplayers(pid)
 end
 
 function getHealth(ped)
-	local hp = ENTITY.GET_ENTITY_HEALTH(ped)
-	local maxHp = PED.GET_PED_MAX_HEALTH(ped)
-	local armor = PED.GET_PED_ARMOUR(ped)
+	local hp = GET_ENTITY_HEALTH(ped)
+	local maxHp = GET_PED_MAX_HEALTH(ped)
+	local armor = GET_PED_ARMOUR(ped)
 	local total = hp
 	if maxHp == 0 then
 		total = 0
@@ -979,8 +979,8 @@ end
 
 local options <const> = {"zu Meinem", "zu Seinem"}
 
+
 -- player options
-local OrbitalCannon = require "wiriscript.orbital_cannon"
 
 local function player(pid)
     menu.divider(menu.player_root(pid), "Selfmade")
@@ -1026,16 +1026,6 @@ local function player(pid)
 	menu.toggle_loop(spam, "explosiv spam", {"explospam"}, "lässt ihn die ganze zeit explodieren", function(on_toggle)
 		menu.trigger_commands("explode" .. players.get_name(pid))
 	end)]]
-
-	menu.action(main, "Kill With Orbital Cannon", {}, "", function()
-		if players.is_in_interior(pid) then
-			util.toast("ist im gebäude")
-		elseif is_player_passive(pid) then
-			util.toast("ist im passive")
-		elseif not OrbitalCannon.exists() and IS_PLAYER_PLAYING(pid) then
-			OrbitalCannon.create(pid)
-		end
-	end)
 
 	-- org teleport menu
 	menu.action(orgthingsteleport, "Zu Mir Teleportieren", {}, "", function()
@@ -1640,6 +1630,40 @@ local function player(pid)
     menu.action(bozo, "Zur history seite", {}, "zur history seite", function()
          menu.trigger_commands("history")
     end)
+
+
+
+
+
+	if (filesystem.exists(filesystem.scripts_dir() .. "lib/wiriscript/orbital_cannon.lua")) then
+		local OrbitalCannon = require "wiriscript.orbital_cannon"
+
+		menu.action(main, "Kill With Orbital Cannon", {}, "", function()
+			if players.is_in_interior(pid) then
+				util.toast("ist im gebäude")
+			elseif is_player_passive(pid) then
+				util.toast("ist im passive")
+			elseif not OrbitalCannon.exists() and IS_PLAYER_PLAYING(pid) then
+				OrbitalCannon.create(pid)
+			end
+		end)
+
+		util.on_stop(function()
+			if OrbitalCannon.exists() then
+				OrbitalCannon.destroy()
+			end
+		end)
+		
+		
+		while true do
+			OrbitalCannon.mainLoop()
+			util.yield_once()
+		end
+	else
+		menu.action(main, "Kill With Orbital Cannon", {}, "", function()
+			util.toast("du hast bestimmte files nicht")
+		end)
+	end
 end
 
 players.on_join(player)
@@ -2587,7 +2611,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 
 	local function renderESP()
 		if not enabled then
-	        return
+	        return false
 	    end
 	    if not enabled and not util.is_session_started() then
 	        return
@@ -2605,7 +2629,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 					goto continue
 				end
 			end
-	        if IS_PLAYER_DEAD(pid) and not ENTITY.IS_ENTITY_ON_SCREEN(ped) or
+	        if IS_PLAYER_DEAD(pid) and not IS_ENTITY_ON_SCREEN(ped) or
 	            (hideInterior and getInterior(pid) and not table.contains({"cayoPerico", "ussLex"}, getInterior(pid))) then
 	            goto continue
 	        end
@@ -2673,7 +2697,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	        if showMoney or showKD then
 	            local textLine = ""
 	            if showKD then
-	                textLine = "KD" .. getKD(pid) .. " "
+	                textLine = "KD " .. getKD(pid) .. " "
 	            end
 	            if showMoney then
 	                textLine = textLine .. "$" .. getMoney(pid, true)
@@ -2701,11 +2725,11 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	        ::continue::
 	    end
 	end
-	util.create_tick_handler(renderESP)
 	
 local enabledToggle = menu.toggle(ESP, "Enable ESP", {"ESP"}, "", function(on_toggle)
 	if on_toggle then
 		enabled = true
+		util.create_tick_handler(renderESP)
 	else
 		enabled = false
 	end
@@ -4364,17 +4388,5 @@ menu.toggle(entitymanagersettings, "platz klauen oder dazu setzen NPC", {}, "wen
 		vehenterstealnpc = false
 	end
 end)
-
-util.on_stop(function()
-	if OrbitalCannon.exists() then
-		OrbitalCannon.destroy()
-	end
-end)
-
-
-while true do
-	OrbitalCannon.mainLoop()
-	util.yield_once()
-end
 
 util.keep_running()
