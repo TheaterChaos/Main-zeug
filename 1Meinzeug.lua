@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.34
+local localVer = 0.35
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -45,16 +45,12 @@ until response
 
 --require ('resources/Alltabels')
 
-local resource_dir = filesystem.resources_dir()
-if not filesystem.exists(resource_dir) then
-	util.toast("resource directory not found. notification system will be less of a bruh")
-else
-	util.register_file(resource_dir .. "bruhzowski.ytd")
-end
-
-local a = 1
-local abb = 10
-local bba = 10
+--local resource_dir = filesystem.resources_dir()
+--if not filesystem.exists(resource_dir) then
+--	util.toast("resource directory not found. notification system will be less of a bruh")
+--else
+--	util.register_file(resource_dir .. "bruhzowski.ytd")
+--end
 
 -- Functions and infos
 
@@ -871,7 +867,7 @@ function getPlayerPosition(pid)
     return players.get_position(pid)
 end
 
-function getvehName(hash)
+function getmodelnamebyhash(hash)
 	if util.get_label_text(hash) ~= "NULL" then
 		return util.get_label_text(hash)
 	end
@@ -1674,8 +1670,7 @@ local Self = menu.list(menu.my_root(), "Self zeug", {}, "")
 local vehicle = menu.list(menu.my_root(), "Vehicle zeug", {}, "")
 local Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
 local Entitymanagercleararea = menu.list(Entitymanager, "Clear Area", {}, "")
-local Entitymanagergetarea = menu.list(Entitymanager, "Auto in der nähe", {}, "das ist test zeug nichts für dich")
-local Entitymanagergetareavehicles = menu.list(Entitymanagergetarea, "Vehicles", {}, "")
+local Entitymanageresp = menu.list(Entitymanager, "Entity ESP", {}, "")
 local player_zeug = menu.list(menu.my_root(), "Player zeug", {}, "")
 --local streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
 local Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
@@ -1734,6 +1729,604 @@ for pids = 0, 31 do
 		end)
 	end
 end
+
+local Entitymanagerespvehicle = menu.list(Entitymanageresp, "Vehicles", {}, "")
+local Entitymanageresppeds = menu.list(Entitymanageresp, "Peds", {}, "")
+local Entitymanagerespobjects = menu.list(Entitymanageresp, "objects", {}, "")
+local Entitymanageresppickups = menu.list(Entitymanageresp, "Pickups", {}, "")
+
+local deactivateother = false
+menu.toggle(Entitymanageresp, "Deaktivieren andere ESP", {}, "deactiviere andere esp wenn du eine an machst", function(on_toggle)
+	if on_toggle then
+		deactivateother = true
+	else
+		deactivateother = false
+	end
+end)
+
+local enabledveh, showonlymissionveh = false, false
+local xValueveh, yValueveh, scaleValueveh = 0, 0, 35
+local colorveh = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
+local maxDistanceveh = 700
+local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, showinvehveh, showmissionveh, showownerveh, showentitygroupveh = true, true, true, true, false, false, false, false, true
+
+	local function renderESPveh(givedata)
+		if not enabledveh then
+	        return false
+	    end
+		local data = {}
+		local gameX, gameY = memory.alloc(1), memory.alloc(1)
+	    local myPed = players.user_ped()
+	    local myPos = players.get_position(players.user())
+	    for _, vehs in pairs(entities.get_all_vehicles_as_pointers()) do
+			local vehshandle = entities.pointer_to_handle(vehs)
+	        if not IS_ENTITY_ON_SCREEN(vehshandle) then
+	            goto continue
+	        end
+			local modelhash = entities.get_model_hash(vehs)
+	        local pPos = entities.get_position(vehs)
+	        local dist = myPos:distance(pPos)
+	        if (dist > maxDistanceveh) then
+	            goto continue
+	        end
+			local driverplayer = false
+	        local isMyVehicle = false
+			local ispedinveh = IS_PED_IN_ANY_VEHICLE(myPed, false)
+			local vehofped = GET_VEHICLE_PED_IS_IN(myPed, false)
+	       	local driver = GET_PED_IN_VEHICLE_SEAT(vehshandle, -1)
+			local ownerveh =  players.get_name(entities.get_owner(vehshandle))
+			local missionentityveh = IS_ENTITY_A_MISSION_ENTITY(vehshandle)
+	            if driver == myPed then
+	                isMyVehicle = true
+	            end
+			if not showmyveh and ispedinveh and vehofped == vehshandle then
+				goto continue
+			end
+			if (not missionentityveh) and showonlymissionveh then
+				goto continue
+			end
+			if IS_PED_A_PLAYER(driver) then
+				driverplayer = true
+				driverplayerindex = players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(driver))
+			end
+	        local posToUse = pPos
+	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
+	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
+	        local valuesToDisplay = {}
+	        local playersInVehicle = ""
+			if showentitygroupveh then
+	            valuesToDisplay[#valuesToDisplay + 1] = "VEHICLE"
+	        end
+			if showDistanceveh then
+	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
+	        end
+			if (shownameveh or showspeedveh) then
+	            local textLine = ""
+	            if shownameveh then
+	                textLine = getmodelnamebyhash(modelhash) .. " "
+	            end
+	            if showspeedveh and getSpeed(vehshandle, true) > 0 then
+	                textLine = textLine .. getSpeed(vehshandle)
+	            end
+	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	        end
+	        if isMyVehicle and showinvehveh then
+	            local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehshandle)
+	            for i = 0, maxPassengers do
+	                if not IS_VEHICLE_SEAT_FREE(vehshandle, i, false) then
+	                    local vehPed = GET_PED_IN_VEHICLE_SEAT(vehshandle, i)
+	                    if IS_PED_A_PLAYER(vehPed) then
+	                        playersInVehicle = playersInVehicle .. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(vehPed)) .. ", "
+	                    end
+	                end
+	            end
+			end
+			if not isMyVehicle and showinvehveh then
+				local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehshandle)
+				for i = 0, maxPassengers do
+	                if not IS_VEHICLE_SEAT_FREE(vehshandle, i, false) then
+	                    local vehPed = GET_PED_IN_VEHICLE_SEAT(vehshandle, i)
+	                    if IS_PED_A_PLAYER(vehPed) then
+	                        playersInVehicle = playersInVehicle .. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(vehPed)) .. ", "
+	                    end
+	                end
+	            end
+	        end
+			if driverplayer and showdriverveh then
+	            valuesToDisplay[#valuesToDisplay + 1] = "Driver" .. ": " .. driverplayerindex
+	        end
+	        if playersInVehicle:len() > 0 then
+	            valuesToDisplay[#valuesToDisplay + 1] = "in Vehicle" .. ": " .. playersInVehicle:gsub(", $", "")
+	        end
+			if missionentityveh and showmissionveh then
+				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
+			end
+			if showownerveh then
+				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerveh
+			end
+	        local text = table.concat(valuesToDisplay, "\n")
+	        directx.draw_text(screenX + xValueveh, screenY + yValueveh, text, 5, scaleValueveh, colorveh, false)
+	        ::continue::
+	    end
+	end
+	
+enabledToggleveh = menu.toggle(Entitymanagerespvehicle, "Enable ESP Vehicle", {"ESPveh"}, "", function(on_toggle)
+	if on_toggle then
+		enabledveh = true
+		if deactivateother then
+			menu.trigger_commands("ESPped off")
+			menu.trigger_commands("ESPobject off")
+			menu.trigger_commands("ESPpickup off")
+		end
+		util.create_tick_handler(renderESPveh)
+	else
+		enabledveh = false
+	end
+end)
+
+
+onlymissionToggleveh = menu.toggle(Entitymanagerespvehicle, "Show Only Mission", {}, "", function(on)
+	showonlymissionveh = on
+end, showonlymissionveh)
+showonlymissionveh = menu.get_value(onlymissionToggleveh)
+local positionSubmenuveh = menu.list(Entitymanagerespvehicle, "position", {}, "")
+xSliderveh = menu.slider(positionSubmenuveh, "XPos", {}, "", -10, 10, xValueveh, 1, function(val)
+	xValueveh = val / 200
+end)
+--xValue = menu.get_value(xSlider) / 100
+ySliderveh = menu.slider(positionSubmenuveh, "YPos", {}, "", -10, 10, yValueveh, 1, function(val)
+	yValueveh = val / 200
+end)
+--yValue = menu.get_value(ySlider) / 100
+scaleSliderveh = menu.slider(positionSubmenuveh, "scale", {}, "", 1, 200, scaleValueveh, 1, function(val)
+	scaleValueveh = val / 100
+end)
+scaleValueveh = menu.get_value(scaleSliderveh) / 100
+colorRefveh = menu.colour(Entitymanagerespvehicle, "color", {}, "", colorveh, true, function(c)
+	colorveh = c
+end)
+maxDistSliderveh = menu.slider(Entitymanagerespvehicle, "max Dist", {"setdisvehicle"}, "", 10, 10000, maxDistanceveh, 10, function(val)
+	maxDistanceveh = val
+end)
+maxDistanceveh = menu.get_value(maxDistSliderveh)
+
+entitygroupToggleveh = menu.toggle(Entitymanagerespvehicle, "show Entity Group", {}, "", function(on)
+	showentitygroupveh = on
+end, showentitygroupveh)
+showentitygroupveh = menu.get_value(entitygroupToggleveh)
+distToggleveh = menu.toggle(Entitymanagerespvehicle, "show Distance", {}, "", function(on)
+	showDistanceveh = on
+end, showDistanceveh)
+showDistanceveh = menu.get_value(distToggleveh)
+nametoggleveh = menu.toggle(Entitymanagerespvehicle, "show Name", {}, "", function(on)
+	shownameveh = on
+end, shownameveh)
+shownameveh = menu.get_value(nametoggleveh)
+speedtoggleveh = menu.toggle(Entitymanagerespvehicle, "show Speed", {}, "", function(on)
+	showspeedveh = on
+end, showspeedveh)
+showspeedveh = menu.get_value(speedtoggleveh)
+showdrivertoggleveh = menu.toggle(Entitymanagerespvehicle, "show Driver", {}, "", function(on)
+	showdriverveh = on
+end, showdriverveh)
+showdriverveh = menu.get_value(showdrivertoggleveh)
+showinvehtoggleveh = menu.toggle(Entitymanagerespvehicle, "show In vehicle", {}, "", function(on)
+	showinvehveh = on
+end, showinvehveh)
+showinvehveh = menu.get_value(showinvehtoggleveh)
+myvehtoggleveh = menu.toggle(Entitymanagerespvehicle, "show My Vehicle", {}, "", function(on)
+	showmyveh = on
+end, showmyveh)
+showmyveh = menu.get_value(myvehtoggleveh)
+missiontoggleveh = menu.toggle(Entitymanagerespvehicle, "show Mission Entity", {}, "", function(on)
+	showmissionveh = on
+end, showmissionveh)
+showmissionveh = menu.get_value(missiontoggleveh)
+ownertoggleveh = menu.toggle(Entitymanagerespvehicle, "show Owner", {}, "", function(on)
+	showownerveh = on
+end, showownerveh)
+showownerveh = menu.get_value(ownertoggleveh)
+
+local enabledped, showonlymissionped = false, false
+local xValueped, yValueped, scaleValueped = 0, 0, 35
+local colorped = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
+local maxDistanceped = 700
+local showDistanceped, shownameped, showmissionped, showvehpedisinped, showownerped, showentitygroupped = true, true, true, true, false, true
+
+	local function renderESPped(givedata)
+		if not enabledped then
+	        return false
+	    end
+		local data = {}
+		local gameX, gameY = memory.alloc(1), memory.alloc(1)
+	    local myPed = players.user_ped()
+	    local myPos = players.get_position(players.user())
+	    for _, peds in pairs(entities.get_all_peds_as_pointers()) do
+			local pedshandle = entities.pointer_to_handle(peds)
+	        if not IS_ENTITY_ON_SCREEN(pedshandle) then
+	            goto continue
+	        end
+			local modelhash = entities.get_model_hash(peds)
+	        local pPos = entities.get_position(peds)
+	        local dist = myPos:distance(pPos)
+			local ownerped =  players.get_name(entities.get_owner(pedshandle))
+	        if (dist > maxDistanceped) then
+	            goto continue
+	        end
+			local ispedinveh = IS_PED_IN_ANY_VEHICLE(pedshandle, false)
+			local vehofped = GET_VEHICLE_PED_IS_IN(pedshandle, false)
+			local vehmodelhas = entities.get_model_hash(vehofped)
+			local missionentityped = IS_ENTITY_A_MISSION_ENTITY(pedshandle)
+			if IS_PED_A_PLAYER(pedshandle) then
+				goto continue
+			end
+			if (not missionentityped) and showonlymissionped then
+				goto continue
+			end
+	        local posToUse = pPos
+	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
+	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
+	        local valuesToDisplay = {}
+			if showentitygroupped then
+	            valuesToDisplay[#valuesToDisplay + 1] = "PED"
+	        end
+			if showDistanceped then
+	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
+	        end
+			if shownameped then
+	            local textLine = ""
+	            if shownameped then
+	                textLine = getmodelnamebyhash(modelhash) .. " "
+	            end
+	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	        end
+	        if ispedinveh and showvehpedisinped then
+				valuesToDisplay[#valuesToDisplay + 1] = "Vehicle: ".. getmodelnamebyhash(vehmodelhas)
+			end
+			if missionentityped and showmissionped then
+				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
+			end
+			if showownerped then
+				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerped
+			end
+	        local text = table.concat(valuesToDisplay, "\n")
+	        directx.draw_text(screenX + xValueped, screenY + yValueped, text, 5, scaleValueped, colorped, false)
+	        ::continue::
+	    end
+	end
+	
+enabledToggleped = menu.toggle(Entitymanageresppeds, "Enable ESP Ped", {"ESPped"}, "", function(on_toggle)
+	if on_toggle then
+		enabledped = true
+		if deactivateother then
+			menu.trigger_commands("ESPveh off")
+			menu.trigger_commands("ESPobject off")
+			menu.trigger_commands("ESPpickup off")
+		end
+		util.create_tick_handler(renderESPped)
+	else
+		enabledped = false
+	end
+end)
+
+onlymissionToggleped = menu.toggle(Entitymanageresppeds, "Show Only Mission", {}, "", function(on)
+	showonlymissionped = on
+end, showonlymissionped)
+showonlymissionped = menu.get_value(onlymissionToggleped)
+local positionSubmenuped = menu.list(Entitymanageresppeds, "position", {}, "")
+xSliderped = menu.slider(positionSubmenuped, "XPos", {}, "", -10, 10, xValueped, 1, function(val)
+	xValueped = val / 200
+end)
+--xValue = menu.get_value(xSlider) / 100
+ySliderped = menu.slider(positionSubmenuped, "YPos", {}, "", -10, 10, yValueped, 1, function(val)
+	yValueped = val / 200
+end)
+--yValue = menu.get_value(ySlider) / 100
+scaleSliderped = menu.slider(positionSubmenuped, "scale", {}, "", 1, 200, scaleValueped, 1, function(val)
+	scaleValueped = val / 100
+end)
+scaleValueped = menu.get_value(scaleSliderped) / 100
+colorRefped = menu.colour(Entitymanageresppeds, "color", {}, "", colorped, true, function(c)
+	colorped = c
+end)
+maxDistSliderped = menu.slider(Entitymanageresppeds, "max Dist", {"setdisped"}, "", 10, 10000, maxDistanceped, 10, function(val)
+	maxDistanceped = val
+end)
+maxDistanceped = menu.get_value(maxDistSliderped)
+
+entitygroupToggleped = menu.toggle(Entitymanageresppeds, "show Entity Group", {}, "", function(on)
+	showentitygroupped = on
+end, showentitygroupped)
+showentitygroupped = menu.get_value(entitygroupToggleped)
+distToggleped = menu.toggle(Entitymanageresppeds, "show Distance", {}, "", function(on)
+	showDistanceped = on
+end, showDistanceped)
+showDistanceped = menu.get_value(distToggleped)
+nametoggleped = menu.toggle(Entitymanageresppeds, "show Name", {}, "", function(on)
+	shownameped = on
+end, shownameped)
+shownameped = menu.get_value(nametoggleped)
+vehpedisintoggleped = menu.toggle(Entitymanageresppeds, "show Vehicle PedIsIn", {}, "", function(on)
+	showvehpedisinped = on
+end, showvehpedisinped)
+showvehpedisinped = menu.get_value(vehpedisintoggleped)
+missiontoggleped = menu.toggle(Entitymanageresppeds, "show Mission Entity", {}, "", function(on)
+	showmissionped = on
+end, showmissionped)
+showmissionped = menu.get_value(missiontoggleped)
+ownertoggleped = menu.toggle(Entitymanageresppeds, "show Owner", {}, "", function(on)
+	showownerped = on
+end, showownerped)
+showownerped = menu.get_value(ownertoggleped)
+
+
+local enabledobj, showonlymissionobj = false, false
+local xValueobj, yValueobj, scaleValueobj = 0, 0, 35
+local colorobj = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
+local maxDistanceobj = 300
+local showDistanceobj, shownameobj, showmissionobj, showownerobj, showattachtoobjobj, showattachtopedobj, showattachtovehobj, showentitygroupobj = true, true, true, true, false, false, false, true
+
+	local function renderESPobj(givedata)
+		if not enabledobj then
+	        return false
+	    end
+		local data = {}
+		local gameX, gameY = memory.alloc(1), memory.alloc(1)
+	    local myPed = players.user_ped()
+	    local myPos = players.get_position(players.user())
+	    for _, objs in pairs(entities.get_all_objects_as_pointers()) do
+			local objshandle = entities.pointer_to_handle(objs)
+	        if not IS_ENTITY_ON_SCREEN(objshandle) then
+	            goto continue
+	        end
+			local modelhash = entities.get_model_hash(objs)
+	        local pPos = entities.get_position(objs)
+	        local dist = myPos:distance(pPos)
+			local ownerobj = players.get_name(entities.get_owner(objshandle))
+			local missionentityobj = IS_ENTITY_A_MISSION_ENTITY(objshandle)
+			local attachedobj = IS_ENTITY_ATTACHED_TO_ANY_OBJECT(objshandle)
+			local attachedped = IS_ENTITY_ATTACHED_TO_ANY_PED(objshandle)
+			local attachedveh = IS_ENTITY_ATTACHED_TO_ANY_VEHICLE(objshandle)
+	        if (dist > maxDistanceobj) then
+	            goto continue
+	        end
+			if (not missionentityobj) and showonlymissionobj then
+				goto continue
+			end
+			if attachedobj and (not showattachtoobjobj) then
+				goto continue
+			end
+			if attachedped and (not showattachtopedobj) then
+				goto continue
+			end
+			if attachedveh and (not showattachtovehobj) then
+				goto continue
+			end
+	        local posToUse = pPos
+	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
+	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
+	        local valuesToDisplay = {}
+			if showentitygroupobj then
+	            valuesToDisplay[#valuesToDisplay + 1] = "OBJECT"
+	        end
+			if showDistanceobj then
+	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
+	        end
+			if shownameobj then
+	            local textLine = ""
+	            if shownameobj then
+	                textLine = getmodelnamebyhash(modelhash) .. " "
+	            end
+	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	        end
+			if missionentityobj and showmissionobj then
+				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
+			end
+			if showownerobj then
+				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerobj
+			end
+	        local text = table.concat(valuesToDisplay, "\n")
+	        directx.draw_text(screenX + xValueobj, screenY + yValueobj, text, 5, scaleValueobj, colorobj, false)
+	        ::continue::
+	    end
+	end
+	
+enabledToggleobj = menu.toggle(Entitymanagerespobjects, "Enable ESP Objects", {"ESPobject"}, "", function(on_toggle)
+	if on_toggle then
+		enabledobj = true
+		if deactivateother then
+			menu.trigger_commands("ESPped off")
+			menu.trigger_commands("ESPveh off")
+			menu.trigger_commands("ESPpickup off")
+		end
+		util.create_tick_handler(renderESPobj)
+	else
+		enabledobj = false
+	end
+end)
+
+onlymissionToggleobj = menu.toggle(Entitymanagerespobjects, "Show Only Mission", {}, "", function(on)
+	showonlymissionobj = on
+end, showonlymissionobj)
+showonlymissionobj = menu.get_value(onlymissionToggleobj)
+local positionSubmenuobj = menu.list(Entitymanagerespobjects, "position", {}, "")
+xSliderobj = menu.slider(positionSubmenuobj, "XPos", {}, "", -10, 10, xValueobj, 1, function(val)
+	xValueobj = val / 200
+end)
+--xValue = menu.get_value(xSlider) / 100
+ySliderobj = menu.slider(positionSubmenuobj, "YPos", {}, "", -10, 10, yValueobj, 1, function(val)
+	yValueobj = val / 200
+end)
+--yValue = menu.get_value(ySlider) / 100
+scaleSliderobj = menu.slider(positionSubmenuobj, "scale", {}, "", 1, 200, scaleValueobj, 1, function(val)
+	scaleValueobj = val / 100
+end)
+scaleValueobj = menu.get_value(scaleSliderobj) / 100
+colorRefobj = menu.colour(Entitymanagerespobjects, "color", {}, "", colorobj, true, function(c)
+	colorobj = c
+end)
+maxDistSliderobj = menu.slider(Entitymanagerespobjects, "max Dist", {"setdisobject"}, "", 10, 10000, maxDistanceobj, 10, function(val)
+	maxDistanceobj = val
+end)
+maxDistanceobj = menu.get_value(maxDistSliderobj)
+
+entitygroupToggleobj = menu.toggle(Entitymanagerespobjects, "show Entity Group", {}, "", function(on)
+	showentitygroupobj = on
+end, showentitygroupobj)
+showentitygroupobj = menu.get_value(entitygroupToggleobj)
+distToggleobj = menu.toggle(Entitymanagerespobjects, "show Distance", {}, "", function(on)
+	showDistanceobj = on
+end, showDistanceobj)
+showDistanceobj = menu.get_value(distToggleobj)
+nametoggleobj = menu.toggle(Entitymanagerespobjects, "show Name", {}, "", function(on)
+	shownameobj = on
+end, shownameobj)
+shownameobj = menu.get_value(nametoggleobj)
+missiontoggleobj = menu.toggle(Entitymanagerespobjects, "show Mission Entity", {}, "", function(on)
+	showmissionobj = on
+end, showmissionobj)
+showmissionobj = menu.get_value(missiontoggleobj)
+ownertoggleobj = menu.toggle(Entitymanagerespobjects, "show Owner", {}, "", function(on)
+	showownerobj = on
+end, showownerobj)
+showownerobj = menu.get_value(ownertoggleobj)
+attachtoobjtoggleobj = menu.toggle(Entitymanagerespobjects, "show Attachted Obj to Obj", {}, "", function(on)
+	showattachtoobjobj = on
+end, showattachtoobjobj)
+showattachtoobjobj = menu.get_value(attachtoobjtoggleobj)
+attachtopedtoggleobj = menu.toggle(Entitymanagerespobjects, "show Attachted Obj to Ped", {}, "", function(on)
+	showattachtopedobj = on
+end, showattachtopedobj)
+showattachtopedobj = menu.get_value(attachtopedtoggleobj)
+attachtovehtoggleobj = menu.toggle(Entitymanagerespobjects, "show Attachted Obj to Veh", {}, "", function(on)
+	showattachtovehobj = on
+end, showattachtovehobj)
+showattachtovehobj = menu.get_value(attachtovehtoggleobj)
+
+local enabledpickup, showonlymissionpickup = false, false
+local xValuepickup, yValuepickup, scaleValuepickup = 0, 0, 35
+local colorpickup = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
+local maxDistancepickup = 1000
+local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, showentitiygrouppickup = true, true, true, true, true
+
+	local function renderESPpickup(givedata)
+		if not enabledpickup then
+	        return false
+	    end
+		local data = {}
+		local gameX, gameY = memory.alloc(1), memory.alloc(1)
+	    local myPed = players.user_ped()
+	    local myPos = players.get_position(players.user())
+	    for _, pickups in pairs(entities.get_all_pickups_as_pointers()) do
+			local pickupshandle = entities.pointer_to_handle(pickups)
+	        if not IS_ENTITY_ON_SCREEN(pickupshandle) then
+	            goto continue
+	        end
+			local modelhash = entities.get_model_hash(pickups)
+	        local pPos = entities.get_position(pickups)
+	        local dist = myPos:distance(pPos)
+			local ownerpickup = players.get_name(entities.get_owner(pickupshandle))
+			local missionentitypickup = IS_ENTITY_A_MISSION_ENTITY(pickupshandle)
+	        if (dist > maxDistancepickup) then
+	            goto continue
+	        end
+			if (not missionentitypickup) and showonlymissionpickup then
+				goto continue
+			end
+	        local posToUse = pPos
+	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
+	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
+	        local valuesToDisplay = {}
+			if showentitiygrouppickup then
+	            valuesToDisplay[#valuesToDisplay + 1] = "PICKUP"
+	        end
+			if showDistancepickup then
+	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
+	        end
+			if shownamepickup then
+	            local textLine = ""
+	            if shownamepickup then
+	                textLine = getmodelnamebyhash(modelhash) .. " "
+	            end
+	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	        end
+			if missionentitypickup and showmissionpickup then
+				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
+			end
+			if showownerpickup then
+				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerpickup
+			end
+	        local text = table.concat(valuesToDisplay, "\n")
+	        directx.draw_text(screenX + xValuepickup, screenY + yValuepickup, text, 5, scaleValuepickup, colorpickup, false)
+			if givedata then
+				data.handle = pickupshandle
+				data.position = pPos
+				data.hash = modelhash
+				return data
+			end
+	        ::continue::
+	    end
+	end
+	
+enabledTogglepickup = menu.toggle(Entitymanageresppickups, "Enable ESP Pickups", {"ESPpickup"}, "", function(on_toggle)
+	if on_toggle then
+		enabledpickup = true
+		if deactivateother then
+			menu.trigger_commands("ESPped off")
+			menu.trigger_commands("ESPobject off")
+			menu.trigger_commands("ESPveh off")
+		end
+		util.create_tick_handler(renderESPpickup)
+	else
+		enabledpickup = false
+	end
+end)
+
+onlymissionTogglepickup = menu.toggle(Entitymanageresppickups, "Show Only Mission", {}, "", function(on)
+	showonlymissionpickup = on
+end, showonlymissionpickup)
+showonlymissionpickup = menu.get_value(onlymissionTogglepickup)
+local positionSubmenupickup = menu.list(Entitymanageresppickups, "position", {}, "")
+xSliderpickup = menu.slider(positionSubmenupickup, "XPos", {}, "", -10, 10, xValuepickup, 1, function(val)
+	xValuepickup = val / 200
+end)
+--xValue = menu.get_value(xSlider) / 100
+ySliderpickup = menu.slider(positionSubmenupickup, "YPos", {}, "", -10, 10, yValuepickup, 1, function(val)
+	yValuepickup = val / 200
+end)
+--yValue = menu.get_value(ySlider) / 100
+scaleSliderpickup = menu.slider(positionSubmenupickup, "scale", {}, "", 1, 200, scaleValuepickup, 1, function(val)
+	scaleValuepickup = val / 100
+end)
+scaleValuepickup = menu.get_value(scaleSliderpickup) / 100
+colorRefpickup = menu.colour(Entitymanageresppickups, "color", {}, "", colorpickup, true, function(c)
+	colorpickup = c
+end)
+maxDistSliderpickup = menu.slider(Entitymanageresppickups, "max Dist", {"setdispickup"}, "", 10, 10000, maxDistancepickup, 10, function(val)
+	maxDistancepickup = val
+end)
+maxDistancepickup = menu.get_value(maxDistSliderpickup)
+
+entitygroupTogglepickup = menu.toggle(Entitymanageresppickups, "show Entity Group", {}, "", function(on)
+	showentitiygrouppickup = on
+end, showentitiygrouppickup)
+showentitiygrouppickup = menu.get_value(entitygroupTogglepickup)
+distTogglepickup = menu.toggle(Entitymanageresppickups, "show Distance", {}, "", function(on)
+	showDistancepickup = on
+end, showDistancepickup)
+showDistancepickup = menu.get_value(distTogglepickup)
+nametogglepickup = menu.toggle(Entitymanageresppickups, "show Name", {}, "", function(on)
+	shownamepickup = on
+end, shownamepickup)
+shownamepickup = menu.get_value(nametogglepickup)
+missiontogglepickup = menu.toggle(Entitymanageresppickups, "show Mission Entity", {}, "", function(on)
+	showmissionpickup = on
+end, showmissionpickup)
+showmissionpickup = menu.get_value(missiontogglepickup)
+ownertogglepickup = menu.toggle(Entitymanageresppickups, "show Owner", {}, "", function(on)
+	showownerpickup = on
+end, showownerpickup)
+showownerpickup = menu.get_value(ownertogglepickup)
 
 menu.action(Self, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein waypoint gesetzt ist geht er da hin wenn keiner da ist geht er zu missions punkt", function()
 	if IS_WAYPOINT_ACTIVE() then
@@ -2035,6 +2628,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 	local speedentity = GET_ENTITY_SPEED(handle) * 3.6
 	speedentity1 = roundDecimals(speedentity, 1)
 	local modelhashentity = GET_ENTITY_MODEL(handle)
+	local modelname = getmodelnamebyhash(modelhashentity)
 	local healthentity = GET_ENTITY_HEALTH(handle)
 	local ownerentity = entities.get_owner(handle)
 	local namefromplayer = players.get_name(ownerentity)
@@ -2062,7 +2656,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				local speedentity2 = GET_ENTITY_SPEED(vehicleding) * 3.6
 				speedentity3 = roundDecimals(speedentity, 1)
 				local modelhashentity1 = GET_ENTITY_MODEL(vehicleding)
-				local vehiclemodelentity1 = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(modelhashentity1)
+				local vehiclemodelentity1 = getmodelnamebyhash(modelhashentity1)
 				local ownerentity1 = entities.get_owner(vehicleding)
 				local namefromplayer1 = players.get_name(ownerentity1)
 				--npc in einem auto
@@ -2075,7 +2669,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 					directx.draw_text(x, y4, "HEALTH: ".. healthentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					directx.draw_text(x, y5, "OWNERVEH: ".. namefromplayer1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 				else
-					directx.draw_text(x, y, "PED", 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+					directx.draw_text(x, y, "PED: ".. modelname, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					directx.draw_text(x, y1, "VEHICLE: ".. vehiclemodelentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					directx.draw_text(x, y2, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 					--directx.draw_text(x, y3, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
@@ -2211,7 +2805,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				local vehmodel = players.get_vehicle_model(nearestplayer)
 				if IS_PED_IN_ANY_VEHICLE(handle,true) then
 					directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  C = KICKEN  /  B = PLAYER WINDOW  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
-					local vehicleplayer1 = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(vehmodel)
+					local vehicleplayer1 = getmodelnamebyhash(vehmodel)
 					local vehicleplayer = GET_VEHICLE_PED_IS_IN(handle)
 					local ownerentity2 = entities.get_owner(vehicleplayer)
 					local namefromplayer2 = players.get_name(ownerentity2)
@@ -2344,7 +2938,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				end
 			else
 				directx.draw_text(0.5, y10, "R = Delete  /  C = CLEAR TASKS ", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(x, y, "PED", 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+				directx.draw_text(x, y, "PED: ".. modelname, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 				directx.draw_text(x, y1, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 				--directx.draw_text(x, y2, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 				directx.draw_text(x, y2, "DEAD: ".. deadentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
@@ -2364,7 +2958,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 			end
 		elseif IS_ENTITY_A_VEHICLE(handle) then
 			directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
-			local vehiclemodelentity3 = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(modelhashentity)
+			local vehiclemodelentity3 = getmodelnamebyhash(modelhashentity)
 			directx.draw_text(x, y, "VEHICLE: ".. vehiclemodelentity3, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			directx.draw_text(x, y1, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			--directx.draw_text(x, y2, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
@@ -2396,7 +2990,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 			end
 		elseif IS_ENTITY_AN_OBJECT(handle) then
 			directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  C = COPY HASH", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y, "OBJECT", 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+			directx.draw_text(x, y, "OBJECT: ".. modelname, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			directx.draw_text(x, y1, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			directx.draw_text(x, y2, "FOR MISSION: ".. missionentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 			directx.draw_text(x, y3, "MODEL HASH: ".. modelhashentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
@@ -2554,19 +3148,6 @@ menu.toggle(player_zeug, "Kick leute mit host token spoof", {}, "geht nur auf le
 	end
 end)
 
-menu.toggle_loop(Entitymanagergetarea, "enable auto scanner", {}, "", function ()
-	local vehiclenames = {}
-	local handlevehicles = entities.get_all_vehicles_as_handles()
-	for handlevehicles as h do 
-		local vehhash = entities.get_model_hash(h)
-		local vehiclename = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(vehhash)
-		local vehpos = entities.get_position(h)
-		local dist = myPos:distance(vehpos)
-			vehiclename = menu.list(Entitymanagergetareavehicles, vehiclename.. "  " ..dist , {}, "", function()
-			end)
-	end
-end)
-
 local anti_russen_zeug = menu.list(player_zeug, "Anti Länder zeug", {}, "")
 local leanderauswahl = menu.list(anti_russen_zeug, "länder auswahl", {}, "")
 local ESP = menu.list(player_zeug, "ESP", {}, "")
@@ -2713,7 +3294,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	        if (showVehicle or showSpeed) and vehicle then
 	            local textLine = ""
 	            if showVehicle then
-	                textLine = getvehName(players.get_vehicle_model(pid)) .. " "
+	                textLine = getmodelnamebyhash(players.get_vehicle_model(pid)) .. " "
 	            end
 	            if showSpeed and getSpeed(vehicle, true) > 0 then
 	                textLine = textLine .. getSpeed(vehicle)
@@ -2726,7 +3307,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	    end
 	end
 	
-local enabledToggle = menu.toggle(ESP, "Enable ESP", {"ESP"}, "", function(on_toggle)
+enabledToggle = menu.toggle(ESP, "Enable ESP Player", {"ESP"}, "", function(on_toggle)
 	if on_toggle then
 		enabled = true
 		util.create_tick_handler(renderESP)
@@ -2736,99 +3317,99 @@ local enabledToggle = menu.toggle(ESP, "Enable ESP", {"ESP"}, "", function(on_to
 end)
 local ESPSettings = menu.list(ESP, "Settings", {}, "")
 
-local enableOnAimToggle = menu.toggle(ESPSettings, "enableOnAimOnly", {}, "", function(on)
+enableOnAimToggle = menu.toggle(ESPSettings, "enableOnAimOnly", {}, "", function(on)
 	enableOnAim = on
 end, enableOnAim)
 enableOnAim = menu.get_value(enableOnAimToggle)
-local deactivateOnAimToggle = menu.toggle(ESPSettings, "DeactivateOnAim", {}, "", function(on)
+deactivateOnAimToggle = menu.toggle(ESPSettings, "DeactivateOnAim", {}, "", function(on)
 	deactivateOnAim = on
 end, deactivateOnAim)
 deactivateOnAim = menu.get_value(deactivateOnAimToggle)
-local fovslider = menu.slider(ESPSettings, "FOV", {}, "", 1, 30, fovset, 1, function(val)
+fovslider = menu.slider(ESPSettings, "FOV", {}, "", 1, 30, fovset, 1, function(val)
 	fovset = val
 end)
-local hideInteriorToggle = menu.toggle(ESPSettings, "hideInterior", {}, "", function(on)
+hideInteriorToggle = menu.toggle(ESPSettings, "hideInterior", {}, "", function(on)
 	hideInterior = on
 end, hideInterior)
 hideInterior = menu.get_value(hideInteriorToggle)
 local positionSubmenu = menu.list(ESPSettings, "position", {}, "")
-local xSlider = menu.slider(positionSubmenu, "XPos", {}, "", -10, 10, xValue, 1, function(val)
+xSlider = menu.slider(positionSubmenu, "XPos", {}, "", -10, 10, xValue, 1, function(val)
 	xValue = val / 200
 end)
 --xValue = menu.get_value(xSlider) / 100
-local ySlider = menu.slider(positionSubmenu, "YPos", {}, "", -10, 10, yValue, 1, function(val)
+ySlider = menu.slider(positionSubmenu, "YPos", {}, "", -10, 10, yValue, 1, function(val)
 	yValue = val / 200
 end)
 --yValue = menu.get_value(ySlider) / 100
-local scaleSlider = menu.slider(positionSubmenu, "scale", {}, "", 1, 200, scaleValue, 1, function(val)
+scaleSlider = menu.slider(positionSubmenu, "scale", {}, "", 1, 200, scaleValue, 1, function(val)
 	scaleValue = val / 100
 end)
 scaleValue = menu.get_value(scaleSlider) / 100
-local colorRef = menu.colour(ESPSettings, "color", {}, "", color, true, function(c)
+colorRef = menu.colour(ESPSettings, "color", {}, "", color, true, function(c)
 	color = c
 end)
-local maxDistSlider = menu.slider(ESPSettings, "maxDist", {}, "", 10, 10000, maxDistance, 10, function(val)
+maxDistSlider = menu.slider(ESPSettings, "maxDist", {}, "", 10, 10000, maxDistance, 10, function(val)
 	maxDistance = val
 end)
 maxDistance = menu.get_value(maxDistSlider)
 
-local distToggle = menu.toggle(ESP, "showDistance", {}, "", function(on)
+distToggle = menu.toggle(ESP, "showDistance", {}, "", function(on)
 	showDistance = on
 end, showDistance)
 showDistance = menu.get_value(distToggle)
-local wantedToggle = menu.toggle(ESP, "showWanted", {}, "", function(on)
+wantedToggle = menu.toggle(ESP, "showWanted", {}, "", function(on)
 	showWanted = on
 end, showWanted)
 showWanted = menu.get_value(wantedToggle)
-local rankToggle = menu.toggle(ESP, "showRank", {}, "", function(on)
+rankToggle = menu.toggle(ESP, "showRank", {}, "", function(on)
 	showRank = on
 end, showRank)
 showRank = menu.get_value(rankToggle)
-local langToggle = menu.toggle(ESP, "showLanguage", {}, "", function(on)
+langToggle = menu.toggle(ESP, "showLanguage", {}, "", function(on)
 	showLanguage = on
 end, showLanguage)
 showLanguage = menu.get_value(langToggle)
-local nameToggle = menu.toggle(ESP, "showName", {}, "", function(on)
+nameToggle = menu.toggle(ESP, "showName", {}, "", function(on)
 	showName = on
 end, showName)
 showName = menu.get_value(nameToggle)
-local tagsToggle = menu.toggle(ESP, "showTags", {}, "", function(on)
+tagsToggle = menu.toggle(ESP, "showTags", {}, "", function(on)
 	showTags = on
 end, showTags)
 showTags = menu.get_value(tagsToggle)
-local hpToggle = menu.toggle(ESP, "showHealth", {}, "", function(on)
+hpToggle = menu.toggle(ESP, "showHealth", {}, "", function(on)
 	showHealth = on
 end, showHealth)
 showHealth = menu.get_value(hpToggle)
-local armorToggle = menu.toggle(ESP, "showArmor", {}, "", function(on)
+armorToggle = menu.toggle(ESP, "showArmor", {}, "", function(on)
 	showArmor = on
 end, showArmor)
 showArmor = menu.get_value(armorToggle)
-local kdToggle = menu.toggle(ESP, "showKD", {}, "", function(on)
+kdToggle = menu.toggle(ESP, "showKD", {}, "", function(on)
 	showKD = on
 end, showKD)
 showKD = menu.get_value(kdToggle)
-local bountyToggle = menu.toggle(ESP, "showBounty", {}, "", function(on)
+bountyToggle = menu.toggle(ESP, "showBounty", {}, "", function(on)
 	showBounty = on
 end, showBounty)
 showBounty = menu.get_value(bountyToggle)
-local moneyToggle = menu.toggle(ESP, "showMoney", {}, "", function(on)
+moneyToggle = menu.toggle(ESP, "showMoney", {}, "", function(on)
 	showMoney = on
 end, showMoney)
 showMoney = menu.get_value(moneyToggle)
-local weaponToggle = menu.toggle(ESP, "showWeapon", {}, "", function(on)
+weaponToggle = menu.toggle(ESP, "showWeapon", {}, "", function(on)
 	showWeapon = on
 end, showWeapon)
 showWeapon = menu.get_value(weaponToggle)
-local myVehicleToggle = menu.toggle(ESP, "showInMyVehicle", {}, "", function(on)
+myVehicleToggle = menu.toggle(ESP, "showInMyVehicle", {}, "", function(on)
 		showInMyVehicle = on
 	end, showInMyVehicle)
 showInMyVehicle = menu.get_value(myVehicleToggle)
-local vehicleToggle = menu.toggle(ESP, "showVehicle", {}, "", function(on)
+vehicleToggle = menu.toggle(ESP, "showVehicle", {}, "", function(on)
 	showVehicle = on
 end, showVehicle)
 showVehicle = menu.get_value(vehicleToggle)
-local speedToggle = menu.toggle(ESP, "showSpeed", {}, "", function(on)
+speedToggle = menu.toggle(ESP, "showSpeed", {}, "", function(on)
 	showSpeed = on
 end, showSpeed)
 showSpeed = menu.get_value(speedToggle)
@@ -3855,6 +4436,7 @@ menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 	end
 end)
 
+local a = 1
 menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 50]\ngib die kmh an auf die es boosten soll", 1,50, 1, 1, function(boost)
 	a = boost
 end)
@@ -3906,8 +4488,8 @@ end)
 	util.toast(positionveh)
 end)]]
 
-
-
+local bba = 10
+local abb = 10
 timer2 = 0
 menu.toggle_loop(vehicle, "instant veh enter/exit", {}, "halte F gedrückt dann setzt du dich in das auto was dir am nächsten ist in den settings kann man auswählen wie lange man drücken soll", function()
 if not util.is_session_transition_active() then
@@ -3930,7 +4512,7 @@ if not util.is_session_transition_active() then
 	local doorpositionrightfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex3)
 	local doorpositionrightback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex4)
 	local seatofplayer = getseatofplayer(mypositionvehicle)
-	local vehiclename = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(vehhash)
+	local vehiclename = getmodelnamebyhash(vehhash)
 	local personalveh = entities.get_user_personal_vehicle_as_handle(players.user())
 	timer1 = 0
 	if not IS_PED_IN_ANY_VEHICLE(players.user_ped(), false) then --and not (GET_IS_TASK_ACTIVE(ped, 160)) then
