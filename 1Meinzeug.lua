@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.35
+local localVer = 0.36
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -56,6 +56,10 @@ until response
 
 local int_min = -2147483647
 local int_max = 2147483647
+
+local a = 1
+local bba = 10
+local abb = 10
 
 vehenterstealnpc = false
 vehentersteal = false
@@ -4436,7 +4440,6 @@ menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 	end
 end)
 
-local a = 1
 menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 50]\ngib die kmh an auf die es boosten soll", 1,50, 1, 1, function(boost)
 	a = boost
 end)
@@ -4488,8 +4491,6 @@ end)
 	util.toast(positionveh)
 end)]]
 
-local bba = 10
-local abb = 10
 timer2 = 0
 menu.toggle_loop(vehicle, "instant veh enter/exit", {}, "halte F gedrückt dann setzt du dich in das auto was dir am nächsten ist in den settings kann man auswählen wie lange man drücken soll", function()
 if not util.is_session_transition_active() then
