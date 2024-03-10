@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.37
+local localVer = 0.38
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -4273,10 +4273,15 @@ local function getplayertokick(pid)
 			return pid
 		end
 	end
+	if Austria then
+		if pidlanguage(pid) == "Austria" then
+			return pid
+		end
+	end
 	return "false"
 end
 
-russentimer = 1
+--[[russentimer = 1
 local function russenkick(pid)
 	if kickrussen then
 		if not util.is_session_transition_active() then
@@ -4301,7 +4306,7 @@ local function russenkick(pid)
 	end
 end
 
-players.on_join(russenkick)
+players.on_join(russenkick)]]
 
 menu.toggle(leanderauswahl, "Russian Federation", {}, "", function(on_toggle)
 	if on_toggle then
@@ -4310,7 +4315,6 @@ menu.toggle(leanderauswahl, "Russian Federation", {}, "", function(on_toggle)
 		Russian_Federation = false
 	end
 end)
-
 menu.toggle(leanderauswahl, "Ukraine", {}, "", function(on_toggle)
 	if on_toggle then
 		Ukraine = true
@@ -4318,7 +4322,6 @@ menu.toggle(leanderauswahl, "Ukraine", {}, "", function(on_toggle)
 		Ukraine = false
 	end
 end)
-
 menu.toggle(leanderauswahl, "Poland", {}, "", function(on_toggle)
 	if on_toggle then
 		Poland = true
@@ -4326,7 +4329,6 @@ menu.toggle(leanderauswahl, "Poland", {}, "", function(on_toggle)
 		Poland = false
 	end
 end)
-
 menu.toggle(leanderauswahl, "France", {}, "", function(on_toggle)
 	if on_toggle then
 		France = true
@@ -4334,7 +4336,6 @@ menu.toggle(leanderauswahl, "France", {}, "", function(on_toggle)
 		France = false
 	end
 end)
-
 menu.toggle(leanderauswahl, "Italy", {}, "", function(on_toggle)
 	if on_toggle then
 		Italy = true
@@ -4342,7 +4343,6 @@ menu.toggle(leanderauswahl, "Italy", {}, "", function(on_toggle)
 		Italy = false
 	end
 end)
-
 menu.toggle(leanderauswahl, "Romania", {}, "", function(on_toggle)
 	if on_toggle then
 		Romania = true
@@ -4350,7 +4350,6 @@ menu.toggle(leanderauswahl, "Romania", {}, "", function(on_toggle)
 		Romania = false
 	end
 end)
-
 menu.toggle(leanderauswahl, "Czech Republic", {}, "", function(on_toggle)
 	if on_toggle then
 		Czech_Republic = true
@@ -4358,12 +4357,18 @@ menu.toggle(leanderauswahl, "Czech Republic", {}, "", function(on_toggle)
 		Czech_Republic = false
 	end
 end)
-
 menu.toggle(leanderauswahl, "Germany", {}, "", function(on_toggle)
 	if on_toggle then
 		Germany = true
 	else 
 		Germany = false
+	end
+end)
+menu.toggle(leanderauswahl, "Austria", {}, "", function(on_toggle)
+	if on_toggle then
+		Austria = true
+	else 
+		Austria = false
 	end
 end)
 
@@ -4400,6 +4405,7 @@ menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie
 	local romaniacounter = 0
 	local czechcounter = 0
 	local germanycoutner = 0
+	local Austriacoutner = 0
 	local notselectet = false
 	local hostpid = players.get_host()
 	for players.list(false, false, true) as pid do
@@ -4443,8 +4449,13 @@ menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie
 				germanycoutner += 1
 			end
 		end
+		if Austria then
+			if pidlanguage(pid) == "Austria" then
+				Austriacoutner += 1
+			end
+		end
 	end
-	if (not Czech_Republic) and (not Romania) and (not Italy) and (not France) and (not Poland) and (not Ukraine) and (not Russian_Federation) and (not Germany) then
+	if (not Czech_Republic) and (not Romania) and (not Italy) and (not France) and (not Poland) and (not Ukraine) and (not Russian_Federation) and (not Germany)and (not Austria) then
 		notselectet = true
 		util.toast("keine länder ausgewählt")
 	end
@@ -4502,6 +4513,13 @@ menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie
 			util.toast(tostring(germanycoutner).. " Germany")
 		else
 			util.toast("Keine Germany")
+		end
+	end
+	if Austria then
+		if Austriacoutner != 0 then
+			util.toast(tostring(Austriacoutner).. " Austria")
+		else
+			util.toast("Keine Austria")
 		end
 	end
 end)
