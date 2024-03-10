@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.36
+local localVer = 0.37
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -60,6 +60,7 @@ local int_max = 2147483647
 local a = 1
 local bba = 10
 local abb = 10
+
 
 vehenterstealnpc = false
 vehentersteal = false
@@ -288,6 +289,92 @@ LANGUAGES = {
 	[11] = "MX",
 	[12] = "CN"
 }
+local EXPLOSIONVARIATION = {
+    {1, "GRENADE", {}, ""},
+    {2, "GRENADELAUNCHER", {}, ""},
+    {3, "STICKYBOMB", {}, ""},
+    {4, "MOLOTOV", {}, ""},
+    {5, "ROCKET", {}, ""},
+    {6, "TANKSHELL", {}, ""},
+    {7, "HI_OCTANE", {}, ""},
+    {8, "CAR", {}, ""},
+    {9, "PLANE", {}, ""},
+    {10, "PETROL_PUMP", {}, ""},
+    {11, "BIKE", {}, ""},
+    {12, "DIR_STEAM", {}, ""},
+    {13, "DIR_FLAME", {}, ""},
+    {14, "DIR_WATER_HYDRANT", {}, ""},
+    {15, "DIR_GAS_CANISTER", {}, ""},
+    {16, "BOAT", {}, ""},
+    {17, "SHIP_DESTROY", {}, ""},
+    {18, "TRUCK", {}, ""},
+    {19, "BULLET", {}, ""},
+    {20, "SMOKEGRENADELAUNCHER", {}, ""},
+    {21, "SMOKEGRENADE", {}, ""},
+    {22, "BZGAS", {}, ""},
+    {23, "FLARE", {}, ""},
+    {24, "GAS_CANISTER", {}, ""},
+    {25, "EXTINGUISHER", {}, ""},
+    {26, "PROGRAMMABLEAR", {}, ""},
+    {27, "TRAIN", {}, ""},
+    {28, "BARREL", {}, ""},
+    {29, "PROPANE", {}, ""},
+    {30, "BLIMP", {}, ""},
+    {31, "DIR_FLAME_EXPLODE", {}, ""},
+    {32, "TANKER", {}, ""},
+    {33, "PLANE_ROCKET", {}, ""},
+    {34, "VEHICLE_BULLET", {}, ""},
+    {35, "GAS_TANK", {}, ""},
+    {36, "BIRD_CRAP", {}, ""},
+    {37, "RAILGUN", {}, ""},
+    {38, "BLIMP2", {}, ""},
+    {39, "FIREWORK", {}, ""},
+    {40, "SNOWBALL", {}, ""},
+    {41, "PROXMINE", {}, ""},
+    {42, "VALKYRIE_CANNON", {}, ""},
+    {43, "AIR_DEFENCE", {}, ""},
+    {44, "PIPEBOMB", {}, ""},
+    {45, "VEHICLEMINE", {}, ""},
+    {46, "EXPLOSIVEAMMO", {}, ""},
+    {47, "APCSHELL", {}, ""},
+    {48, "BOMB_CLUSTER", {}, ""},
+    {49, "BOMB_GAS", {}, ""},
+    {50, "BOMB_INCENDIARY", {}, ""},
+    {51, "BOMB_STANDARD", {}, ""},
+    {52, "TORPEDO", {}, ""},
+    {53, "TORPEDO_UNDERWATER", {}, ""},
+    {54, "BOMBUSHKA_CANNON", {}, ""},
+    {55, "BOMB_CLUSTER_SECONDARY", {}, ""},
+    {56, "HUNTER_BARRAGE", {}, ""},
+    {57, "HUNTER_CANNON", {}, ""},
+    {58, "ROGUE_CANNON", {}, ""},
+    {59, "MINE_UNDERWATER", {}, ""},
+    {60, "ORBITAL_CANNON", {}, ""},
+    {61, "BOMB_STANDARD_WIDE", {}, ""},
+    {62, "EXPLOSIVEAMMO_SHOTGUN", {}, ""},
+    {63, "OPPRESSOR2_CANNON", {}, ""},
+    {64, "MORTAR_KINETIC", {}, ""},
+    {65, "VEHICLEMINE_KINETIC", {}, ""},
+    {66, "VEHICLEMINE_EMP", {}, ""},
+    {67, "VEHICLEMINE_SPIKE", {}, ""},
+    {68, "VEHICLEMINE_SLICK", {}, ""},
+    {69, "VEHICLEMINE_TAR", {}, ""},
+    {70, "SCRIPT_DRONE", {}, ""},
+    {71, "RAYGUN", {}, ""},
+    {72, "BURIEDMINE", {}, ""},
+    {73, "SCRIPT_MISSILE", {}, ""},
+    {74, "RCTANK_ROCKET", {}, ""},
+    {75, "BOMB_WATER", {}, ""},
+    {76, "BOMB_WATER_SECONDARY", {}, ""},
+    {77, "EXP_TAG_MINE_CNCSPIKE", {}, ""},
+    {78, "EXP_TAG_BZGAS_MK2", {}, ""},
+    {79, "FLASHGRENADE", {}, ""},
+    {80, "STUNGRENADE", {}, ""},
+    {81, "EXP_TAG_CNC_KINETICRAM", {}, ""},
+    {82, "SCRIPT_MISSILE_LARGE", {}, ""},
+    {83, "SUBMARINE_BIG", {}, ""},
+    {84, "EMPLAUNCHER_EMP", {}, ""}
+}
 
 local menus = {}
 
@@ -344,8 +431,8 @@ function Streamptfx(lib)
     GRAPHICS.USE_PARTICLE_FX_ASSET(lib)
 end
 
---[[
-local function is_user_a_stand_user(pid)
+
+--[[local function is_user_a_stand_user(pid)
     if players.exists(pid) and pid != players.user() then
         for menu.player_root(pid):getChildren() as cmd do
             if cmd:getType() == COMMAND_LIST_CUSTOM_SPECIAL_MEANING and (cmd:refByRelPath("Stand Nutzer"):isValid() or cmd:refByRelPath("Stand User (Co-Loading)"):isValid() or cmd:refByRelPath("Stand user"):isValid() or cmd:refByRelPath("Stand Nutzer (Mit Co-Load)"):isValid()) then
@@ -354,8 +441,8 @@ local function is_user_a_stand_user(pid)
         end
     end
     return false
-end
-]]
+end]]
+
 
 function levideaktivate()
 	if menu.get_value(menu.ref_by_path("Self>Movement>Levitation>Levitation")) then
@@ -376,6 +463,7 @@ local function getcontrole(entity)
 	local time = 0
 		repeat
 		time += 1
+		util.draw_debug_text("GETTING CONTROLE")
 		NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
 			if time > 400 then
 				util.toast("konnte keine kontrolle bekommen")
@@ -387,6 +475,14 @@ local function getcontrole(entity)
 	return true
 end
 
+--[[local function getcontrole(entity)
+	if entities.request_control(entity, 400) then
+		return true
+	else
+		util.toast("konnte kein kontrolle bekommen")
+		return false
+	end
+end]]
 
 local function v3(x, y, z)
 	if x == nil then x = 0 end
@@ -659,6 +755,21 @@ function get_ms_since_last_press(string_or_int)
     return util.current_time_millis() - lastPressMS[keyCode]
 end
 
+function isanykeypressed()
+	for keyLookupTable as key do
+		local keydown = is_key_down(key)
+		if keydown then
+			return true
+		end
+	end
+	return false
+end
+
+function isMoving(ped)
+	if not PED.IS_PED_IN_ANY_VEHICLE(ped, true) and ENTITY.GET_ENTITY_SPEED(ped) > 1 then return true end
+	if ENTITY.GET_ENTITY_SPEED(PED.GET_VEHICLE_PED_IS_IN(ped, false)) > 1 then return true end
+end
+
 function getseatofplayer(vehicle)
 	local getseatofdriver00 = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, false)
 	local getseatofdriver0 = GET_PED_IN_VEHICLE_SEAT(vehicle, 0, false)
@@ -780,12 +891,11 @@ local function getvehtype(hashveh)
 	end
 end
 
-local function getorganisationplayers(pid)
+function getorganisationplayers(pid)
 	local orgmembers = {}
 	local bossofpid = players.get_boss(pid)
 	if bossofpid == -1 then
-		util.toast("spieler ist in keiner organisation")
-		return "false"
+		return false
 	end
 		for players.list(false, true, true) as pid1 do
 			local bossofpid1 = players.get_boss(pid1)
@@ -796,6 +906,17 @@ local function getorganisationplayers(pid)
 			end
 		end
 		return orgmembers
+end
+
+function getorgtype(pid)
+	local orgtype = players.get_org_type(pid)
+	if orgtype == -1 then
+		return "false"
+	elseif orgtype == 0 then
+		return "CEO"
+	elseif orgtype == 1 then
+		return "Bike Club"
+	end
 end
 
 function getHealth(ped)
@@ -883,6 +1004,16 @@ function getLanguage(pid)
 	return LANGUAGES[players.get_language(pid)]
 end
 
+local function removeValues(t, removeT)
+	for _, r in ipairs(removeT) do
+		for i, v in ipairs(t) do
+			if v == r then
+				table.remove(t, i)
+			end
+		end
+	end
+end
+
 selectedplayer = {}
 for b = 0, 31 do
     selectedplayer[b] = false
@@ -922,6 +1053,16 @@ end
 listgenerel = {}
 for i = 0, 31 do
 	listgenerel[i] = 0
+end
+
+veh = {}
+for i = 0, 300 do
+	veh[i] = 0
+end
+
+veh1 = {}
+for i = 0, 300 do
+	veh1[i] = 0
 end
 
 local colors = {
@@ -1031,6 +1172,7 @@ local function player(pid)
 	menu.action(orgthingsteleport, "Zu Mir Teleportieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1042,6 +1184,7 @@ local function player(pid)
 	menu.action(orgthingsteleport, "Zu Meinem Wegpunkt Teleportieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1053,6 +1196,7 @@ local function player(pid)
 	menu.action(orgthingsteleport, "Zu Meinem Missionsziel Teleportieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1066,6 +1210,7 @@ local function player(pid)
 	menu.action(orgthingsfriendlyvehicle, "Komplett Verbessern", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1077,6 +1222,7 @@ local function player(pid)
 	menu.action(orgthingsfriendlyvehicle, "Fahrzeug Reparieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1088,6 +1234,7 @@ local function player(pid)
 	menu.action(orgthingsfriendlyvehicle, "Unzerstörbar", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1107,6 +1254,7 @@ local function player(pid)
 	menu.action(orgthingsfriendly, "CEO Geld-Schleife", {}, "wird nicht dem boss gegeben\nAN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local bossofceo = players.get_boss(pid1)
@@ -1128,6 +1276,7 @@ local function player(pid)
 	menu.action(orgthingsfriendly, "Kasino-Figuren Geben", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1145,6 +1294,7 @@ local function player(pid)
 	menu.action(orgthingsfriendly, "Spielkarten Geben", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1162,6 +1312,7 @@ local function player(pid)
 	menu.action(orgthingsfriendly, "Automatische Heilung", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1179,6 +1330,7 @@ local function player(pid)
 	menu.action(orgthingsfriendly, "Nie Gefahndet", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1196,6 +1348,7 @@ local function player(pid)
 	menu.action(orgthingsfriendly, "Vom Radar Verschwinden", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1213,6 +1366,7 @@ local function player(pid)
 	menu.action(orgthingsfriendly, "P's & Q's Geben", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1232,6 +1386,7 @@ local function player(pid)
 	menu.action(orgthingsweapons, "Alle Waffen Geben", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1243,6 +1398,7 @@ local function player(pid)
 	menu.action(orgthingsweapons, "Munition Geben", {}, "gibt nur für die ausgerüstete waffe munition", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1263,6 +1419,7 @@ local function player(pid)
 	menu.action(orgthingsweapons, "Fallschirm Geben", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1274,6 +1431,7 @@ local function player(pid)
 	menu.action(orgthingsweapons, "Unbewaffnen", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1293,6 +1451,7 @@ local function player(pid)
 	menu.action(orgthingstrollingvehicle, "Töten", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1304,6 +1463,7 @@ local function player(pid)
 	menu.action(orgthingstrollingvehicle, "EMP", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1329,6 +1489,7 @@ local function player(pid)
 		local level = s
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1357,6 +1518,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Einfrieren", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1374,6 +1536,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Kamera Nach Vorne Zwingen", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1391,6 +1554,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Ragdoll", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1408,6 +1572,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Kamera Verwackeln", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1425,6 +1590,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Töten", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1436,6 +1602,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Explodieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1447,6 +1614,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Benachrichtigungs-Spam", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1464,6 +1632,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Kick Vom Fahrzeug", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1475,6 +1644,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Kick Vom Innenraum", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1486,6 +1656,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Kick Vom CEO/MC", {}, "kickt den boss raus damit ist die org aufgelöst", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local bossofceo = players.get_boss(pid1)
@@ -1504,6 +1675,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "Unedlicher Ladebildschirm", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1515,6 +1687,7 @@ local function player(pid)
 	menu.action(orgthingstrolling, "In Freemode-Mission Zwingen", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1528,6 +1701,7 @@ local function player(pid)
 	menu.action(orgthingscrash, "Elegant", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1539,6 +1713,7 @@ local function player(pid)
 	menu.action(orgthingscrash, "Burger King Fußsalat", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1550,6 +1725,7 @@ local function player(pid)
 	menu.action(orgthingscrash, "Fahrzeug Totschlag", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1561,6 +1737,7 @@ local function player(pid)
 	menu.action(orgthingscrash, "Dampfwalze", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1572,6 +1749,7 @@ local function player(pid)
 	menu.action(orgthings, "Kick", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
 		if orgmembers == "false" then
+			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1675,6 +1853,7 @@ local vehicle = menu.list(menu.my_root(), "Vehicle zeug", {}, "")
 local Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
 local Entitymanagercleararea = menu.list(Entitymanager, "Clear Area", {}, "")
 local Entitymanageresp = menu.list(Entitymanager, "Entity ESP", {}, "")
+local Entitymanagernearvehicle = menu.list(Entitymanager, "Near vehicle [Test zeug]", {}, "")
 local player_zeug = menu.list(menu.my_root(), "Player zeug", {}, "")
 --local streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
 local Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
@@ -1752,7 +1931,7 @@ local enabledveh, showonlymissionveh = false, false
 local xValueveh, yValueveh, scaleValueveh = 0, 0, 35
 local colorveh = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistanceveh = 700
-local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, showinvehveh, showmissionveh, showownerveh, showentitygroupveh = true, true, true, true, false, false, false, false, true
+local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, showinvehveh, showmissionveh, showownerveh, showentitygroupveh, showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh = true, true, true, true, false, false, false, false, true, false, false, true
 
 	local function renderESPveh(givedata)
 		if not enabledveh then
@@ -1764,7 +1943,7 @@ local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, show
 	    local myPos = players.get_position(players.user())
 	    for _, vehs in pairs(entities.get_all_vehicles_as_pointers()) do
 			local vehshandle = entities.pointer_to_handle(vehs)
-	        if not IS_ENTITY_ON_SCREEN(vehshandle) then
+	        if not IS_ENTITY_ON_SCREEN(vehshandle) and getonlyvisibleveh then
 	            goto continue
 	        end
 			local modelhash = entities.get_model_hash(vehs)
@@ -1846,12 +2025,26 @@ local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, show
 				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
 			end
 			if showownerveh then
-				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerveh
+				if  showonlyotherownerveh and (ownerveh == players.get_name(players.user())) then
+				else
+					valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerveh
+				end
+			end
+			if (GET_VEHICLE_ENGINE_HEALTH(vehshandle) <= 0) and not showdestroyedveh then
+				goto continue
 			end
 	        local text = table.concat(valuesToDisplay, "\n")
-	        directx.draw_text(screenX + xValueveh, screenY + yValueveh, text, 5, scaleValueveh, colorveh, false)
-	        ::continue::
-	    end
+			if not givedata then
+	       		directx.draw_text(screenX + xValueveh, screenY + yValueveh, text, 5, scaleValueveh, colorveh, false)
+			end
+			if givedata then
+				table.insert(data, vehshandle)
+			end
+			::continue::
+		end
+		if givedata then
+			return data
+		end
 	end
 	
 enabledToggleveh = menu.toggle(Entitymanagerespvehicle, "Enable ESP Vehicle", {"ESPveh"}, "", function(on_toggle)
@@ -1873,6 +2066,169 @@ onlymissionToggleveh = menu.toggle(Entitymanagerespvehicle, "Show Only Mission",
 	showonlymissionveh = on
 end, showonlymissionveh)
 showonlymissionveh = menu.get_value(onlymissionToggleveh)
+
+local actionSubmenuveh = menu.list(Entitymanagerespvehicle, "Action", {}, "action für die auf dennen ESP drauf ist")
+local actionsettingsSubmenuveh = menu.list(actionSubmenuveh, "Settings", {}, "")
+local explosiontype = 6
+local explosionsettingveh = menu.list_select(actionsettingsSubmenuveh, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", EXPLOSIONVARIATION, explosiontype, function(value)
+	explosiontype = value
+end)
+onlyvisibleToggleveh = menu.toggle(actionSubmenuveh, "get only visible vehs", {}, "", function(on)
+	getonlyvisibleveh = on
+end, getonlyvisibleveh)
+getonlyvisibleveh = menu.get_value(onlyvisibleToggleveh)
+menu.action(actionSubmenuveh, "teleport to me", {}, "Nutzen auf eigene gefahr\nignoriert spieler", function()
+	local data = renderESPveh(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if IS_VEHICLE_SEAT_FREE(entity, -1, false) then
+				if entities.request_control(entity, 150) then
+					SET_ENTITY_AS_MISSION_ENTITY(entity)
+					SET_ENTITY_COORDS(entity, pPos.x, pPos.y, pPos.z)
+				end
+			else
+				pedinseat = GET_PED_IN_VEHICLE_SEAT(entity, -1, true)
+				if not IS_PED_A_PLAYER(pedinseat) then
+					if entities.request_control(entity, 150) then
+						SET_ENTITY_AS_MISSION_ENTITY(entity)
+						SET_ENTITY_COORDS(entity, pPos.x, pPos.y, pPos.z)
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuveh, "Delete", {}, "", function()
+	local data = renderESPveh(true)
+	if data then
+		for data as entity do
+			if IS_VEHICLE_SEAT_FREE(entity, -1, false) then
+				if entities.request_control(entity, 150) then
+					entities.delete(entity)
+				end
+			else
+				pedofvehicle = GET_PED_IN_VEHICLE_SEAT(entity, -1, true)
+				if not IS_PED_A_PLAYER(pedofvehicle) then
+					if entities.request_control(pedofvehicle, 150) then
+						entities.delete(entity)
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuveh, "Explode", {}, "bissel bugi aber mit bissel spamen geht klar", function()
+	local time = 0
+	local data = renderESPveh(true)
+	if data then
+		for data as entity do
+			--local pointerent = entities.handle_to_pointer(entity)
+			--local positon = entities.get_position(pointerent)
+			local boneindex = GET_ENTITY_BONE_INDEX_BY_NAME(entity, "engine")
+			local position = GET_ENTITY_BONE_POSTION(entity, boneindex)
+			if position ~= number then
+				if IS_VEHICLE_SEAT_FREE(entity, -1, false) then
+					if entities.request_control(entity, 150) then
+						repeat
+							util.yield()
+							time += 1
+							ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 1, true, false, 0.0, false)
+						until (GET_VEHICLE_ENGINE_HEALTH(entity) <= 0) or time == 500 or (not DOES_ENTITY_EXIST(entity))
+					end
+				else
+					pedofvehicle = GET_PED_IN_VEHICLE_SEAT(entity, -1, true)
+					if not IS_PED_A_PLAYER(pedofvehicle) then
+						if entities.request_control(pedofvehicle, 150) then
+							repeat
+								util.yield()
+								time += 1
+								ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 1, true, false, 0.0, false)
+							until (GET_VEHICLE_ENGINE_HEALTH(entity) <= 0) or time == 500 or (not DOES_ENTITY_EXIST(entity))
+						end
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuveh, "Repair", {}, "", function()
+	local data = renderESPveh(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if IS_VEHICLE_SEAT_FREE(entity, -1, false) then
+				if entities.request_control(entity, 150) then
+					STOP_ENTITY_FIRE(entity)
+					SET_VEHICLE_FIXED(entity)
+					SET_VEHICLE_DIRT_LEVEL(entity, 0)
+				end
+			else
+				pedinseat = GET_PED_IN_VEHICLE_SEAT(entity, -1, true)
+				if not IS_PED_A_PLAYER(pedinseat) then
+					if entities.request_control(entity, 150) then
+						STOP_ENTITY_FIRE(entity)
+						SET_VEHICLE_FIXED(entity)
+						SET_VEHICLE_DIRT_LEVEL(entity, 0)
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.toggle_loop(actionSubmenuveh, "Freeze", {}, "", function()
+	local data = renderESPveh(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if IS_VEHICLE_SEAT_FREE(entity, -1, false) then
+				if entities.request_control(entity, 150) then
+					FREEZE_ENTITY_POSITION(entity, true)
+				end
+			else
+				pedinseat = GET_PED_IN_VEHICLE_SEAT(entity, -1, true)
+				if not IS_PED_A_PLAYER(pedinseat) then
+					if entities.request_control(entity, 150) then
+						FREEZE_ENTITY_POSITION(entity, true)
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.toggle_loop(actionSubmenuveh, "UN Freeze", {}, "", function()
+	local data = renderESPveh(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if IS_VEHICLE_SEAT_FREE(entity, -1, false) then
+				if entities.request_control(entity, 150) then
+					FREEZE_ENTITY_POSITION(entity, false)
+				end
+			else
+				pedinseat = GET_PED_IN_VEHICLE_SEAT(entity, -1, true)
+				if not IS_PED_A_PLAYER(pedinseat) then
+					if entities.request_control(entity, 150) then
+						FREEZE_ENTITY_POSITION(entity, false)
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+
 local positionSubmenuveh = menu.list(Entitymanagerespvehicle, "position", {}, "")
 xSliderveh = menu.slider(positionSubmenuveh, "XPos", {}, "", -10, 10, xValueveh, 1, function(val)
 	xValueveh = val / 200
@@ -1886,9 +2242,11 @@ scaleSliderveh = menu.slider(positionSubmenuveh, "scale", {}, "", 1, 200, scaleV
 	scaleValueveh = val / 100
 end)
 scaleValueveh = menu.get_value(scaleSliderveh) / 100
+
 colorRefveh = menu.colour(Entitymanagerespvehicle, "color", {}, "", colorveh, true, function(c)
 	colorveh = c
 end)
+
 maxDistSliderveh = menu.slider(Entitymanagerespvehicle, "max Dist", {"setdisvehicle"}, "", 10, 10000, maxDistanceveh, 10, function(val)
 	maxDistanceveh = val
 end)
@@ -1930,12 +2288,21 @@ ownertoggleveh = menu.toggle(Entitymanagerespvehicle, "show Owner", {}, "", func
 	showownerveh = on
 end, showownerveh)
 showownerveh = menu.get_value(ownertoggleveh)
+onlyotherownertoggleveh = menu.toggle(Entitymanagerespvehicle, "show only other Owners", {}, "", function(on)
+	showonlyotherownerveh = on
+end, showonlyotherownerveh)
+showonlyotherownerveh = menu.get_value(onlyotherownertoggleveh)
+destroyedtoggleveh = menu.toggle(Entitymanagerespvehicle, "show Destroyed vehicle", {}, "", function(on)
+	showdestroyedveh = on
+end, showdestroyedveh)
+showdestroyedveh = menu.get_value(destroyedtoggleveh)
 
 local enabledped, showonlymissionped = false, false
 local xValueped, yValueped, scaleValueped = 0, 0, 35
 local colorped = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistanceped = 700
-local showDistanceped, shownameped, showmissionped, showvehpedisinped, showownerped, showentitygroupped = true, true, true, true, false, true
+local showDistanceped, shownameped, showmissionped, showvehpedisinped, showownerped, showentitygroupped, showdeadped, 
+getonlyvisibleped, showpedsinvehped, showonlyblibsped = true, true, true, true, false, true, false, false, true, false
 
 	local function renderESPped(givedata)
 		if not enabledped then
@@ -1947,7 +2314,7 @@ local showDistanceped, shownameped, showmissionped, showvehpedisinped, showowner
 	    local myPos = players.get_position(players.user())
 	    for _, peds in pairs(entities.get_all_peds_as_pointers()) do
 			local pedshandle = entities.pointer_to_handle(peds)
-	        if not IS_ENTITY_ON_SCREEN(pedshandle) then
+	        if (not IS_ENTITY_ON_SCREEN(pedshandle)) and getonlyvisibleped then
 	            goto continue
 	        end
 			local modelhash = entities.get_model_hash(peds)
@@ -1959,12 +2326,22 @@ local showDistanceped, shownameped, showmissionped, showvehpedisinped, showowner
 	        end
 			local ispedinveh = IS_PED_IN_ANY_VEHICLE(pedshandle, false)
 			local vehofped = GET_VEHICLE_PED_IS_IN(pedshandle, false)
-			local vehmodelhas = entities.get_model_hash(vehofped)
+			local vehmodelhash = entities.get_model_hash(vehofped)
 			local missionentityped = IS_ENTITY_A_MISSION_ENTITY(pedshandle)
+			ispeddead = IS_PED_DEAD_OR_DYING(pedshandle, 1)
 			if IS_PED_A_PLAYER(pedshandle) then
 				goto continue
 			end
 			if (not missionentityped) and showonlymissionped then
+				goto continue
+			end
+			if not showdeadped and ispeddead then
+				goto continue
+			end
+			if ispedinveh and not showpedsinvehped then
+				goto continue
+			end
+			if showonlyblibsped and (GET_BLIP_FROM_ENTITY(pedshandle) == 0) then
 				goto continue
 			end
 	        local posToUse = pPos
@@ -1985,7 +2362,7 @@ local showDistanceped, shownameped, showmissionped, showvehpedisinped, showowner
 	            valuesToDisplay[#valuesToDisplay + 1] = textLine
 	        end
 	        if ispedinveh and showvehpedisinped then
-				valuesToDisplay[#valuesToDisplay + 1] = "Vehicle: ".. getmodelnamebyhash(vehmodelhas)
+				valuesToDisplay[#valuesToDisplay + 1] = "Vehicle: ".. getmodelnamebyhash(vehmodelhash)
 			end
 			if missionentityped and showmissionped then
 				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
@@ -1994,9 +2371,17 @@ local showDistanceped, shownameped, showmissionped, showvehpedisinped, showowner
 				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerped
 			end
 	        local text = table.concat(valuesToDisplay, "\n")
-	        directx.draw_text(screenX + xValueped, screenY + yValueped, text, 5, scaleValueped, colorped, false)
-	        ::continue::
+			if not givedata then
+	        	directx.draw_text(screenX + xValueped, screenY + yValueped, text, 5, scaleValueped, colorped, false)
+			end
+			if givedata then
+				table.insert(data, pedshandle)
+			end
+			::continue::
 	    end
+		if givedata then
+			return data
+		end
 	end
 	
 enabledToggleped = menu.toggle(Entitymanageresppeds, "Enable ESP Ped", {"ESPped"}, "", function(on_toggle)
@@ -2017,6 +2402,179 @@ onlymissionToggleped = menu.toggle(Entitymanageresppeds, "Show Only Mission", {}
 	showonlymissionped = on
 end, showonlymissionped)
 showonlymissionped = menu.get_value(onlymissionToggleped)
+onlyblibsToggleped = menu.toggle(Entitymanageresppeds, "Show Only peds with blibs", {}, "", function(on)
+	showonlyblibsped = on
+end, showonlyblibsped)
+showonlyblibsped = menu.get_value(onlyblibsToggleped)
+
+local actionSubmenuped = menu.list(Entitymanageresppeds, "Action", {}, "action für die auf dennen ESP drauf ist")
+local actionsettingsSubmenuped = menu.list(actionSubmenuped, "Settings", {}, "")
+local explosionsettingped = menu.list_select(actionsettingsSubmenuped, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", EXPLOSIONVARIATION, explosiontype, function(value)
+	explosiontype = value
+end)
+onlyvisibleToggleped = menu.toggle(actionSubmenuped, "get only visible peds", {}, "", function(on)
+	getonlyvisibleped = on
+end, getonlyvisibleped)
+getonlyvisibleped = menu.get_value(onlyvisibleToggleped)
+menu.action(actionSubmenuped, "teleport to me", {}, "ignoriert spieler", function()
+	local data = renderESPped(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if not IS_PED_A_PLAYER(entity) then
+				if entities.request_control(entity, 150) then
+					if IS_PED_IN_ANY_VEHICLE(entity, false) then
+						CLEAR_PED_TASKS_IMMEDIATELY(entity)
+						TASK_LEAVE_ANY_VEHICLE(entity, 0, 16)
+						SET_ENTITY_COORDS(entity, pPos.x, pPos.y, pPos.z)
+					else
+						SET_ENTITY_COORDS(entity, pPos.x, pPos.y, pPos.z)
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuped, "Delete", {}, "", function()
+	local data = renderESPped(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if not IS_PED_A_PLAYER(entity) then
+				if entities.request_control(entity, 150) then
+					entities.delete(entity)
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuped, "Explode", {}, "", function()
+	local time = 0
+	local data = renderESPped(true)
+	if data then
+		for data as entity do
+			--local pointerent = entities.handle_to_pointer(entity)
+			--local positon = entities.get_position(pointerent)
+			local boneindex = GET_ENTITY_BONE_INDEX_BY_NAME(entity, "IK_Head")
+			local position = GET_ENTITY_BONE_POSTION(entity, boneindex)
+			if position ~= number then
+				if not IS_PED_A_PLAYER(entity) then
+					if GET_ENTITY_CAN_BE_DAMAGED(entity) then
+						repeat
+							util.yield()
+							time += 1
+							ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 1, true, false, 0.0, false)
+						until (IS_PED_DEAD_OR_DYING(entity)) or time == 100 or (not DOES_ENTITY_EXIST(entity))
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuped, "HEAL", {}, "", function()
+	local data = renderESPped(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if not IS_PED_A_PLAYER(entity) then
+				if entities.request_control(entity, 150) then
+					maxhealth = GET_PED_MAX_HEALTH(entity)
+					SET_ENTITY_HEALTH(entity, maxhealth, 0)
+					STOP_ENTITY_FIRE(entity)
+					CLEAR_PED_TASKS_IMMEDIATELY(entity)
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuped, "silent kill", {}, "", function()
+	local data = renderESPped(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if not IS_PED_A_PLAYER(entity) then
+				if entities.request_control(entity, 150) then
+					SET_ENTITY_HEALTH(entity, 0, 0)
+					FORCE_PED_MOTION_STATE(entity, 0x0DBB071C, 0,0,0)
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuped, "Clear Tasks", {}, "", function()
+	local data = renderESPped(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if not IS_PED_A_PLAYER(entity) then
+				if entities.request_control(entity, 150) then
+					CLEAR_PED_TASKS_IMMEDIATELY(entity)
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuped, "Freeze", {}, "", function()
+	local data = renderESPped(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if not IS_PED_A_PLAYER(entity) then
+				if entities.request_control(entity, 150) then
+					FREEZE_ENTITY_POSITION(entity, true)
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuped, "UN Freeze", {}, "", function()
+	local data = renderESPped(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if not IS_PED_A_PLAYER(entity) then
+				if entities.request_control(entity, 150) then
+					FREEZE_ENTITY_POSITION(entity, false)
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuped, "Leave all vehicle", {}, "", function()
+	local data = renderESPped(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if not IS_PED_A_PLAYER(entity) then
+				if IS_PED_IN_ANY_VEHICLE(entity) then
+					local getvehicle = GET_VEHICLE_PED_IS_IN(entity, false)
+					if entities.request_control(entity, 150) then
+						TASK_LEAVE_VEHICLE(entity, getvehicle, 16)
+					end
+				end
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+
 local positionSubmenuped = menu.list(Entitymanageresppeds, "position", {}, "")
 xSliderped = menu.slider(positionSubmenuped, "XPos", {}, "", -10, 10, xValueped, 1, function(val)
 	xValueped = val / 200
@@ -2030,9 +2588,11 @@ scaleSliderped = menu.slider(positionSubmenuped, "scale", {}, "", 1, 200, scaleV
 	scaleValueped = val / 100
 end)
 scaleValueped = menu.get_value(scaleSliderped) / 100
+
 colorRefped = menu.colour(Entitymanageresppeds, "color", {}, "", colorped, true, function(c)
 	colorped = c
 end)
+
 maxDistSliderped = menu.slider(Entitymanageresppeds, "max Dist", {"setdisped"}, "", 10, 10000, maxDistanceped, 10, function(val)
 	maxDistanceped = val
 end)
@@ -2050,6 +2610,10 @@ nametoggleped = menu.toggle(Entitymanageresppeds, "show Name", {}, "", function(
 	shownameped = on
 end, shownameped)
 shownameped = menu.get_value(nametoggleped)
+pedsinvehtoggleped = menu.toggle(Entitymanageresppeds, "show Peds in vehicle", {}, "", function(on)
+	showpedsinvehped = on
+end, showpedsinvehped)
+showpedsinvehped = menu.get_value(pedsinvehtoggleped)
 vehpedisintoggleped = menu.toggle(Entitymanageresppeds, "show Vehicle PedIsIn", {}, "", function(on)
 	showvehpedisinped = on
 end, showvehpedisinped)
@@ -2058,6 +2622,10 @@ missiontoggleped = menu.toggle(Entitymanageresppeds, "show Mission Entity", {}, 
 	showmissionped = on
 end, showmissionped)
 showmissionped = menu.get_value(missiontoggleped)
+deadtoggleped = menu.toggle(Entitymanageresppeds, "show dead peds", {}, "", function(on)
+	showdeadped = on
+end, showdeadped)
+showdeadped = menu.get_value(deadtoggleped)
 ownertoggleped = menu.toggle(Entitymanageresppeds, "show Owner", {}, "", function(on)
 	showownerped = on
 end, showownerped)
@@ -2068,7 +2636,7 @@ local enabledobj, showonlymissionobj = false, false
 local xValueobj, yValueobj, scaleValueobj = 0, 0, 35
 local colorobj = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistanceobj = 300
-local showDistanceobj, shownameobj, showmissionobj, showownerobj, showattachtoobjobj, showattachtopedobj, showattachtovehobj, showentitygroupobj = true, true, true, true, false, false, false, true
+local showDistanceobj, shownameobj, showmissionobj, showownerobj, showattachtoobjobj, showattachtopedobj, showattachtovehobj, showentitygroupobj, getonlyvisibleobj = true, true, true, true, false, false, false, true, false
 
 	local function renderESPobj(givedata)
 		if not enabledobj then
@@ -2080,7 +2648,7 @@ local showDistanceobj, shownameobj, showmissionobj, showownerobj, showattachtoob
 	    local myPos = players.get_position(players.user())
 	    for _, objs in pairs(entities.get_all_objects_as_pointers()) do
 			local objshandle = entities.pointer_to_handle(objs)
-	        if not IS_ENTITY_ON_SCREEN(objshandle) then
+	        if not IS_ENTITY_ON_SCREEN(objshandle) and getonlyvisibleobj then
 	            goto continue
 	        end
 			local modelhash = entities.get_model_hash(objs)
@@ -2097,21 +2665,45 @@ local showDistanceobj, shownameobj, showmissionobj, showownerobj, showattachtoob
 			if (not missionentityobj) and showonlymissionobj then
 				goto continue
 			end
-			if attachedobj and (not showattachtoobjobj) then
+			if showattachtoobjobj or showattachtopedobj or showattachtovehobj then
+				if attachedobj or attachedped or attachedveh then
+					if attachedobj and showattachtoobjobj then
+						goto checkdone
+					end
+					if attachedped and showattachtopedobj then
+						goto checkdone
+					end
+					if attachedveh and showattachtovehobj then
+						goto checkdone
+					end
+				end
 				goto continue
 			end
-			if attachedped and (not showattachtopedobj) then
+			--[[if not attachedobj and showattachtoobjobj then
 				goto continue
 			end
-			if attachedveh and (not showattachtovehobj) then
+			if not attachedped and showattachtopedobj then
 				goto continue
 			end
+			if not attachedveh and showattachtovehobj then
+				goto continue
+			end]]
+			::checkdone::
 	        local posToUse = pPos
 	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
 	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
 	        local valuesToDisplay = {}
 			if showentitygroupobj then
 	            valuesToDisplay[#valuesToDisplay + 1] = "OBJECT"
+	        end
+			if attachedobj and showattachtoobjobj then
+	            valuesToDisplay[#valuesToDisplay + 1] = "Attached to OBJ"
+	        end
+			if attachedped and showattachtopedobj then
+	            valuesToDisplay[#valuesToDisplay + 1] = "Attached to PED"
+	        end
+			if attachedveh and showattachtovehobj then
+	            valuesToDisplay[#valuesToDisplay + 1] = "Attached to VEH"
 	        end
 			if showDistanceobj then
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
@@ -2130,9 +2722,17 @@ local showDistanceobj, shownameobj, showmissionobj, showownerobj, showattachtoob
 				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerobj
 			end
 	        local text = table.concat(valuesToDisplay, "\n")
-	        directx.draw_text(screenX + xValueobj, screenY + yValueobj, text, 5, scaleValueobj, colorobj, false)
-	        ::continue::
+			if not givedata then
+	        	directx.draw_text(screenX + xValueobj, screenY + yValueobj, text, 5, scaleValueobj, colorobj, false)
+			end
+			if givedata then
+				table.insert(data, objshandle)
+			end
+			::continue::
 	    end
+		if givedata then
+			return data
+		end
 	end
 	
 enabledToggleobj = menu.toggle(Entitymanagerespobjects, "Enable ESP Objects", {"ESPobject"}, "", function(on_toggle)
@@ -2153,6 +2753,38 @@ onlymissionToggleobj = menu.toggle(Entitymanagerespobjects, "Show Only Mission",
 	showonlymissionobj = on
 end, showonlymissionobj)
 showonlymissionobj = menu.get_value(onlymissionToggleobj)
+local actionSubmenuobj = menu.list(Entitymanagerespobjects, "Action", {}, "action für die auf dennen ESP drauf ist")
+onlyvisibleToggleobj = menu.toggle(actionSubmenuobj, "get only visible OBJ", {}, "", function(on)
+	getonlyvisibleobj = on
+end, getonlyvisibleobj)
+getonlyvisibleobj = menu.get_value(onlyvisibleToggleobj)
+menu.action(actionSubmenuobj, "teleport to me", {}, "", function()
+	local data = renderESPobj(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if entities.request_control(entity, 150) then
+				SET_ENTITY_COORDS_NO_OFFSET(entity, pPos.x, pPos.y, pPos.z, false, false, false)
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenuobj, "Delete", {}, "", function()
+	local data = renderESPobj(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if entities.request_control(entity, 150) then
+				entities.delete(entity)
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+
 local positionSubmenuobj = menu.list(Entitymanagerespobjects, "position", {}, "")
 xSliderobj = menu.slider(positionSubmenuobj, "XPos", {}, "", -10, 10, xValueobj, 1, function(val)
 	xValueobj = val / 200
@@ -2194,15 +2826,15 @@ ownertoggleobj = menu.toggle(Entitymanagerespobjects, "show Owner", {}, "", func
 	showownerobj = on
 end, showownerobj)
 showownerobj = menu.get_value(ownertoggleobj)
-attachtoobjtoggleobj = menu.toggle(Entitymanagerespobjects, "show Attachted Obj to Obj", {}, "", function(on)
+attachtoobjtoggleobj = menu.toggle(Entitymanagerespobjects, "show Only Attachted Obj to Obj", {}, "", function(on)
 	showattachtoobjobj = on
 end, showattachtoobjobj)
 showattachtoobjobj = menu.get_value(attachtoobjtoggleobj)
-attachtopedtoggleobj = menu.toggle(Entitymanagerespobjects, "show Attachted Obj to Ped", {}, "", function(on)
+attachtopedtoggleobj = menu.toggle(Entitymanagerespobjects, "show Only Attachted Obj to Ped", {}, "", function(on)
 	showattachtopedobj = on
 end, showattachtopedobj)
 showattachtopedobj = menu.get_value(attachtopedtoggleobj)
-attachtovehtoggleobj = menu.toggle(Entitymanagerespobjects, "show Attachted Obj to Veh", {}, "", function(on)
+attachtovehtoggleobj = menu.toggle(Entitymanagerespobjects, "show Only Attachted Obj to Veh", {}, "", function(on)
 	showattachtovehobj = on
 end, showattachtovehobj)
 showattachtovehobj = menu.get_value(attachtovehtoggleobj)
@@ -2211,7 +2843,7 @@ local enabledpickup, showonlymissionpickup = false, false
 local xValuepickup, yValuepickup, scaleValuepickup = 0, 0, 35
 local colorpickup = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistancepickup = 1000
-local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, showentitiygrouppickup = true, true, true, true, true
+local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, showentitiygrouppickup, getonlyvisiblepickups = true, true, true, true, true, false
 
 	local function renderESPpickup(givedata)
 		if not enabledpickup then
@@ -2223,7 +2855,7 @@ local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, sh
 	    local myPos = players.get_position(players.user())
 	    for _, pickups in pairs(entities.get_all_pickups_as_pointers()) do
 			local pickupshandle = entities.pointer_to_handle(pickups)
-	        if not IS_ENTITY_ON_SCREEN(pickupshandle) then
+	        if not IS_ENTITY_ON_SCREEN(pickupshandle) and getonlyvisiblepickups then
 	            goto continue
 	        end
 			local modelhash = entities.get_model_hash(pickups)
@@ -2261,15 +2893,17 @@ local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, sh
 				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerpickup
 			end
 	        local text = table.concat(valuesToDisplay, "\n")
-	        directx.draw_text(screenX + xValuepickup, screenY + yValuepickup, text, 5, scaleValuepickup, colorpickup, false)
-			if givedata then
-				data.handle = pickupshandle
-				data.position = pPos
-				data.hash = modelhash
-				return data
+			if not givedata then
+	       		directx.draw_text(screenX + xValuepickup, screenY + yValuepickup, text, 5, scaleValuepickup, colorpickup, false)
 			end
-	        ::continue::
-	    end
+			if givedata then
+				table.insert(data, pickupshandle)
+			end
+			::continue::
+		end
+		if givedata then
+			return data
+		end
 	end
 	
 enabledTogglepickup = menu.toggle(Entitymanageresppickups, "Enable ESP Pickups", {"ESPpickup"}, "", function(on_toggle)
@@ -2290,6 +2924,38 @@ onlymissionTogglepickup = menu.toggle(Entitymanageresppickups, "Show Only Missio
 	showonlymissionpickup = on
 end, showonlymissionpickup)
 showonlymissionpickup = menu.get_value(onlymissionTogglepickup)
+
+local actionSubmenupickups = menu.list(Entitymanageresppickups, "Action", {}, "action für die auf dennen ESP drauf ist")
+onlyvisibleTogglepickups = menu.toggle(actionSubmenupickups, "get only visible vehs", {}, "", function(on)
+	getonlyvisiblepickups = on
+end, getonlyvisiblepickups)
+getonlyvisiblepickups = menu.get_value(onlyvisibleTogglepickups)
+menu.action(actionSubmenupickups, "teleport to me", {}, "", function()
+	local data = renderESPpickup(true)
+	if data then
+		pPos = players.get_position(players.user())
+		for data as entity do
+			if entities.request_control(entity, 150) then
+				SET_ENTITY_COORDS(entity, pPos.x, pPos.y, pPos.z)
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+menu.action(actionSubmenupickups, "Delete", {}, "", function()
+	local data = renderESPpickup(true)
+	if data then
+		for data as entity do
+			if entities.request_control(entity, 150) then
+				entities.delete(entity)
+			end
+		end
+	else
+		util.toast("du musst zuerst das ESP an machen dafür")
+	end
+end)
+
 local positionSubmenupickup = menu.list(Entitymanageresppickups, "position", {}, "")
 xSliderpickup = menu.slider(positionSubmenupickup, "XPos", {}, "", -10, 10, xValuepickup, 1, function(val)
 	xValuepickup = val / 200
@@ -2303,9 +2969,11 @@ scaleSliderpickup = menu.slider(positionSubmenupickup, "scale", {}, "", 1, 200, 
 	scaleValuepickup = val / 100
 end)
 scaleValuepickup = menu.get_value(scaleSliderpickup) / 100
+
 colorRefpickup = menu.colour(Entitymanageresppickups, "color", {}, "", colorpickup, true, function(c)
 	colorpickup = c
 end)
+
 maxDistSliderpickup = menu.slider(Entitymanageresppickups, "max Dist", {"setdispickup"}, "", 10, 10000, maxDistancepickup, 10, function(val)
 	maxDistancepickup = val
 end)
@@ -2332,6 +3000,97 @@ ownertogglepickup = menu.toggle(Entitymanageresppickups, "show Owner", {}, "", f
 end, showownerpickup)
 showownerpickup = menu.get_value(ownertogglepickup)
 
+local Entitymanagernearvehiclevehicles = menu.list(Entitymanagernearvehicle, "vehicles", {}, "")
+
+
+local enablednearvehicle = false
+local vehicledata = {}
+
+local function getnearvehicle()
+	if not enablednearvehicle then
+		if not enablednearvehicle then
+			for vehicledata as vehhandle do
+				if menu.is_ref_valid(veh[vehhandle]) then
+					menu.delete(veh[vehhandle])
+				end
+			end
+			for a, msg in ipairs(vehicledata) do
+				table.remove(vehicledata, a)
+			end
+			return false
+		end
+	end
+	if util.is_session_transition_active() then
+		goto end
+	end
+	local allpointer = entities.get_all_vehicles_as_pointers()
+	for _, vehpointer in pairs(allpointer) do
+		local vehhandle = entities.pointer_to_handle(vehpointer)
+		local modelhash = entities.get_model_hash(vehhandle)
+		local pPos = players.get_position(players.user())
+		local ePos = entities.get_position(vehpointer)
+		local dist = math.floor(pPos:distance(ePos))
+		local modelname = getmodelnamebyhash(modelhash)
+		if not table.contains(vehicledata, vehhandle) then
+			table.insert(vehicledata, vehhandle)
+			veh[vehhandle] = menu.list(Entitymanagernearvehiclevehicles, modelname.. "  [".. dist.. "]", {}, "")
+			menu.action(veh[vehhandle], "teleport to veh", {}, "", function()
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				local entitypPos = entities.get_position(entitypointer)
+				SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entitypPos.x, entitypPos.y, entitypPos.z, false, false, false)
+			end)
+			menu.action(veh[vehhandle], "teleport to me", {}, "", function()
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				local mypos = players.get_position(players.user())
+				local entitypPos = entities.get_position(entitypointer)
+				if getcontrole(entityhandle) then
+					SET_ENTITY_COORDS_NO_OFFSET(entityhandle, mypos.x, mypos.y, mypos.z, false, false, false)
+				end
+			end)
+			menu.action(veh[vehhandle], "dist", {}, "", function()
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				local mypos = players.get_position(players.user())
+				local entitypPos = entities.get_position(entitypointer)
+				local dist = math.floor(mypos:distance(entitypPos))
+				util.toast(dist)
+			end)
+		end
+	end
+	for vehicledata as vehhandle do
+		if not DOES_ENTITY_EXIST(vehhandle) then
+			if menu.is_ref_valid(veh[vehhandle]) then
+				menu.delete(veh[vehhandle])
+				for a, msg in ipairs(vehicledata) do
+					if msg == vehhandle then
+						table.remove(vehicledata, a)
+					end
+				end
+			end
+		end
+	end
+	::end::
+end
+
+
+enabledToggnearvehicle = menu.toggle(Entitymanagernearvehicle, "Enable get vehicles", {}, "", function(on_toggle)
+	if on_toggle then
+		enablednearvehicle  = true
+		util.create_tick_handler(getnearvehicle)
+	else
+		enablednearvehicle  = false
+	end
+end)
+
+
 menu.action(Self, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein waypoint gesetzt ist geht er da hin wenn keiner da ist geht er zu missions punkt", function()
 	if IS_WAYPOINT_ACTIVE() then
 		menu.trigger_commands("tpwp")
@@ -2352,6 +3111,8 @@ menu.toggle_loop(Self, 'Shoot gods', {}, 'Disables godmode for other players whe
 end
 end)
 
+
+--IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) or IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, vehicleped)
 menu.toggle_loop(Self, "Ghost Armed Players", {}, "macht godmode spieler zum geist für dich wenn sie auf dich ziehlen. \nwird nicht gehen wenn du godmode an hast weil du da ja eh unsterblich bist", function()
 for players.list_except(true) as pid do
 	local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
@@ -2361,7 +3122,7 @@ for players.list_except(true) as pid do
 	local vehicleped = GET_VEHICLE_PED_IS_IN(players.user_ped())
 	local pc = players.get_position(players.user())
 	local cc = players.get_position(pid)
-		if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) or IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, vehicleped) and not players.is_in_interior(pid) then
+		if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PED_FACING_PED(ped, pedplayer, 10) and not players.is_in_interior(pid) then
 			if players.is_godmode(pid) and not godmodeon then
 				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
 			end
@@ -2420,6 +3181,26 @@ menu.toggle_loop(Self, "Tempo anzeige nur im auto", {}, "macht die anzeige an we
 	on_stop = menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
 end)
 
+local timerforafk = 120
+local timegerade = util.current_time_millis()
+menu.toggle_loop(Self, "anti afk kill", {}, "", function()
+	if not util.is_session_transition_active() then
+		if isanykeypressed() then
+			timegerade = util.current_time_millis()
+			for players.list(false, true, true) as pid do
+				SET_REMOTE_PLAYER_AS_GHOST(pid, false)
+			end
+		elseif not isanykeypressed() and not isMoving(players.user_ped()) then
+			if (util.current_time_millis() - timegerade) >= (timerforafk * 1000) then
+				for players.list(false, true, true) as pid do
+					SET_REMOTE_PLAYER_AS_GHOST(pid, true)
+				end
+				util.draw_debug_text("[AFK] Spieler sind im Ghost")
+			end
+		end
+	end
+end)
+
 local auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "du kannst sagen was nicht aus gemacht werden soll weil das nicht gemacht werden muss. Ist aber würde ich sagen trz bei manchen missionen zu empfehlen")
 
 menu.toggle(auswahlauusmachen, "lockweapons", {}, "achte darauf das man es nicht an aus macht während man :zeug für job aus machen: an hat / wenn es an ist dann wird es nicht aus gemacht", function(on_toggle)
@@ -2460,7 +3241,6 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		Entityspamzeug = menu.get_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"))
 		restrictedareas = menu.get_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"))
 		wantedlevel = menu.get_value(menu.ref_by_path("Self>Lock Wanted Level"))
-		disynckarma = menu.get_value(menu.ref_by_path("Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma"))
 		hosttokenspoof = menu.get_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"))
 		allweapons = menu.get_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"))
 		
@@ -2487,7 +3267,6 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		menu.trigger_command(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), false)
 		menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), false)
 	else
 		zeugforthejob = false
@@ -2513,7 +3292,6 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
 		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
 		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
-		menu.set_value(menu.ref_by_path("Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma"), disynckarma)
 		menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
 	end
 end)
@@ -2532,7 +3310,6 @@ menu.action(Zeugforjob, "was deaktiviert wurde drück hier", {}, "zeigt was alle
 	util.toast("Join Group Override = Don't Override", TOAST_CONSOLE)
 	util.toast("Disable Restricted Areas 0 false", TOAST_CONSOLE)
 	util.toast("Lock Wanted Level = false", TOAST_CONSOLE)
-	util.toast("Desync Kick Karma = false", TOAST_CONSOLE)
 	util.toast("Host Token Spoofing = false", TOAST_CONSOLE)
 	util.toast("Guck in deine console da steht alles. wenn du keine hast fick dich")
 end)
@@ -2551,7 +3328,6 @@ local function zeugwiederan()
 		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
 		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
 		menu.set_value(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel1)
-		menu.set_value(menu.ref_by_path("Online>Protections>Love Letter & Desync Kicks>Desync Kick Karma"), disynckarma)
 		menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
 		menu.set_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), allweapons)
 	end
@@ -3162,7 +3938,7 @@ local xValue, yValue, scaleValue, fovset = 0, 0, 35, 10
 local color = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistance = 400
 local showDistance, showWanted, showRank, showLanguage, showName, showTags, showHealth, showArmor, showKD, showMoney, showWeapon, showInMyVehicle, showVehicle, showSpeed,
-	hideInterior, showBounty = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false
+	hideInterior, showBounty, showorgandowner, showorgmembers = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false, false, false
 
 	local function getName(pid, inVehicle)
 	    local value = ""
@@ -3265,6 +4041,36 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	        if playersInVehicle:len() > 0 then
 	            valuesToDisplay[#valuesToDisplay + 1] = "in Vehicle" .. ": " .. playersInVehicle:gsub(", $", "")
 	        end
+			local orgowner = players.get_boss(pid)
+			if showorgandowner then
+				if orgowner != -1 then
+					local orgtype = getorgtype(orgowner)
+					if orgtype != "false" then
+						if orgowner == pid then
+							valuesToDisplay[#valuesToDisplay + 1] = orgtype.. " [OWNER]"
+						else
+							valuesToDisplay[#valuesToDisplay + 1] = orgtype.. " [".. players.get_name(orgowner).. "]"
+						end
+					end
+				end
+			end
+			local orgmembers = ""
+			if showorgmembers then
+				if orgowner != -1 then
+					local orgmem = getorganisationplayers(pid)
+					if orgmem != {} then
+						for orgmem as orgmember do
+							if orgmember != orgowner then
+								nameoforgmembers = players.get_name(orgmember)
+								orgmembers = orgmembers .. nameoforgmembers .. ","
+							end
+						end
+					end
+				end
+			end
+			if orgmembers:len() > 0 then
+				valuesToDisplay[#valuesToDisplay + 1] = "Orgmembers: ".. orgmembers:gsub(", $", "")
+			end
 	        local hpData = getHealth(ped)
 	        if showHealth or showArmor then
 	            local textLine = ""
@@ -3381,6 +4187,14 @@ tagsToggle = menu.toggle(ESP, "showTags", {}, "", function(on)
 	showTags = on
 end, showTags)
 showTags = menu.get_value(tagsToggle)
+organdownerToggle = menu.toggle(ESP, "showorgandorgOwner", {}, "", function(on)
+	showorgandowner = on
+end, showorgandowner)
+showorgandowner = menu.get_value(organdownerToggle)
+orgmembersToggle = menu.toggle(ESP, "showorgmembers", {}, "", function(on)
+	showorgmembers = on
+end, showorgmembers)
+showorgmembers = menu.get_value(orgmembersToggle)
 hpToggle = menu.toggle(ESP, "showHealth", {}, "", function(on)
 	showHealth = on
 end, showHealth)
@@ -4016,10 +4830,10 @@ menu.action(tp, "Richtiges Teleportiren", {}, "Teleportiert die zu dir", functio
 	for pids = 0, 31 do
 		if excludeselected then
 			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-				local ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-				local pos = players.get_position(players.user())
-				local ppos = players.get_position(pids)
-				local vehin = IS_PED_IN_ANY_VEHICLE(ped, true)
+				ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
+				pos = players.get_position(players.user())
+				ppos = players.get_position(pids)
+				vehin = IS_PED_IN_ANY_VEHICLE(ped, true)
 				menu.trigger_commands("summon"..GET_PLAYER_NAME(pids))
 				if (VDIST2(pos.x,pos.y,pos.z,ppos.x,ppos.y,ppos.z) >= 1000000) then
 					util.yield(3500)
@@ -4031,10 +4845,10 @@ menu.action(tp, "Richtiges Teleportiren", {}, "Teleportiert die zu dir", functio
 			end
 		else
 			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-				local ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-				local pos = players.get_position(players.user())
-				local ppos = players.get_position(pids)
-				local vehin = IS_PED_IN_ANY_VEHICLE(ped, true)
+				ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
+				pos = players.get_position(players.user())
+				ppos = players.get_position(pids)
+				vehin = IS_PED_IN_ANY_VEHICLE(ped, true)
 				menu.trigger_commands("summon"..GET_PLAYER_NAME(pids))
 				if (VDIST2(pos.x,pos.y,pos.z,ppos.x,ppos.y,ppos.z) >= 1000000) then
 					util.yield(3500)
@@ -4427,11 +5241,17 @@ menu.toggle(Zeug_für_mich, "schnell laufen", {}, "", function(on_toggle)
 	end
 end)
 
+menu.toggle_loop(Zeug_für_mich, "Ist Unsichtbarkeit an", {}, "", function()
+	if menu.get_value(menu.ref_by_path("Self>Appearance>Invisibility")) == 1 then
+		util.draw_debug_text("Unsichtbarkeit ist an")
+	end
+end)
+
 menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
-	local keyCode = getKeyCode('VK_W')
-	local keyCode1 = getKeyCode('VK_S')
-	local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
-	local currentSpeed = GET_ENTITY_SPEED(vehicle)
+	keyCode = getKeyCode('VK_W')
+	keyCode1 = getKeyCode('VK_S')
+	vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
+	currentSpeed = GET_ENTITY_SPEED(vehicle)
 	umrechnung = a / 10
 	if util.is_key_down(keyCode) and IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
 		APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehicle, 1, 0.0, umrechnung, 0.0, true, true, true, true)
@@ -4444,17 +5264,28 @@ menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "
 	a = boost
 end)
 
+menu.toggle_loop(vehicle, "Stick to ground kake", {}, "", function()
+	vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
+	pPos = players.get_position(players.user())
+	getground = get_ground_z(pPos)
+	if getground ~= number then
+		if pPos.z >= (getground + 1) then
+			APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehicle, 1, 0.0, 0.0, -20, true, true, true, true)
+		end
+	end
+end)
+
 menu.click_slider(vehicle, "speed boost", {"selfboostsset"}, "[50 - 10000]\ngib die kmh an auf die es boosten soll", 50 ,10000, 0, 50, function(s)
 	speed = s
 	speedset = s / 3.6
-	local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
+	vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
 	if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
 		SET_VEHICLE_FORWARD_SPEED(vehicle, speedset)
 	end
 end)
 
 menu.action(vehicle, "sofort anhalten", {}, "", function()
-	local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
+	vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
 	if IS_PED_IN_ANY_VEHICLE(players.user_ped(),true) then
 		FREEZE_ENTITY_POSITION(vehicle, true)
 		FREEZE_ENTITY_POSITION(vehicle, false)
@@ -4465,11 +5296,11 @@ menu.action(vehicle, "sofort anhalten", {}, "", function()
 end)
 
 menu.action(vehicle,"Auto Reparieren", {}, "", function()
-		local vehicle = entities.get_user_vehicle_as_handle(players.user(), true)
-		local currentSpeed = GET_ENTITY_SPEED(vehicle)
-		local seatplayer = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
-		local pid = GET_NEAREST_PLAYER_TO_ENTITY(seatplayer)
-		local playername = players.get_name(pid)
+		vehicle = entities.get_user_vehicle_as_handle(players.user(), true)
+		currentSpeed = GET_ENTITY_SPEED(vehicle)
+		seatplayer = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
+		pid = GET_NEAREST_PLAYER_TO_ENTITY(seatplayer)
+		playername = players.get_name(pid)
 		if seatplayer == players.user_ped() or seatplayer == 0 then
 			SET_VEHICLE_FIXED(vehicle)
 			SET_VEHICLE_DIRT_LEVEL(vehicle, 0)
@@ -4482,38 +5313,33 @@ menu.action(vehicle,"Auto Reparieren", {}, "", function()
 		end
 end)
 
---[[menu.action(Zeug_für_mich,"test ding", {}, "", function()
-	local myposition = players.get_position(players.user())
-	local playerveh = GET_VEHICLE_PED_IS_IN(players.user_ped())
-	local positionveh = GET_WORLD_POSITION_OF_ENTITY_BONE(playerveh)
-	TASK_LEAVE_VEHICLE(players.user_ped(), playerveh, 16)
-	START_PLAYER_TELEPORT(players.user(),positionveh,false,true,false)
-	util.toast(positionveh)
-end)]]
-
 timer2 = 0
 menu.toggle_loop(vehicle, "instant veh enter/exit", {}, "halte F gedrückt dann setzt du dich in das auto was dir am nächsten ist in den settings kann man auswählen wie lange man drücken soll", function()
 if not util.is_session_transition_active() then
 	local keyCode = getKeyCode("VK_F")
-	local playernameself = players.get_name(players.user())
-	local myposition = players.get_position(players.user())
-	local mypositionvehicle = getClosestVehicle(myposition)
-	local vehhash = entities.get_model_hash(mypositionvehicle)
-	local ped = GET_PED_IN_VEHICLE_SEAT(mypositionvehicle, -1, true)
-	local missionped = IS_ENTITY_A_MISSION_ENTITY(ped)
-	local speedofvehicle = GET_ENTITY_SPEED(mypositionvehicle)
-	local flyingvehicle = IS_PED_IN_FLYING_VEHICLE(players.user_ped())
-	local doorindex = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_dside_f")
-	local doorindex2 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_dside_r")
-	local doorindex3 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_pside_f")
-	local doorindex4 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_pside_r")
-	local positionoffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(mypositionvehicle, -2, 0, 0)
-	local doorpositionleftfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex)
-	local doorpositionleftback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex2)
-	local doorpositionrightfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex3)
-	local doorpositionrightback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex4)
+	playernameself = players.get_name(players.user())
+	myposition = players.get_position(players.user())
+	mypositionvehicle = getClosestVehicle(myposition)
+	if not mypositionvehicle then
+		goto stop
+	else
+		vehhash = entities.get_model_hash(mypositionvehicle)
+		vehiclename = getmodelnamebyhash(vehhash)
+	end
+	ped = GET_PED_IN_VEHICLE_SEAT(mypositionvehicle, -1, true)
+	missionped = IS_ENTITY_A_MISSION_ENTITY(ped)
+	speedofvehicle = GET_ENTITY_SPEED(mypositionvehicle)
+	flyingvehicle = IS_PED_IN_FLYING_VEHICLE(players.user_ped())
+	doorindex = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_dside_f")
+	doorindex2 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_dside_r")
+	doorindex3 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_pside_f")
+	doorindex4 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_pside_r")
+	positionoffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(mypositionvehicle, -2, 0, 0)
+	doorpositionleftfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex)
+	doorpositionleftback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex2)
+	doorpositionrightfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex3)
+	doorpositionrightback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex4)
 	local seatofplayer = getseatofplayer(mypositionvehicle)
-	local vehiclename = getmodelnamebyhash(vehhash)
 	local personalveh = entities.get_user_personal_vehicle_as_handle(players.user())
 	timer1 = 0
 	if not IS_PED_IN_ANY_VEHICLE(players.user_ped(), false) then --and not (GET_IS_TASK_ACTIVE(ped, 160)) then
@@ -4539,7 +5365,7 @@ if not util.is_session_transition_active() then
 			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
 			timer1 = 0
 		if IS_PED_A_PLAYER(ped) and not (ped == players.user_ped()) then
-			local pid = GET_NEAREST_PLAYER_TO_ENTITY(ped)
+			pid = GET_NEAREST_PLAYER_TO_ENTITY(ped)
 			local getplayername = players.get_name(pid)
 			if not ifplayerincar then
 				if ARE_ANY_VEHICLE_SEATS_FREE(mypositionvehicle) then
@@ -4612,7 +5438,7 @@ if not util.is_session_transition_active() then
 					if missionnpc then
 						if missionped then
 							SET_ENTITY_COORDS_NO_OFFSET(ped, doorpositionleftfront, false, false, false)
-							local pedpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(ped, -3, 0, 0)
+							pedpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(ped, -3, 0, 0)
 							SET_ENTITY_COORDS_NO_OFFSET(ped, pedpos.x, pedpos.y, pedpos.z, false, false, false)
 						else
 		   					entities.delete_by_handle(ped)
@@ -4701,9 +5527,9 @@ if not util.is_session_transition_active() then
 							BRING_VEHICLE_TO_HALT(mypositionvehicle, 0, 1, false)
 						end
 							SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), doorpositionleftfront, false, false, false)
-							local posminus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), -0.5, 0, 0)
+							posminus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), -0.5, 0, 0)
 							if groundspawn and not IS_PED_IN_ANY_BOAT(players.user_ped()) then
-								local groundposminus = get_ground_z(posminus) + 1
+								groundposminus = get_ground_z(posminus) + 1
 								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posminus.x, posminus.y, groundposminus, false, false, false)
 							else
 								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posminus.x, posminus.y, posminus.z, false, false, false)
@@ -4711,18 +5537,18 @@ if not util.is_session_transition_active() then
 					else
 						if doorindex3 > -1 then
 							SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), doorpositionrightfront, false, false, false)
-							local posplus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0.5, 0, 0)
+							posplus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0.5, 0, 0)
 							if groundspawn and not IS_PED_IN_ANY_BOAT(players.user_ped()) then
-								local groundposplus = get_ground_z(posplus) + 1
+								groundposplus = get_ground_z(posplus) + 1
 								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posplus.x, posplus.y, groundposplus, false, false, false)
 							else
 								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posplus.x, posplus.y, posplus.z, false, false, false)
 							end
 						elseif doorindex > -1 then
 							SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), doorpositionleftfront, false, false, false)
-							local posminus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), -0.5, 0, 0)
+							posminus = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), -0.5, 0, 0)
 							if groundspawn and not IS_PED_IN_ANY_BOAT(players.user_ped()) then
-								local groundposminus = get_ground_z(posminus) + 1
+								groundposminus = get_ground_z(posminus) + 1
 								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posminus.x, posminus.y, groundposminus, false, false, false)
 							else
 								SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), posminus.x, posminus.y, posminus.z, false, false, false)
@@ -4742,6 +5568,7 @@ if not util.is_session_transition_active() then
 			end
 		end
 	end
+	::stop::
 end
 end)
 
@@ -4761,7 +5588,7 @@ menu.toggle_loop(Zeug_für_mich, "nach loaden auto spawnen", {}, "", function()
 			util.yield()
 		until not util.is_session_transition_active()
 		util.yield(3000)
-		local persoveh = entities.get_user_personal_vehicle_as_handle()
+		persoveh = entities.get_user_personal_vehicle_as_handle()
 		if persoveh == -1 then
 			menu.trigger_commands("claimallvehicles")
 		end
@@ -4820,8 +5647,9 @@ end)
 
 local entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
 local enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
+local miscs = menu.list(settings, "Misc", {}, "", function(); end)
 
-menu.toggle(settings, "host kick freunde", {}, "AN = kickt auch freunde\nAUS = kickt keine freunde", function(on_toggle)
+menu.toggle(miscs, "host kick freunde", {}, "AN = kickt auch freunde\nAUS = kickt keine freunde", function(on_toggle)
 	if on_toggle then
 		hostkickfriends = true
 	else
@@ -4829,9 +5657,9 @@ menu.toggle(settings, "host kick freunde", {}, "AN = kickt auch freunde\nAUS = k
 	end
 end)
 
-menu.action(settings, "alle sachen bei spielern ausssachlten", {}, "wenn du bei dem org ding was angemacht hast und es bei allen spieler wieder aus machen willst drück einfach hier", function()
+menu.action(miscs, "alle sachen bei spielern ausssachlten", {}, "wenn du bei dem org ding was angemacht hast und es bei allen spieler wieder aus machen willst drück einfach hier", function()
 	for players.list(false, true, true) as pid do
-		local playername = players.get_name(pid)
+		playername = players.get_name(pid)
 		menu.trigger_commands("givevehgod".. playername.. " off")
 		util.yield(20)
 		menu.trigger_commands("ceopay".. playername.. " off")
@@ -4862,6 +5690,10 @@ menu.action(settings, "alle sachen bei spielern ausssachlten", {}, "wenn du bei 
 		util.yield(20)
 	end
 	util.toast("es wurde alles aus gemacht")
+end)
+
+sliderforaktimer = menu.slider(miscs, "anti afk kill timer", {"enterafktimer"}, "sekunden", 10, 300, timerforafk, 10, function(value)
+	timerforafk = value
 end)
 
 menu.toggle(enterexitsettings, "npc auto klauen oder beifahrer", {}, "AN = beifahrer\nAUS = klauen", function(on_toggle)
