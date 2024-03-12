@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.38
+local localVer = 0.39
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -463,10 +463,10 @@ local function getcontrole(entity)
 	local time = 0
 		repeat
 		time += 1
-		util.draw_debug_text("GETTING CONTROLE")
+		--util.draw_debug_text("GETTING CONTROLE")
 		NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
 			if time > 400 then
-				util.toast("konnte keine kontrolle bekommen")
+				--util.toast("konnte keine kontrolle bekommen")
 				time = 0
 				return false
 			end
@@ -703,6 +703,8 @@ local keyLookupTable = {
 
 local justPressed = {}
 local lastPressMS = {}
+
+local loadthigson = true
 
 local function getKeyCode(string_or_int)
     local lookup = keyLookupTable[string_or_int]
@@ -1931,7 +1933,8 @@ local enabledveh, showonlymissionveh = false, false
 local xValueveh, yValueveh, scaleValueveh = 0, 0, 35
 local colorveh = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistanceveh = 700
-local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, showinvehveh, showmissionveh, showownerveh, showentitygroupveh, showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh = true, true, true, true, false, false, false, false, true, false, false, true
+local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, showinvehveh, showmissionveh, showownerveh, showentitygroupveh, 
+showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true, true, true, true, false, false, false, false, true, false, false, true, true
 
 	local function renderESPveh(givedata)
 		if not enabledveh then
@@ -1983,10 +1986,13 @@ local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, show
 			if showDistanceveh then
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
-			if (shownameveh or showspeedveh) then
+			if (shownameveh or showspeedveh or showidnameveh) then
 	            local textLine = ""
 	            if shownameveh then
 	                textLine = getmodelnamebyhash(modelhash) .. " "
+	            end
+				if showidnameveh then
+	                textLine = textLine .. "["..util.reverse_joaat(modelhash) .. "] "
 	            end
 	            if showspeedveh and getSpeed(vehshandle, true) > 0 then
 	                textLine = textLine .. getSpeed(vehshandle)
@@ -2264,6 +2270,10 @@ nametoggleveh = menu.toggle(Entitymanagerespvehicle, "show Name", {}, "", functi
 	shownameveh = on
 end, shownameveh)
 shownameveh = menu.get_value(nametoggleveh)
+idnametoggleveh = menu.toggle(Entitymanagerespvehicle, "show ID Name", {}, "", function(on)
+	showidnameveh = on
+end, showidnameveh)
+showidnameveh = menu.get_value(idnametoggleveh)
 speedtoggleveh = menu.toggle(Entitymanagerespvehicle, "show Speed", {}, "", function(on)
 	showspeedveh = on
 end, showspeedveh)
@@ -3051,6 +3061,8 @@ local function getnearvehicle()
 				local entitypPos = entities.get_position(entitypointer)
 				if getcontrole(entityhandle) then
 					SET_ENTITY_COORDS_NO_OFFSET(entityhandle, mypos.x, mypos.y, mypos.z, false, false, false)
+				else
+					util.toast("konnte keine kontrolle bekommen")
 				end
 			end)
 			menu.action(veh[vehhandle], "dist", {}, "", function()
@@ -3678,6 +3690,8 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 					if is_key_just_down('VK_G') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 						if getcontrole(vehicleplayer) then
 							NETWORK_EXPLODE_VEHICLE(vehicleplayer, 1, 0, 0)
+						else
+							util.toast("konnte keine kontrolle bekommen")
 						end
 					end
 				else
@@ -3733,6 +3747,8 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				if is_key_just_down('VK_C') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 					if getcontrole(handle) then
 						CLEAR_PED_TASKS(handle)
+					else
+						util.toast("konnte keine kontrolle bekommen")
 					end
 				end
 			end
@@ -3761,6 +3777,8 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 			if is_key_just_down('VK_G') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 				if getcontrole(handle) then
 					NETWORK_EXPLODE_VEHICLE(handle, 1, 0, 0)
+				else
+					util.toast("konnte keine kontrolle bekommen")
 				end
 			end
 			if not schwerkraftan then
@@ -3931,6 +3949,7 @@ end)
 local anti_russen_zeug = menu.list(player_zeug, "Anti Länder zeug", {}, "")
 local leanderauswahl = menu.list(anti_russen_zeug, "länder auswahl", {}, "")
 local ESP = menu.list(player_zeug, "ESP", {}, "")
+local antivehicleaction = menu.list(player_zeug, "Anti vehicle action", {}, "")
 
 
 local enabled, enableOnAim = false, false
@@ -3938,7 +3957,7 @@ local xValue, yValue, scaleValue, fovset = 0, 0, 35, 10
 local color = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistance = 400
 local showDistance, showWanted, showRank, showLanguage, showName, showTags, showHealth, showArmor, showKD, showMoney, showWeapon, showInMyVehicle, showVehicle, showSpeed,
-	hideInterior, showBounty, showorgandowner, showorgmembers = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false, false, false
+	hideInterior, showBounty, showorgandowner, showorgmembers, showVehicleidname = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false, false, false, false
 
 	local function getName(pid, inVehicle)
 	    local value = ""
@@ -4020,6 +4039,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
 	        local valuesToDisplay = {}
 	        local playersInVehicle = ""
+			local vehidname = util.reverse_joaat(players.get_vehicle_model(pid))
 	        if vehicle and not isMyVehicle then
 	            local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehicle)
 	            for i = 0, maxPassengers do
@@ -4101,11 +4121,14 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	                valuesToDisplay[#valuesToDisplay + 1] = weapon
 	            end
 	        end
-	        if (showVehicle or showSpeed) and vehicle then
+	        if (showVehicle or showSpeed or showVehicleidname) and vehicle then
 	            local textLine = ""
 	            if showVehicle then
 	                textLine = getmodelnamebyhash(players.get_vehicle_model(pid)) .. " "
 	            end
+				if showVehicleidname then
+					textLine = textLine .. "["..vehidname.."]" .. " "
+				end
 	            if showSpeed and getSpeed(vehicle, true) > 0 then
 	                textLine = textLine .. getSpeed(vehicle)
 	            end
@@ -4158,7 +4181,7 @@ scaleValue = menu.get_value(scaleSlider) / 100
 colorRef = menu.colour(ESPSettings, "color", {}, "", color, true, function(c)
 	color = c
 end)
-maxDistSlider = menu.slider(ESPSettings, "maxDist", {}, "", 10, 10000, maxDistance, 10, function(val)
+maxDistSlider = menu.slider(ESPSettings, "maxDist", {"setespdist"}, "", 10, 10000, maxDistance, 10, function(val)
 	maxDistance = val
 end)
 maxDistance = menu.get_value(maxDistSlider)
@@ -4227,6 +4250,10 @@ vehicleToggle = menu.toggle(ESP, "showVehicle", {}, "", function(on)
 	showVehicle = on
 end, showVehicle)
 showVehicle = menu.get_value(vehicleToggle)
+vehicleidnameToggle = menu.toggle(ESP, "showVehicle ID name", {}, "", function(on)
+	showVehicleidname = on
+end, showVehicleidname)
+showVehicleidname = menu.get_value(vehicleidnameToggle)
 speedToggle = menu.toggle(ESP, "showSpeed", {}, "", function(on)
 	showSpeed = on
 end, showSpeed)
@@ -4565,6 +4592,257 @@ end
 players.on_join(kickhosttoken)
 players.on_join(playerjoinmassge)
 
+local vehicletablefotactions = {}
+local function sortKeys(a, b)
+	local ta, tb = type(a), type(b)
+ 
+ 
+	if ta == tb and (ta == 'string' or ta == 'number') then
+	   return (a) < (b)
+	end
+ 
+	local dta = defaultTypeOrders[ta] or 100
+	local dtb = defaultTypeOrders[tb] or 100
+ 
+ 
+	return dta == dtb and ta < tb or dta < dtb
+ end
+
+ function vehicle_spawn_list(root)
+    local general_list = root
+    local all_vehicles = util.get_vehicles()
+
+    local vehicles = util.get_vehicles()
+    table.sort(all_vehicles, function(a, b)
+        if a.class != b.class then
+            return lang.get_string(a.class) < lang.get_string(b.class)
+        end
+        return a.name < b.name
+    end)
+    
+    local current_class
+    local current_class_list
+    for all_vehicles as vehicle do
+        if current_class != vehicle.class then
+            current_class = vehicle.class
+            current_class_list = general_list:list(vehicle.class)
+        end
+
+        local vehicle_name = util.get_label_text(vehicle.name)
+        if vehicle_name == "NULL" then
+            continue
+        end
+		local vehhash1 = util.joaat(vehicle.name)
+
+        local action = current_class_list:toggle(util.get_label_text(vehicle.name), {"antivehicle"..vehhash1}, "", function(on_toggle)
+			local vehname = vehicle.name
+			local realvehname = util.get_label_text(vehname)
+			local vehhash = util.joaat(vehicle.name)
+			if on_toggle then
+				local vehhash = menu.action(vehiclesactivate,realvehname, {"antivehicleactivate"..vehhash}, "drück einfach drauf wenn du es raus nehmen willst", function()
+					menu.trigger_commands("antivehicle"..vehhash)
+				end)
+				table.insert(vehicletablefotactions, vehname)
+			else
+				if menu.is_ref_valid(menu.ref_by_command_name("antivehicleactivate"..vehhash)) then
+					menu.delete(menu.ref_by_command_name("antivehicleactivate"..vehhash))
+				end
+				for a, vehhashtable in ipairs(vehicletablefotactions) do
+					if vehhashtable == vehname then
+						table.remove(vehicletablefotactions, a)
+					end
+				end
+			end
+        end)
+    end
+end
+
+antiactionvehicles = menu.list(antivehicleaction, "vehicles auswahl", {}, "commands einfach ignorieren sind nur eine hilfe für mich")
+vehiclesactivate = menu.list(antiactionvehicles, "aktivierte vehicle", {}, "")
+antivehiclesettings = menu.list(antivehicleaction, "Settings", {}, "")
+
+local maxDistanceantiaction = 1000
+local antiactionfriends, antiactionnotify = false, true
+
+maxDistSliderantiaction = menu.slider(antivehiclesettings, "Dist", {"setactiondist"}, "random fahrzeuge können erst von dir ab ~ 800 gesehen werden\nfahrzeuge wie z.b. oppressor MKII wird auf der karte angezeigt als besonderes fahrzeug das geht von überall (meistens)", 10, 10000, maxDistanceantiaction, 10, function(val)
+	maxDistanceantiaction = val
+end)
+maxDistanceantiaction = menu.get_value(maxDistSliderantiaction)
+friendsToggle = menu.toggle(antivehiclesettings, "Freunde auch", {}, "", function(on)
+	antiactionfriends = on
+end, antiactionfriends)
+antiactionfriends = menu.get_value(friendsToggle)
+notifyactionToggle = menu.toggle(antivehiclesettings, "Notify bekommen", {}, "", function(on)
+	antiactionnotify = on
+end, antiactionnotify)
+antiactionnotify = menu.get_value(notifyactionToggle)
+
+menu.text_input(antiactionvehicles, "addveh", {"addtoantiveh"}, "WICHITG!!!!!!\ndort muss der id name vom auto rein.\num zu schauen wie der id name ist geh zum spawn menu von stand und gib das fahrzeug ein was du willst dann steht dort als befehl der id name\nich habe bei meinem esp ein anzeige gemacht wo man sehen kann was der name ist (id name)", function(input)
+	local hash = util.joaat(input)
+	for util.get_vehicles() as vehicles do
+		local hashveh = util.joaat(vehicles.name)
+		if hash == hashveh then
+			if menu.is_ref_valid(menu.ref_by_command_name("antivehicle"..hash)) then
+				menu.trigger_commands("antivehicle"..hash.. " on")
+				util.toast(getmodelnamebyhash(hash).. " wurde zur liste hinzugefügt")
+			else
+				util.toast("["..input.. "] gibt es nicht in dieser liste")
+			end
+		end
+	end
+	menu.set_value(menu.ref_by_command_name("addtoantiveh"), "")
+end)
+
+menu.toggle_loop(antivehicleaction, "kick of vehicle", {}, "", function()
+	local timer = 0
+	for players.list(false, true, true) as pid do
+		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+		if IS_PED_IN_ANY_VEHICLE(ped) then
+			local vehicle = GET_VEHICLE_PED_IS_USING(ped)
+			local vehicleofpid = players.get_vehicle_model(pid)
+			local pidname = players.get_name(pid)
+			local myPos = players.get_position(players.user())
+			local pPos = getPlayerPosition(pid)
+	        local dist = myPos:distance(pPos)
+			if PlayerisFriend(pid) and not antiactionfriends then
+				goto continue
+			end
+			--local modelhash = entities.get_model_hash(vehicle)
+			if vehicletablefotactions != {} and vehicleofpid != 0 then
+				for vehicletablefotactions as vehname do
+					local hash = util.joaat(vehname)
+					if hash == vehicleofpid then
+						if dist < maxDistanceantiaction then
+							SET_VEHICLE_EXCLUSIVE_DRIVER(vehicle, players.user_ped(), 0)
+							repeat
+								util.yield()
+								timer += 1
+								vehicleofpid = players.get_vehicle_model(pid)
+							until vehicleofpid == 0 or timer == 500
+							if timer == 500 then
+								if antiactionnotify then
+									util.toast(pidname.."  Konnte ihn nicht aus dem fahrzeug kicken")
+								end
+							else
+								if antiactionnotify then
+									util.toast(pidname.. " wurde aus dem ".. getmodelnamebyhash(vehicleofpid) .." gekickt")
+								end
+							end
+							timer = 0
+						end
+					end
+				end
+			end
+		end
+		::continue::
+	end
+end)
+menu.toggle_loop(antivehicleaction, "Delete vehicle", {}, "", function()
+	local timer = 0
+	for players.list(false, true, true) as pid do
+		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+		if IS_PED_IN_ANY_VEHICLE(ped) then
+			local vehicle = GET_VEHICLE_PED_IS_USING(ped)
+			local vehicleofpid = players.get_vehicle_model(pid)
+			local pidname = players.get_name(pid)
+			local myPos = players.get_position(players.user())
+			local pPos = getPlayerPosition(pid)
+	        local dist = myPos:distance(pPos)
+			if PlayerisFriend(pid) and not antiactionfriends then
+				goto continue
+			end
+			--local modelhash = entities.get_model_hash(vehicle)
+			if vehicletablefotactions != {} and vehicleofpid != 0 then
+				for vehicletablefotactions as vehname do
+					local hash = util.joaat(vehname)
+					if hash == vehicleofpid then
+						if dist < maxDistanceantiaction then
+							--menu.trigger_commands("delveh"..pidname)
+							if getcontrole(vehicle) then
+								entities.delete(vehicle)
+								repeat
+									util.yield()
+									timer += 1
+									vehicleofpid = players.get_vehicle_model(pid)
+								until vehicleofpid == 0 or timer == 500
+								if timer == 500 then
+									if antiactionnotify then
+										util.toast(pidname.."  Sein fahrzeug konnte nicht gelöscht werden")
+									end
+								else
+									if antiactionnotify then
+										util.toast(pidname.. "  wurde sein ".. getmodelnamebyhash(vehicleofpid) .." gelöscht")
+									end
+								end
+								timer = 0
+							else
+								if antiactionnotify then
+									util.toast(pidname.. "  konnte keine kontrolle bekommen")
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		::continue::
+	end
+end)
+menu.toggle_loop(antivehicleaction, "Explode vehicle", {}, "", function()
+	local timer = 0
+	for players.list(false, true, true) as pid do
+		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+		if IS_PED_IN_ANY_VEHICLE(ped) then
+			local vehicle = GET_VEHICLE_PED_IS_USING(ped)
+			local vehicleofpid = players.get_vehicle_model(pid)
+			local health = GET_VEHICLE_ENGINE_HEALTH(vehicle)
+			local pidname = players.get_name(pid)
+			local myPos = players.get_position(players.user())
+			local pidtags = players.get_tags_string(pid)
+			local pPos = getPlayerPosition(pid)
+	        local dist = myPos:distance(pPos)
+			if PlayerisFriend(pid) and not antiactionfriends then
+				goto continue
+			end
+			if players.is_godmode(pid) then
+				goto continue
+			end
+			--local modelhash = entities.get_model_hash(vehicle)
+			if vehicletablefotactions != {} and vehicleofpid != 0 then
+				for vehicletablefotactions as vehname do
+					local hash = util.joaat(vehname)
+					if hash == vehicleofpid then
+						if dist < maxDistanceantiaction then
+							if GET_ENTITY_CAN_BE_DAMAGED(vehicle) then
+								if health > 0 and not IS_PED_DEAD_OR_DYING(ped, 1) then
+									repeat
+										util.yield()
+										timer += 1
+										health = GET_VEHICLE_ENGINE_HEALTH(vehicle)
+										pPos = getPlayerPosition(pid)
+										ADD_EXPLOSION(pPos.x, pPos.y, pPos.z, 6, 1, true, false, 0.0, false)
+									until (health < 0) or (timer > 200)
+									if timer > 200 then
+										if antiactionnotify then
+											util.toast(pidname.."  Konnte ihn nicht Töten/fahrzeug zerstören")
+										end
+									elseif health < 0 then
+										if antiactionnotify then
+											util.toast(pidname.. " Sein auto ist zerstört")
+										end
+									end
+									timer = 0
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		::continue::
+	end
+end)
+
 local actionen = menu.list(custselc, "actionen", {}, "")
 local friendly = menu.list(actionen, "Friendly stuff", {}, "")
 local kicken = menu.list(actionen, "Kick/crash stuff", {}, "")
@@ -4782,13 +5060,17 @@ menu.action(kicken, "modder kicken", {}, "kicked alle die eine modder flag haben
 	for pids = 0, 31 do
 		if excludeselected then
 			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) and players.is_marked_as_modder(pids) then
+				if not PlayerisFriend(pids) then
 						  menu.trigger_commands("kick " .. GET_PLAYER_NAME(pids))
-				util.yield()
+					util.yield()
+				end
 			end
 		else
 			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) and players.is_marked_as_modder(pids) then
+				if not PlayerisFriend(pids) then
 						   menu.trigger_commands("kick " .. GET_PLAYER_NAME(pids))
-				util.yield()
+							util.yield()
+				end
 			end
 		end
 	end
@@ -5262,6 +5544,14 @@ end)
 menu.toggle_loop(Zeug_für_mich, "Ist Unsichtbarkeit an", {}, "", function()
 	if menu.get_value(menu.ref_by_path("Self>Appearance>Invisibility")) == 1 then
 		util.draw_debug_text("Unsichtbarkeit ist an")
+	end
+end)
+
+menu.toggle(Zeug_für_mich, "Unsichitbarkeit an/aus", {}, "", function(on_toggle)
+	if on_toggle then
+		menu.set_value(menu.ref_by_path("Self>Appearance>Invisibility"), 1)
+	else
+		menu.set_value(menu.ref_by_path("Self>Appearance>Invisibility"), 0)
 	end
 end)
 
@@ -5821,5 +6111,13 @@ menu.toggle(entitymanagersettings, "platz klauen oder dazu setzen NPC", {}, "wen
 		vehenterstealnpc = false
 	end
 end)
+
+loadthings = menu.action(settings, "loaded sachen ", {"loadstuff"}, "", function()
+	if not menu.is_ref_valid(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME ..">Player zeug>Anti vehicle action>vehicles>Boats")) then
+		vehicle_spawn_list(antiactionvehicles)
+	end
+end)
+
+menu.trigger_commands("loadstuff")
 
 util.keep_running()
