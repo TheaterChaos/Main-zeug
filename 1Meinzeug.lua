@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.39
+local localVer = 0.40
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -4704,6 +4704,7 @@ menu.toggle_loop(antivehicleaction, "kick of vehicle", {}, "", function()
 			local myPos = players.get_position(players.user())
 			local pPos = getPlayerPosition(pid)
 	        local dist = myPos:distance(pPos)
+			local fullvehname = getmodelnamebyhash(vehicleofpid)
 			if PlayerisFriend(pid) and not antiactionfriends then
 				goto continue
 			end
@@ -4725,10 +4726,111 @@ menu.toggle_loop(antivehicleaction, "kick of vehicle", {}, "", function()
 								end
 							else
 								if antiactionnotify then
-									util.toast(pidname.. " wurde aus dem ".. getmodelnamebyhash(vehicleofpid) .." gekickt")
+									util.toast(pidname.. " wurde aus dem ".. fullvehname .." gekickt")
 								end
 							end
 							timer = 0
+						end
+					end
+				end
+			end
+		end
+		::continue::
+	end
+end)
+menu.toggle_loop(antivehicleaction, "kick of vehicle V2", {}, "benutzt stand sein player vehicle kick", function()
+	local timer = 0
+	for players.list(false, true, true) as pid do
+		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+		if IS_PED_IN_ANY_VEHICLE(ped) then
+			local vehicle = GET_VEHICLE_PED_IS_USING(ped)
+			local vehicleofpid = players.get_vehicle_model(pid)
+			local pidname = players.get_name(pid)
+			local myPos = players.get_position(players.user())
+			local pPos = getPlayerPosition(pid)
+	        local dist = myPos:distance(pPos)
+			local fullvehname = getmodelnamebyhash(vehicleofpid)
+			if PlayerisFriend(pid) and not antiactionfriends then
+				goto continue
+			end
+			--local modelhash = entities.get_model_hash(vehicle)
+			if vehicletablefotactions != {} and vehicleofpid != 0 then
+				for vehicletablefotactions as vehname do
+					local hash = util.joaat(vehname)
+					if hash == vehicleofpid then
+						if dist < maxDistanceantiaction then
+							menu.trigger_commands("vehkick"..pidname)
+							repeat
+								util.yield()
+								timer += 1
+								vehicleofpid = players.get_vehicle_model(pid)
+							until vehicleofpid == 0 or timer == 500
+							if timer == 500 then
+								if antiactionnotify then
+									util.toast(pidname.."  Konnte ihn nicht aus dem fahrzeug kicken")
+								end
+							else
+								if antiactionnotify then
+									util.toast(pidname.. " wurde aus dem ".. fullvehname .." gekickt")
+								end
+							end
+							timer = 0
+						end
+					end
+				end
+			end
+		end
+		::continue::
+	end
+end)
+menu.toggle_loop(antivehicleaction, "EMP vehicle", {}, "", function()
+	local timer = 0
+	for players.list(false, true, true) as pid do
+		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+		if IS_PED_IN_ANY_VEHICLE(ped) then
+			local vehicle = GET_VEHICLE_PED_IS_USING(ped)
+			local vehicleofpid = players.get_vehicle_model(pid)
+			local pidname = players.get_name(pid)
+			local disvehbyemp = GET_IS_VEHICLE_DISABLED_BY_EMP(vehicle)
+			local myPos = players.get_position(players.user())
+			local pPos = getPlayerPosition(pid)
+	        local dist = myPos:distance(pPos)
+			local fullvehname = getmodelnamebyhash(vehicleofpid)
+			if PlayerisFriend(pid) and not antiactionfriends then
+				goto continue
+			end
+			if disvehbyemp then
+				goto continue
+			end
+			--local modelhash = entities.get_model_hash(vehicle)
+			if vehicletablefotactions != {} and vehicleofpid != 0 then
+				for vehicletablefotactions as vehname do
+					local hash = util.joaat(vehname)
+					if hash == vehicleofpid then
+						if dist < maxDistanceantiaction then
+							--menu.trigger_commands("delveh"..pidname)
+							if getcontrole(vehicle) then
+								repeat
+									util.yield()
+									timer += 1
+									menu.trigger_commands("empveh"..pidname)
+									disvehbyemp = GET_IS_VEHICLE_DISABLED_BY_EMP(vehicle)
+								until disvehbyemp or timer == 150
+								if timer == 150 then
+									if antiactionnotify then
+										util.toast(pidname.."  Sein fahrzeug konnte nicht mit EMP versetzt werden")
+									end
+								elseif disvehbyemp then
+									if antiactionnotify then
+										util.toast(pidname.. "  wurde sein ".. fullvehname .." mit EMP versetzt")
+									end
+								end
+								timer = 0
+							else
+								if antiactionnotify then
+									util.toast(pidname.. "  konnte keine kontrolle bekommen")
+								end
+							end
 						end
 					end
 				end
@@ -4748,6 +4850,7 @@ menu.toggle_loop(antivehicleaction, "Delete vehicle", {}, "", function()
 			local myPos = players.get_position(players.user())
 			local pPos = getPlayerPosition(pid)
 	        local dist = myPos:distance(pPos)
+			local fullvehname = getmodelnamebyhash(vehicleofpid)
 			if PlayerisFriend(pid) and not antiactionfriends then
 				goto continue
 			end
@@ -4771,7 +4874,7 @@ menu.toggle_loop(antivehicleaction, "Delete vehicle", {}, "", function()
 									end
 								else
 									if antiactionnotify then
-										util.toast(pidname.. "  wurde sein ".. getmodelnamebyhash(vehicleofpid) .." gelöscht")
+										util.toast(pidname.. "  wurde sein ".. fullvehname .." gelöscht")
 									end
 								end
 								timer = 0
@@ -4801,6 +4904,7 @@ menu.toggle_loop(antivehicleaction, "Explode vehicle", {}, "", function()
 			local pidtags = players.get_tags_string(pid)
 			local pPos = getPlayerPosition(pid)
 	        local dist = myPos:distance(pPos)
+			local fullvehname = getmodelnamebyhash(vehicleofpid)
 			if PlayerisFriend(pid) and not antiactionfriends then
 				goto continue
 			end
@@ -4828,7 +4932,7 @@ menu.toggle_loop(antivehicleaction, "Explode vehicle", {}, "", function()
 										end
 									elseif health < 0 then
 										if antiactionnotify then
-											util.toast(pidname.. " Sein auto ist zerstört")
+											util.toast(pidname.. " Sein ".. fullvehname .." ist zerstört")
 										end
 									end
 									timer = 0
