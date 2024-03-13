@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.40
+local localVer = 0.41
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -4628,13 +4628,15 @@ local function sortKeys(a, b)
             current_class_list = general_list:list(vehicle.class)
         end
 
+		--(util.get_label_text(vehicle.name)
         local vehicle_name = util.get_label_text(vehicle.name)
         if vehicle_name == "NULL" then
-            continue
-        end
+			vehicle_name = getmodelnamebyhash(util.joaat(vehicle.name))
+            --continue
+       	end
 		local vehhash1 = util.joaat(vehicle.name)
 
-        local action = current_class_list:toggle(util.get_label_text(vehicle.name), {"antivehicle"..vehhash1}, "", function(on_toggle)
+        local action = current_class_list:toggle(vehicle_name, {"antivehicle"..vehhash1}, "", function(on_toggle)
 			local vehname = vehicle.name
 			local realvehname = util.get_label_text(vehname)
 			local vehhash = util.joaat(vehicle.name)
@@ -4662,7 +4664,7 @@ vehiclesactivate = menu.list(antiactionvehicles, "aktivierte vehicle", {}, "")
 antivehiclesettings = menu.list(antivehicleaction, "Settings", {}, "")
 
 local maxDistanceantiaction = 1000
-local antiactionfriends, antiactionnotify = false, true
+local antiactionfriends, antiactionnotify, antiactionsearchclear = false, true, true
 
 maxDistSliderantiaction = menu.slider(antivehiclesettings, "Dist", {"setactiondist"}, "random fahrzeuge können erst von dir ab ~ 800 gesehen werden\nfahrzeuge wie z.b. oppressor MKII wird auf der karte angezeigt als besonderes fahrzeug das geht von überall (meistens)", 10, 10000, maxDistanceantiaction, 10, function(val)
 	maxDistanceantiaction = val
@@ -4692,8 +4694,67 @@ menu.text_input(antiactionvehicles, "addveh", {"addtoantiveh"}, "WICHITG!!!!!!\n
 	end
 	menu.set_value(menu.ref_by_command_name("addtoantiveh"), "")
 end)
+local searchvehciletable = {}
+local function clearsearchlist()
+	for searchvehciletable as vehicle do
+		local hash = util.joaat(vehicle)
+		local valid = menu.is_ref_valid(menu.ref_by_command_name("antivehiclesearchactivate"..hash))
+			if valid then
+				menu.delete(menu.ref_by_command_name("antivehiclesearchactivate"..hash))
+				util.yield()
+			end
+	end
+	searchvehciletable = {}
+end
 
-menu.toggle_loop(antivehicleaction, "kick of vehicle", {}, "", function()
+antivehiclessearch = menu.list(antiactionvehicles, "Search", {}, "")
+
+searchclreaactionToggle = menu.toggle(antivehiclessearch, "Auto clear search", {}, "", function(on)
+	antiactionsearchclear = on
+end, antiactionsearchclear)
+antiactionsearchclear = menu.get_value(searchclreaactionToggle)
+
+menu.action(antivehiclessearch, "Clear list", {}, "", function()
+	for searchvehciletable as vehicle do
+		local hash = util.joaat(vehicle)
+		local valid = menu.is_ref_valid(menu.ref_by_command_name("antivehiclesearchactivate"..hash))
+			if valid then
+				menu.delete(menu.ref_by_command_name("antivehiclesearchactivate"..hash))
+				util.yield()
+			end
+	end
+	searchvehciletable = {}
+end)
+menu.text_input(antivehiclessearch, "Search", {"searchofvehicles"}, "such nicht während es gerade die aktuelle suche läd = mega läg vlt auch fehler", function(input)
+	if antiactionsearchclear then
+		clearsearchlist()
+	end
+	if input == "" then
+		goto end
+	end
+	for util.get_vehicles() as vehicle do
+		local hash = util.joaat(vehicle.name)
+		local vehiclename =	getmodelnamebyhash(hash)
+		if string.match(vehiclename, input) or string.match(vehicle.name, input) then
+			table.insert(searchvehciletable, vehicle.name)
+			local hash = menu.action(antivehiclessearch,vehiclename .."  [".. vehicle.name.."]" , {"antivehiclesearchactivate"..hash}, "drück einfach drauf", function()
+				local hash1 = hash
+				local vehiclena = vehiclename
+					local getvalue = menu.get_value(menu.ref_by_command_name("antivehicle"..hash))
+				if getvalue then
+					menu.trigger_commands("antivehicle"..hash1.. " off")
+					util.toast(vehiclena.." Wurde aus liste entfernt")
+				else
+					menu.trigger_commands("antivehicle"..hash1.. " on")
+					util.toast(vehiclena.." Wurde zur liste hinzugefügt")
+				end
+			end)
+		end
+	end
+	::end::
+end)
+
+menu.toggle_loop(antivehicleaction, "kick of vehicle", {}, "dadurch kann er das fahrzeug meistens nicht mehr benutzen und muss es neu rufen", function()
 	local timer = 0
 	for players.list(false, true, true) as pid do
 		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
@@ -4719,8 +4780,8 @@ menu.toggle_loop(antivehicleaction, "kick of vehicle", {}, "", function()
 								util.yield()
 								timer += 1
 								vehicleofpid = players.get_vehicle_model(pid)
-							until vehicleofpid == 0 or timer == 500
-							if timer == 500 then
+							until vehicleofpid == 0 or timer == 200
+							if timer == 200 then
 								if antiactionnotify then
 									util.toast(pidname.."  Konnte ihn nicht aus dem fahrzeug kicken")
 								end
@@ -4738,7 +4799,7 @@ menu.toggle_loop(antivehicleaction, "kick of vehicle", {}, "", function()
 		::continue::
 	end
 end)
-menu.toggle_loop(antivehicleaction, "kick of vehicle V2", {}, "benutzt stand sein player vehicle kick", function()
+menu.toggle_loop(antivehicleaction, "kick of vehicle V2", {}, "benutzt stand sein player vehicle kick\nwürde ich nicht so empfehlen spamt dann halt gut benachrichtigungen", function()
 	local timer = 0
 	for players.list(false, true, true) as pid do
 		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
@@ -4764,8 +4825,8 @@ menu.toggle_loop(antivehicleaction, "kick of vehicle V2", {}, "benutzt stand sei
 								util.yield()
 								timer += 1
 								vehicleofpid = players.get_vehicle_model(pid)
-							until vehicleofpid == 0 or timer == 500
-							if timer == 500 then
+							until vehicleofpid == 0 or timer == 200
+							if timer == 200 then
 								if antiactionnotify then
 									util.toast(pidname.."  Konnte ihn nicht aus dem fahrzeug kicken")
 								end
@@ -4867,8 +4928,8 @@ menu.toggle_loop(antivehicleaction, "Delete vehicle", {}, "", function()
 									util.yield()
 									timer += 1
 									vehicleofpid = players.get_vehicle_model(pid)
-								until vehicleofpid == 0 or timer == 500
-								if timer == 500 then
+								until vehicleofpid == 0 or timer == 200 or (not isinveh)
+								if timer == 200 then
 									if antiactionnotify then
 										util.toast(pidname.."  Sein fahrzeug konnte nicht gelöscht werden")
 									end
