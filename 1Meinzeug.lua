@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.45
+local localVer = 0.46
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -1001,6 +1001,9 @@ local function playerjoinmassge(pid)
 		ranklevel = players.get_rank(pid)
 		money = players.get_money(pid)
 		languagesname = pidlanguage(pid)
+		if languagesname == nil then
+			goto end
+		end
 		if util.is_session_transition_active() then
 			if ranklevel == 0 or money == 0 then
 				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_CONSOLE)
@@ -1022,6 +1025,7 @@ local function playerjoinmassge(pid)
 				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
 			end
 		end
+		::end::
 	end
 end
 
@@ -3513,7 +3517,7 @@ end)
 local Entitymanagernearvehicleirgnore = menu.list(Entitymanagernearvehicle, "Igrnoriere das", {}, "die sachen werden dann geladen wenn du da drauf drückst also das brauchst du nicht")
 
 local maxDistancenearentitys = 200
-local onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switchsearchnearentitys, showdebugginfosnearentitys = false, true, false, false, true
+local onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switchsearchnearentitys, showdebugginfosnearentitys, showarsignalnearentitys = false, true, false, false, true, true
 local seattable = {}
 local seatzaehlerofseats = 0
 
@@ -3527,8 +3531,11 @@ local function getnearvehicle()
 		vehicledata = {}
 		return false
 	end
+	if not menu.is_open() then
+		return
+	end
 	if util.is_session_transition_active() then
-		goto end
+		return
 	end
 	local allpointer = entities.get_all_vehicles_as_pointers()
 	for _, vehpointer in pairs(allpointer) do
@@ -3560,6 +3567,7 @@ local function getnearvehicle()
 		else
 			infotextline = infotextline.. "\nGOD: FALSE"
 		end
+		infotextline = infotextline.. "\nOwner: ".. players.get_name(entities.get_owner(vehhandle))
 		local passangersinveh = ""
 		if not IS_VEHICLE_SEAT_FREE(vehhandle, -1, false) then
 			pedinveh = GET_PED_IN_VEHICLE_SEAT(vehhandle, -1, true)
@@ -3701,13 +3709,13 @@ local function getnearvehicle()
 				for i=-1, maxPassengers do
 				 	seattextline = getseatname[i]
 					if not IS_VEHICLE_SEAT_FREE(entityhandle, i) then
-						if IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(entityhandle, i)) then
-							seattextline = seattextline.. "  [pl ".. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(GET_PED_IN_VEHICLE_SEAT(entityhandle, i))).. "]"
-						end
-						if not DOES_ENTITY_EXIST(GET_PED_IN_VEHICLE_SEAT(entityhandle, i)) and not IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(entityhandle, i)) then
-							seattextline = seattextline.. "  [NPC]"
-						elseif not IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(entityhandle, i)) then
-							seattextline = seattextline.. "  [NPC]"
+						local pedinseat = GET_PED_IN_VEHICLE_SEAT(entityhandle, i, true)
+						if IS_PED_A_PLAYER(pedinseat) then
+							seattextline = seattextline.. "  [pl ".. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(pedinseat)).. "]"
+						else
+							if DOES_ENTITY_EXIST(pedinseat) then
+								seattextline = seattextline.. "  [NPC]"
+							end
 						end
 					end
 					seatzaehlerofseats += 1
@@ -3719,15 +3727,19 @@ local function getnearvehicle()
 						local dist = pPos:distance(ePos)
 						local entitypPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entityhandle, 0, 0, 0)
 						local seat = i
-						if not IS_VEHICLE_SEAT_FREE(entityhandle, i) then
-							if not IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(entityhandle, i)) then
-								entities.delete(GET_PED_IN_VEHICLE_SEAT(entityhandle, i))
+						if not IS_VEHICLE_SEAT_FREE(entityhandle, seat) then
+							if not IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(entityhandle, seat)) then
+								entities.delete(GET_PED_IN_VEHICLE_SEAT(entityhandle, seat))
 							else
-								menu.trigger_commands("vehkick".. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(GET_PED_IN_VEHICLE_SEAT(entityhandle, i))))
+								if GET_PED_IN_VEHICLE_SEAT(entityhandle, seat) == players.user_ped() then
+									util.toast("Du hockst da schon drin")
+									goto end
+								end
+								menu.trigger_commands("vehkick".. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(GET_PED_IN_VEHICLE_SEAT(entityhandle, seat))))
 								repeat
 									util.yield()
 									timer += 1
-									inseatplayer = IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(entityhandle, i))
+									inseatplayer = IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(entityhandle, seat))
 								until not inseatplayer or timer > 300
 								if timer > 300 then
 									util.toast("konnte nicht aus dem auto gekickt werden")
@@ -3736,10 +3748,10 @@ local function getnearvehicle()
 								end
 							end
 						end
-							if dist > 150 then
-								SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entitypPos.x, entitypPos.y, entitypPos.z, false, false, false)
-								util.yield(20)
-							end
+							--if dist > 150 then
+								--SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entitypPos.x, entitypPos.y, entitypPos.z, false, false, false)
+							--	util.yield(20)
+							--end
 							SET_PED_INTO_VEHICLE(players.user_ped(), entityhandle, seat)
 					::end::
 					end)
@@ -3989,26 +4001,29 @@ local function getnearvehicle()
 			end)
 			end
 		else
+			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
+				util.draw_ar_beacon(ePos)
+			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
-				menu.set_help_text(veh[vehhandle], infotextline)
+				if menu.get_help_text(veh[vehhandle]) != infotextline and menu.is_focused(veh[vehhandle]) then
+					menu.set_help_text(veh[vehhandle], infotextline)
+				end
 			end
-			for i = 1, 16 do
-				if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-					menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
+			for i = 1, 17 do
+				if menu.is_focused(vehinfotab[vehhandle.. i]) then
+					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
+						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
+							util.draw_ar_beacon(ePos)
+						end
+						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
+							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
+						end
+					end
 				end
 			end
 		end
 		::continue::
-		--if not string.match(string.replace(textline, "["..dist.."]", ""), searchnearveh) then
-		--	if DOES_ENTITY_EXIST(vehhandle) then
-		--		if veh[vehhandle] != nil and veh[vehhandle] != number then
-		--			if menu.is_ref_valid(veh[vehhandle]) then
-		--				menu.set_menu_name(veh[vehhandle], textline)
-		--			end
-		--		end
-		--	end
-		--end
 	end
 	for vehicledata as vehhandle do
 		if DOES_ENTITY_EXIST(vehhandle) then
@@ -4024,7 +4039,7 @@ local function getnearvehicle()
 			else
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearveh)
 			end
-			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) then
+			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) then
 				if menu.is_ref_valid(veh[vehhandle]) then
 					menu.delete(veh[vehhandle])
 					for a, msg in ipairs(vehicledata) do
@@ -4058,8 +4073,11 @@ local function getnearpeds()
 		pedsdata = {}
 		return false
 	end
+	if not menu.is_open() then
+		return
+	end
 	if util.is_session_transition_active() then
-		goto end
+		return
 	end
 	local allpointer = entities.get_all_peds_as_pointers()
 	for _, vehpointer in pairs(allpointer) do
@@ -4318,13 +4336,25 @@ local function getnearpeds()
 			end)
 			end
 		else
+			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
+				util.draw_ar_beacon(ePos)
+			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
-				menu.set_help_text(veh[vehhandle], infotextline)
+				if menu.get_help_text(veh[vehhandle]) != infotextline and menu.is_focused(veh[vehhandle]) then
+					menu.set_help_text(veh[vehhandle], infotextline)
+				end
 			end
 			for i = 1, 12 do
-				if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-					menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
+				if menu.is_focused(vehinfotab[vehhandle.. i]) then
+					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
+						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
+							util.draw_ar_beacon(ePos)
+						end
+						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
+							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
+						end
+					end
 				end
 			end
 		end
@@ -4353,7 +4383,7 @@ local function getnearpeds()
 			else
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearpeds)
 			end
-			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) then
+			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) then
 				if menu.is_ref_valid(veh[vehhandle]) then
 					menu.delete(veh[vehhandle])
 					for a, msg in ipairs(pedsdata) do
@@ -4389,8 +4419,11 @@ local function getnearobjects()
 			return false
 		end
 	end
+	if not menu.is_open() then
+		return
+	end
 	if util.is_session_transition_active() then
-		goto end
+		return
 	end
 	local allpointer = entities.get_all_objects_as_pointers()
 	for _, vehpointer in pairs(allpointer) do
@@ -4478,13 +4511,25 @@ local function getnearobjects()
 			end)
 			end
 		else
+			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
+				util.draw_ar_beacon(ePos)
+			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
-				menu.set_help_text(veh[vehhandle], infotextline)
+				if menu.get_help_text(veh[vehhandle]) != infotextline and menu.is_focused(veh[vehhandle]) then
+					menu.set_help_text(veh[vehhandle], infotextline)
+				end
 			end
 			for i = 1, 3 do
-				if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-					menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
+				if menu.is_focused(vehinfotab[vehhandle.. i]) then
+					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
+						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
+							util.draw_ar_beacon(ePos)
+						end
+						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
+							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
+						end
+					end
 				end
 			end
 		end
@@ -4513,7 +4558,7 @@ local function getnearobjects()
 			else
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearobjects)
 			end
-			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) then
+			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) then
 				if menu.is_ref_valid(veh[vehhandle]) then
 					menu.delete(veh[vehhandle])
 					for a, msg in ipairs(objectsdata) do
@@ -4549,8 +4594,11 @@ local function getnearpickup()
 			return false
 		end
 	end
+	if not menu.is_open() then
+		return
+	end
 	if util.is_session_transition_active() then
-		goto end
+		return
 	end
 	local allpointer = entities.get_all_pickups_as_pointers()
 	for _, vehpointer in pairs(allpointer) do
@@ -4635,13 +4683,25 @@ local function getnearpickup()
 			end)
 			end
 		else
+			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
+				util.draw_ar_beacon(ePos)
+			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
-				menu.set_help_text(veh[vehhandle], infotextline)
+				if menu.get_help_text(veh[vehhandle]) != infotextline and menu.is_focused(veh[vehhandle]) then
+					menu.set_help_text(veh[vehhandle], infotextline)
+				end
 			end
 			for i = 1, 3 do
-				if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-					menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
+				if menu.is_focused(vehinfotab[vehhandle.. i]) then
+					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
+						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
+							util.draw_ar_beacon(ePos)
+						end
+						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
+							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
+						end
+					end
 				end
 			end
 		end
@@ -4670,7 +4730,7 @@ local function getnearpickup()
 			else
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearpickups)
 			end
-			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) then
+			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) then
 				if menu.is_ref_valid(veh[vehhandle]) then
 					menu.delete(veh[vehhandle])
 					for a, msg in ipairs(pickupdata) do
@@ -4770,6 +4830,10 @@ debugginfostoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show Debug inf
 	showdebugginfosnearentitys = on
 end, showdebugginfosnearentitys)
 showdebugginfosnearentitys = menu.get_value(debugginfostoggleentitys)
+drawarsignalstoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show AR signal", {}, "", function(on)
+	showarsignalnearentitys = on
+end, showarsignalnearentitys)
+showarsignalnearentitys = menu.get_value(drawarsignalstoggleentitys)
 
 
 menu.action(Self, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein waypoint gesetzt ist geht er da hin wenn keiner da ist geht er zu missions punkt", function()
@@ -6119,6 +6183,10 @@ menu.toggle(anti_russen_zeug, "Kick Länder", {}, "kickt Länder die nachjoinen"
 end)
 
 menu.action(anti_russen_zeug, "Länder aus lobby kicken", {}, "kickt aus deiner lobby jeden der ausgewählten länder", function()
+	if (not Czech_Republic) and (not Romania) and (not Italy) and (not France) and (not Poland) and (not Ukraine) and (not Russian_Federation) and (not Germany)and (not Austria) then
+		util.toast("keine länder ausgewählt")
+		goto end
+	end
 	for players.list(false, false, true) as pid do
 		local pidtokick = getplayertokick(pid)
 		if pidtokick == "false" then
@@ -6132,133 +6200,77 @@ menu.action(anti_russen_zeug, "Länder aus lobby kicken", {}, "kickt aus deiner 
 			end
 		end
 	end
+	::end::
 end)
 
 menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie viele spieler von den ausgewählten ländern in der lobby sind", function()
-	local russencounter = 0
-	local ukrainecounter = 0
-	local polandcounter = 0
-	local francecounter = 0
-	local italycounter = 0
-	local romaniacounter = 0
-	local czechcounter = 0
-	local germanycoutner = 0
-	local Austriacoutner = 0
+	local russencounter, ukrainecounter, polandcounter, francecounter, italycounter, romaniacounter, czechcounter, germanycoutner, Austriacoutner = 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local textline = ""
 	local notselectet = false
 	local hostpid = players.get_host()
 	for players.list(false, false, true) as pid do
-		if Russian_Federation then
 			if pidlanguage(pid) == "Russian Federation" then
 				russencounter += 1
 			end
-		end
-		if Ukraine then
 			if pidlanguage(pid) == "Ukraine" then
 				ukrainecounter += 1
 			end
-		end
-		if Poland then
 			if pidlanguage(pid) == "Poland" then
 				polandcounter += 1
 			end
-		end
-		if France then
 			if pidlanguage(pid) == "France" then
 				francecounter += 1
 			end
-		end
-		if Italy then
 			if pidlanguage(pid) == "Italy" then
 				italycounter += 1
 			end
-		end
-		if Romania then
 			if pidlanguage(pid) == "Romania" then
 				romaniacounter += 1
 			end
-		end
-		if Czech_Republic then
 			if pidlanguage(pid) == "Czech_Republic" then
 				czechcounter += 1
 			end
-		end
-		if Germany then
 			if pidlanguage(pid) == "Germany" then
 				germanycoutner += 1
 			end
-		end
-		if Austria then
 			if pidlanguage(pid) == "Austria" then
 				Austriacoutner += 1
 			end
-		end
 	end
 	if (not Czech_Republic) and (not Romania) and (not Italy) and (not France) and (not Poland) and (not Ukraine) and (not Russian_Federation) and (not Germany)and (not Austria) then
 		notselectet = true
 		util.toast("keine länder ausgewählt")
 	end
 	if Russian_Federation then
-		if russencounter != 0 then
-			util.toast(tostring(russencounter).. " Russian")
-		else
-			util.toast("Keine Russian")
-		end
+		textline = "\n" ..tostring(russencounter).. " Russian"
 	end
 	if Ukraine then
-		if ukrainecounter != 0 then
-			util.toast(tostring(ukrainecounter).. " Ukraine")
-		else
-			util.toast("Keine Ukraine")
-		end
+		textline = textline.. "\n" ..tostring(ukrainecounter).. " Ukraine"
 	end
 	if Poland then
-		if polandcounter != 0 then
-			util.toast(tostring(polandcounter).. " Poland")
-		else
-			util.toast("Keine Poland")
-		end
+		textline = textline.. "\n" ..tostring(polandcounter).. " Poland"
 	end
 	if France then
-		if francecounter != 0 then
-			util.toast(tostring(francecounter).. " France")
-		else
-			util.toast("Keine France")
-		end
+		textline = textline.. "\n" ..tostring(francecounter).. " France"
 	end
 	if Italy then
-		if italycounter != 0 then
-			util.toast(tostring(italycounter).. " Italy")
-		else
-			util.toast("Keine Italy")
-		end
+		textline = textline.. "\n" ..tostring(italycounter).. " Italy"
 	end
 	if Romania then
-		if romaniacounter != 0 then
-			util.toast(tostring(romaniacounter).. " Romania")
-		else
-			util.toast("Keine Romania")
-		end
+		textline = textline.. "\n" ..tostring(romaniacounter).. " Romania"
 	end
 	if Czech_Republic then
-		if czechcounter != 0 then
-			util.toast(tostring(czechcounter).. " Czech_Republic")
-		else
-			util.toast("Keine Czech_Republic")
-		end
+		textline = textline.. "\n" ..tostring(czechcounter).. " Czech_Republic"
 	end
 	if Germany then
-		if germanycoutner != 0 then
-			util.toast(tostring(germanycoutner).. " Germany")
-		else
-			util.toast("Keine Germany")
-		end
+		textline = textline.. "\n" ..tostring(germanycoutner).. " Germany"
 	end
 	if Austria then
-		if Austriacoutner != 0 then
-			util.toast(tostring(Austriacoutner).. " Austria")
-		else
-			util.toast("Keine Austria")
-		end
+		textline = textline.. "\n" ..tostring(Austriacoutner).. " Austria"
+	end
+	if textline != "" then
+		textline = string.replace(textline, "\n", "", 1)
+		util.toast(textline)
 	end
 end)
 
