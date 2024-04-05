@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.49
+local localVer = 0.50
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -60,6 +60,59 @@ local int_max = 2147483647
 local a = 1
 local bba = 10
 local abb = 10
+local playertable = {}
+
+
+selectedplayer = {}
+for b = 0, 31 do
+    selectedplayer[b] = false
+end
+excludeselected = false
+
+cmd_id = {}
+for i = 0, 31 do
+	cmd_id[i] = 0
+end
+
+playerid = {}
+for i = 0, 32 do
+	table.insert(playerid, i)
+end
+
+listkicken = {}
+--for i = 0, 31 do
+--	listkicken[i] = 0
+--end
+
+listfriendly = {}
+--for i = 0, 31 do
+--	listfriendly[i] = 0
+--end
+
+listtp = {}
+--for i = 0, 31 do
+--	listtp[i] = 0
+--end
+
+listtrolling = {}
+--for i = 0, 31 do
+--	listtrolling[i] = 0
+--end
+
+listgenerel = {}
+--for i = 0, 31 do
+--	listgenerel[i] = 0
+--end
+
+veh = {}
+--[[for i = 0, 300 do
+	veh[i] = 0
+end]]
+
+vehinfotab = {}
+for i = 0, 300 do
+	vehinfotab[i] = 0
+end
 
 
 vehenterstealnpc = false
@@ -289,7 +342,7 @@ LANGUAGES = {
 	[11] = "MX",
 	[12] = "CN"
 }
-local EXPLOSIONVARIATION = {
+EXPLOSIONVARIATION = {
     {1, "GRENADE", {}, ""},
     {2, "GRENADELAUNCHER", {}, ""},
     {3, "STICKYBOMB", {}, ""},
@@ -378,7 +431,7 @@ local EXPLOSIONVARIATION = {
 
 local menus = {}
 
-    local function getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
+    function getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
         local playerList = players.list()
         local notWhitelisted = {}
         for i = 1, #playerList do
@@ -389,11 +442,11 @@ local menus = {}
         return notWhitelisted
     end
 
-local function get_friend_count()
+function get_friend_count()
     native_invoker.begin_call();native_invoker.end_call("203F1CFD823B27A4");
     return native_invoker.get_return_value_int();
 end
-local function get_frined_name(friendIndex)
+function get_frined_name(friendIndex)
    native_invoker.begin_call();native_invoker.push_arg_int(friendIndex);native_invoker.end_call("4164F227D052E293");return native_invoker.get_return_value_string();
 end
 
@@ -520,7 +573,7 @@ function Streamptfx(lib)
     GRAPHICS.USE_PARTICLE_FX_ASSET(lib)
 end
 
-local classes = {
+classes = {
 	[0]= "Compacts",
 	[1]= "Sedans",
 	[2]= "SUVs",
@@ -573,7 +626,7 @@ function PlayerisFriend(player)
 	return false
 end
 
-local function getcontrole(entity)
+function getcontrole(entity)
 	local time = 0
 		repeat
 		time += 1
@@ -625,7 +678,7 @@ function getpedsinvehicle(vehicle)
 	end
 end
 
-local getseatname = {
+getseatname = {
 	[-1]= "Driver",
 	[0]= "Front Right Passenger",
 	[1]= "Back Left Passenger",
@@ -639,24 +692,31 @@ local getseatname = {
 	[9]= "IDK Seat",
 	[10]= "IDK Seat"}
 
-local function v3(x, y, z)
+local parenttableforcustom = {
+	actionlistcustomselection,
+	actionlistcustomselectionteleport,
+	actionlistcustomselectionfriendly,
+	actionlistcustomselectiontrolling,
+	actionlistcustomselectionkickcrash}
+
+function v3(x, y, z)
 	if x == nil then x = 0 end
 	if y == nil then y = 0 end
 	if z == nil then z = 0 end
 end
 
-local function send_script_event(first_arg, receiver, args)
+function send_script_event(first_arg, receiver, args)
 	table.insert(args, 1, first_arg)
 	util.trigger_script_event(1 << receiver, args)
 end
 
 handle_ptr = memory.alloc(13*8)
-local function pid_to_handle(pid)
+function pid_to_handle(pid)
     NETWORK_HANDLE_FROM_PLAYER(pid, handle_ptr, 13)
     return handle_ptr
 end
 
-local function roundDecimals(float, decimals)
+function roundDecimals(float, decimals)
 	decimals = 10 ^ decimals
 	return math.floor(float * decimals) / decimals
 end
@@ -861,7 +921,7 @@ local lastPressMS = {}
 
 local loadthigson = true
 
-local function getKeyCode(string_or_int)
+function getKeyCode(string_or_int)
     local lookup = keyLookupTable[string_or_int]
     return (lookup and lookup or string_or_int)
 end
@@ -884,7 +944,7 @@ function is_key_just_down(string_or_int)
     return false
 end
 
-local function update_leave(pid)
+function update_leave(pid)
 	if menu.get_value(menu.ref_by_command_name("selected" ..pid)) == true then
 		menu.trigger_commands("selected" .. pid .. " " .. "off")
 		--util.yield(200)
@@ -894,7 +954,7 @@ local function update_leave(pid)
 	end
 end
 
-local function get_ground_z(coords)
+function get_ground_z(coords)
     local start_time = os.time()
     while true do
         local success, est = util.get_ground_z(coords['x'], coords['y'], coords['z'])
@@ -903,6 +963,64 @@ local function get_ground_z(coords)
         end
         util.yield()
     end
+end
+
+function getpidtoattach(pid)
+	for i = 32,0,-1 do
+		if i < pid then
+			if players.exists(i) then
+				return i
+			end
+		end
+	end
+	return -1
+end
+
+function createparents_in_custom(pid, textline)
+	local Pname = players.get_name(pid)
+	listgenerel[pid] = menu.action(actionlistcustomselection, Pname, {}, textline, function()
+		menu.set_value(playertable[pid], false)
+	end)
+	listtp[pid] = menu.action(actionlistcustomselectionteleport, Pname, {}, textline, function()
+		menu.set_value(playertable[pid], false)
+	end)
+	listfriendly[pid] = menu.action(actionlistcustomselectionfriendly, Pname, {}, textline, function()
+		menu.set_value(playertable[pid], false)
+	end)
+	listtrolling[pid] = menu.action(actionlistcustomselectiontrolling, Pname, {}, textline, function()
+		menu.set_value(playertable[pid], false)
+	end)
+	listkicken[pid] = menu.action(actionlistcustomselectionkickcrash, Pname, {}, textline, function()
+		menu.set_value(playertable[pid], false)
+	end)
+end
+
+function deleteparents_in_custom(pid)
+	if listgenerel[pid] != nil then
+		if menu.is_ref_valid(listgenerel[pid]) then
+			menu.delete(listgenerel[pid])
+		end
+	end
+	if listtp[pid] != nil then
+		if menu.is_ref_valid(listtp[pid]) then
+			menu.delete(listtp[pid])
+		end
+	end
+	if listfriendly[pid] != nil then
+		if menu.is_ref_valid(listfriendly[pid]) then
+			menu.delete(listfriendly[pid])
+		end
+	end
+	if listtrolling[pid] != nil then
+		if menu.is_ref_valid(listtrolling[pid]) then
+			menu.delete(listtrolling[pid])
+		end
+	end
+	if listkicken[pid] != nil then
+		if menu.is_ref_valid(listkicken[pid]) then
+			menu.delete(listkicken[pid])
+		end
+	end
 end
 
 function get_ms_since_last_press(string_or_int)
@@ -954,7 +1072,7 @@ function getseatofplayer(vehicle)
 	return -2
 end
 
-local function get_ip_data(ip)
+function get_ip_data(ip)
     local data = {city = "unknown", state = "unknown", country = "unknown"}
     if util.is_soup_netintel_inited() then
         if (loc := soup.netIntel.getLocationByIp(ip)):isValid() then
@@ -966,7 +1084,7 @@ local function get_ip_data(ip)
     return data
 end
 
-players.on_leave(update_leave)
+--players.on_leave(update_leave)
 
 timer1 = 0
 
@@ -986,14 +1104,14 @@ function getClosestVehicle(myPos)
     end
 end
 
-local function pidlanguage(pid)
+function pidlanguage(pid)
 	local IP = tostring(soup.IpAddr(players.get_connect_ip(pid)))
 	local ip_data = get_ip_data(tostring(IP))
 	languages = ip_data.country
 	return languages
 end
 
-local function playerjoinmassge(pid)
+function playerjoinmassge(pid)
 	if player_join then
 		playername = players.get_name(pid)
 		rockstarid = players.get_rockstar_id(pid)
@@ -1029,7 +1147,7 @@ local function playerjoinmassge(pid)
 	end
 end
 
-local function getvehtype(hashveh)
+function getvehtype(hashveh)
 	if IS_THIS_MODEL_A_BOAT(hashveh) then
 		return "BOAT"
 	elseif IS_THIS_MODEL_A_PLANE(hashveh) then
@@ -1073,7 +1191,7 @@ end
 function getorgtype(pid)
 	local orgtype = players.get_org_type(pid)
 	if orgtype == -1 then
-		return "false"
+		return "NONE"
 	elseif orgtype == 0 then
 		return "CEO"
 	elseif orgtype == 1 then
@@ -1174,7 +1292,7 @@ function getLanguage(pid)
 	return LANGUAGES[players.get_language(pid)]
 end
 
-local function removeValues(t, removeT)
+function removeValues(t, removeT)
 	for _, r in ipairs(removeT) do
 		for i, v in ipairs(t) do
 			if v == r then
@@ -1182,57 +1300,6 @@ local function removeValues(t, removeT)
 			end
 		end
 	end
-end
-
-selectedplayer = {}
-for b = 0, 31 do
-    selectedplayer[b] = false
-end
-excludeselected = false
-
-cmd_id = {}
-for i = 0, 31 do
-	cmd_id[i] = 0
-end
-
-listpickups = {}
-for i = 20, 0 do
-	listpickups[i] = 0
-end
-
-listkicken = {}
-for i = 0, 31 do
-	listkicken[i] = 0
-end
-
-listfriendly = {}
-for i = 0, 31 do
-	listfriendly[i] = 0
-end
-
-listtp = {}
-for i = 0, 31 do
-	listtp[i] = 0
-end
-
-listtrolling = {}
-for i = 0, 31 do
-	listtrolling[i] = 0
-end
-
-listgenerel = {}
-for i = 0, 31 do
-	listgenerel[i] = 0
-end
-
-veh = {}
---[[for i = 0, 300 do
-	veh[i] = 0
-end]]
-
-vehinfotab = {}
-for i = 0, 300 do
-	vehinfotab[i] = 0
 end
 
 local colors = {
@@ -2027,9 +2094,9 @@ local Entitymanagernearvehicle = menu.list(Entitymanager, "Near Entitys", {}, ""
 local player_zeug = menu.list(menu.my_root(), "Lobby zeug", {}, "")
 --local streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
 local Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
-local custselc = menu.list(menu.my_root(), "Custom Selection", {}, "", function(); end)
-local misc = menu.list(menu.my_root(), "Misc", {}, "", function(); end)
-local frendlist = menu.list(misc, "friend list", {"fl"}, "", function(); end)
+local customselection = menu.list(menu.my_root(), "Custom Selection", {}, "")
+local misc = menu.list(menu.my_root(), "Misc", {}, "")
+local frendlist = menu.list(misc, "friend list", {"fl"}, "")
 local players_list = menu.list(misc, "Players", {}, "")
 
 local function gen_fren_funcs(name)
@@ -2105,7 +2172,7 @@ local maxDistanceveh = 700
 local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, showinvehveh, showmissionveh, showownerveh, showentitygroupveh, 
 showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true, true, true, true, false, false, false, false, true, false, false, true, true
 
-	local function renderESPveh(givedata)
+	function renderESPveh(givedata)
 		if not enabledveh then
 	        return false
 	    end
@@ -2159,17 +2226,17 @@ showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
 			if (shownameveh or showspeedveh or showidnameveh) then
-	            local textLine = ""
+	            local textline = ""
 	            if shownameveh then
-	                textLine = getmodelnamebyhash(modelhash) .. " "
+	                textline = getmodelnamebyhash(modelhash) .. " "
 	            end
 				if showidnameveh then
-	                textLine = textLine .. "["..util.reverse_joaat(modelhash) .. "] "
+	                textline = textline .. "["..util.reverse_joaat(modelhash) .. "] "
 	            end
 	            if showspeedveh and getSpeed(vehshandle, true) > 0 then
-	                textLine = textLine .. getSpeed(vehshandle)
+	                textline = textline .. getSpeed(vehshandle)
 	            end
-	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
 	        if isMyVehicle and showinvehveh then
 	            local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehshandle)
@@ -2486,7 +2553,7 @@ local maxDistanceped = 700
 local showDistanceped, shownameped, showmissionped, showvehpedisinped, showownerped, showentitygroupped, showdeadped, 
 getonlyvisibleped, showpedsinvehped, showonlyblibsped = true, true, true, true, false, true, false, false, true, false
 
-	local function renderESPped(givedata)
+	function renderESPped(givedata)
 		if not enabledped then
 	        return false
 	    end
@@ -2540,11 +2607,11 @@ getonlyvisibleped, showpedsinvehped, showonlyblibsped = true, true, true, true, 
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
 			if shownameped then
-	            local textLine = ""
+	            local textline = ""
 	            if shownameped then
-	                textLine = getmodelnamebyhash(modelhash) .. " "
+	                textline = getmodelnamebyhash(modelhash) .. " "
 	            end
-	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
 	        if ispedinveh and showvehpedisinped then
 				valuesToDisplay[#valuesToDisplay + 1] = "Vehicle: ".. getmodelnamebyhash(vehmodelhash)
@@ -2824,7 +2891,7 @@ local maxDistanceobj = 300
 local showDistanceobj, shownameobj, showmissionobj, showownerobj, showattachtoobjobj, showattachtopedobj, 
 showattachtovehobj, showentitygroupobj, getonlyvisibleobj = true, true, true, true, false, false, false, true, false
 
-	local function renderESPobj(givedata)
+	function renderESPobj(givedata)
 		if not enabledobj then
 	        return false
 	    end
@@ -2898,11 +2965,11 @@ showattachtovehobj, showentitygroupobj, getonlyvisibleobj = true, true, true, tr
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
 			if shownameobj then
-	            local textLine = ""
+	            local textline = ""
 	            if shownameobj then
-	                textLine = getmodelnamebyhash(modelhash) .. " "
+	                textline = getmodelnamebyhash(modelhash) .. " "
 	            end
-	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
 			if missionentityobj and showmissionobj then
 				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
@@ -3034,7 +3101,7 @@ local colorpickup = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistancepickup = 1000
 local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, showentitiygrouppickup, getonlyvisiblepickups = true, true, true, true, true, false
 
-	local function renderESPpickup(givedata)
+	function renderESPpickup(givedata)
 		if not enabledpickup then
 	        return false
 	    end
@@ -3072,11 +3139,11 @@ local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, sh
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
 			if shownamepickup then
-	            local textLine = ""
+	            local textline = ""
 	            if shownamepickup then
-	                textLine = getmodelnamebyhash(modelhash) .. " "
+	                textline = getmodelnamebyhash(modelhash) .. " "
 	            end
-	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
 			if missionentitypickup and showmissionpickup then
 				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
@@ -3612,7 +3679,7 @@ local onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, 
 local seattable = {}
 local seatzaehlerofseats = 0
 
-local function getnearvehicle()
+function getnearvehicle()
 	if not enablednearvehicle then
 		for vehicledata as vehhandle do
 			if menu.is_ref_valid(veh[vehhandle]) then
@@ -4207,7 +4274,7 @@ local function getnearvehicle()
 	::end::
 end
 
-local function getnearpeds()
+function getnearpeds()
 	if not enablednearpeds then
 		for pedsdata as vehhandle do
 			if menu.is_ref_valid(veh[vehhandle]) then
@@ -4605,7 +4672,7 @@ local function getnearpeds()
 end
 
 
-local function getnearobjects()
+function getnearobjects()
 	if not enablednearobjects then
 		if not enablednearobjects then
 			for objectsdata as vehhandle do
@@ -4825,7 +4892,7 @@ local function getnearobjects()
 	::end::
 end
 
-local function getnearpickup()
+function getnearpickup()
 	if not enablednearpickups then
 		if not enablednearpickups then
 			for pickupdata as vehhandle do
@@ -5332,7 +5399,7 @@ menu.action(Zeugforjob, "was deaktiviert wurde drück hier", {}, "zeigt was alle
 	util.toast("Guck in deine console da steht alles. wenn du keine hast fick dich")
 end)
 
-local function zeugwiederan()
+function zeugwiederan()
 	if zeugforthejob then
 		menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
 		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
@@ -5844,7 +5911,7 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 end)
 
 CLEAR_AREA_RANGE = 100
-local function clearAreaOfEntities(entitie, range)
+function clearAreaOfEntities(entitie, range)
     local rangesq = range*range
     local pc = players.get_position(players.user())
 		if entitie == "ped" then
@@ -5905,7 +5972,7 @@ end
         end
     end
 end]]
-local function getAreaOfEntities(tbl, range)
+function getAreaOfEntities(tbl, range)
     local rangesq = range*range
     local pc = GET_ENTITY_COORDS(players.user_ped())
     for _, v in pairs(tbl) do
@@ -5990,10 +6057,11 @@ menu.toggle_loop(player_zeug, "Anti modder scripthost", {}, "gibt dir script hos
     end
 end)
 
-local anti_russen_zeug = menu.list(player_zeug, "Anti Länder zeug", {}, "")
-local leanderauswahl = menu.list(anti_russen_zeug, "länder auswahl", {}, "")
+local anti_laender_zeug = menu.list(player_zeug, "Anti Länder zeug", {}, "")
+local leanderauswahl = menu.list(anti_laender_zeug, "länder auswahl", {}, "")
 local ESP = menu.list(player_zeug, "ESP", {}, "")
 local antivehicleaction = menu.list(player_zeug, "Anti vehicle action", {}, "")
+--local selfmadeplayerhistory = menu.list(player_zeug, "Player history", {}, "")
 
 
 local enabled, enableOnAim = false, false
@@ -6003,7 +6071,7 @@ local maxDistance = 400
 local showDistance, showWanted, showRank, showLanguage, showName, showTags, showHealth, showArmor, showKD, showMoney, showWeapon, showInMyVehicle, showVehicle, showSpeed,
 	hideInterior, showBounty, showorgandowner, showorgmembers, showVehicleidname = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false, false, false, false
 
-	local function getName(pid, inVehicle)
+	function getName(pid, inVehicle)
 	    local value = ""
 	    if showName or inVehicle then
 	        value = players.get_name(pid)
@@ -6033,7 +6101,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	    return preName .. value
 	end
 
-	local function renderESP()
+	function renderESP()
 		if not enabled then
 	        return false
 	    end
@@ -6140,27 +6208,27 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 			end
 	        local hpData = getHealth(ped)
 	        if showHealth or showArmor then
-	            local textLine = ""
+	            local textline = ""
 	            if showHealth then
-	                textLine = "H: " .. hpData.health .. "/" .. hpData.maxHealth .. " "
+	                textline = "H: " .. hpData.health .. "/" .. hpData.maxHealth .. " "
 	            end
 	            if showArmor then
-	                textLine = textLine .. "A: " .. hpData.armor .. "/50"
+	                textline = textline .. "A: " .. hpData.armor .. "/50"
 	            end
-	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
 	        if showBounty and players.get_bounty(pid) then
 	            valuesToDisplay[#valuesToDisplay + 1] = "$$" .. players.get_bounty(pid)
 	        end
 	        if showMoney or showKD then
-	            local textLine = ""
+	            local textline = ""
 	            if showKD then
-	                textLine = "KD " .. getKD(pid) .. " "
+	                textline = "KD " .. getKD(pid) .. " "
 	            end
 	            if showMoney then
-	                textLine = textLine .. "$" .. getMoney(pid, true)
+	                textline = textline .. "$" .. getMoney(pid, true)
 	            end
-	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
 	        if showWeapon then
 	            local weapon = getWeapon(ped)
@@ -6169,17 +6237,17 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	            end
 	        end
 	        if (showVehicle or showSpeed or showVehicleidname) and vehicle then
-	            local textLine = ""
+	            local textline = ""
 	            if showVehicle then
-	                textLine = getmodelnamebyhash(players.get_vehicle_model(pid)) .. " "
+	                textline = getmodelnamebyhash(players.get_vehicle_model(pid)) .. " "
 	            end
 				if showVehicleidname then
-					textLine = textLine .. "["..vehidname.."]" .. " "
+					textline = textline .. "["..vehidname.."]" .. " "
 				end
 	            if showSpeed and getSpeed(vehicle, true) > 0 then
-	                textLine = textLine .. getSpeed(vehicle)
+	                textline = textline .. getSpeed(vehicle)
 	            end
-	            valuesToDisplay[#valuesToDisplay + 1] = textLine
+	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
 	        local text = table.concat(valuesToDisplay, "\n")
 	        directx.draw_text(screenX + xValue, screenY + yValue, text, 5, scaleValue, color, false)
@@ -6306,7 +6374,7 @@ speedToggle = menu.toggle(ESP, "showSpeed", {}, "", function(on)
 end, showSpeed)
 showSpeed = menu.get_value(speedToggle)
 
-local function getplayertokick(pid)
+function getplayertokick(pid)
 	if Russian_Federation then
 		if pidlanguage(pid) == "Russian Federation" then
 			return pid
@@ -6446,7 +6514,7 @@ menu.toggle(leanderauswahl, "Austria", {}, "", function(on_toggle)
 	end
 end)
 
-menu.toggle(anti_russen_zeug, "Kick Länder", {}, "kickt Länder die nachjoinen", function(on_toggle)
+menu.toggle(anti_laender_zeug, "Kick Länder", {}, "kickt Länder die nachjoinen", function(on_toggle)
 	if on_toggle then
 		kickrussen = true
 	else 
@@ -6454,7 +6522,7 @@ menu.toggle(anti_russen_zeug, "Kick Länder", {}, "kickt Länder die nachjoinen"
 	end
 end)
 
-menu.action(anti_russen_zeug, "Länder aus lobby kicken", {}, "kickt aus deiner lobby jeden der ausgewählten länder", function()
+menu.action(anti_laender_zeug, "Länder aus lobby kicken", {}, "kickt aus deiner lobby jeden der ausgewählten länder", function()
 	if (not Czech_Republic) and (not Romania) and (not Italy) and (not France) and (not Poland) and (not Ukraine) and (not Russian_Federation) and (not Germany)and (not Austria) then
 		util.toast("keine länder ausgewählt")
 		goto end
@@ -6475,7 +6543,7 @@ menu.action(anti_russen_zeug, "Länder aus lobby kicken", {}, "kickt aus deiner 
 	::end::
 end)
 
-menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie viele spieler von den ausgewählten ländern in der lobby sind", function()
+menu.action(anti_laender_zeug, "ausgewählte länder in der lobby", {}, "sagt wie viele spieler von den ausgewählten ländern in der lobby sind", function()
 	local russencounter, ukrainecounter, polandcounter, francecounter, italycounter, romaniacounter, czechcounter, germanycoutner, Austriacoutner = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	local textline = ""
 	local notselectet = false
@@ -6547,7 +6615,7 @@ menu.action(anti_russen_zeug, "ausgewählte länder in der lobby", {}, "sagt wie
 end)
 
 timer6 = 1
-local function kickhosttoken(pid)
+function kickhosttoken(pid)
 	if kickhosttokenspoof then
 	if not util.is_session_transition_active() then
 		util.yield(5)
@@ -6690,7 +6758,7 @@ menu.text_input(antiactionvehicles, "addveh", {"addtoantiveh"}, "WICHITG!!!!!!\n
 	menu.set_value(menu.ref_by_command_name("addtoantiveh"), "")
 end)
 local searchvehciletable = {}
-local function clearsearchlist()
+function clearsearchlist()
 	for searchvehciletable as vehicle do
 		local hash = util.joaat(vehicle)
 		local valid = menu.is_ref_valid(menu.ref_by_command_name("antivehiclesearchactivate"..hash))
@@ -7001,359 +7069,142 @@ menu.toggle_loop(antivehicleaction, "Explode vehicle", {}, "", function()
 		::continue::
 	end
 end)
+--[[local filepath = filesystem.store_dir() .. "\\Selfmade\\playerhistory.txt"
 
-local actionen = menu.list(custselc, "actionen", {}, "")
-local friendly = menu.list(actionen, "Friendly stuff", {}, "")
-local kicken = menu.list(actionen, "Kick/crash stuff", {}, "")
-local tp = menu.list(actionen, "TP", {}, "")
-local trolling = menu.list(actionen, "Trolling", {}, "")
-removeexclude = menu.divider(actionen, "Remove player from list")
--- custon selection begin
-menu.toggle(custselc, "Exclude Selected", {"Excludeselected"}, "", function(on_toggle)
-	if on_toggle then
-		excludeselected = true
-		excludeselected1 = menu.action(friendly, "!!!Exclude Selected ist AN!!!", {}, "drück drauf um nicht mehr Exclude selected an zu haben", function()
-			menu.trigger_commands("excludeselected off")
-		end)
-		excludeselected2 = menu.action(kicken, "!!!Exclude Selected ist AN!!!", {}, "drück drauf um nicht mehr Exclude selected an zu haben", function()
-			menu.trigger_commands("excludeselected off")
-		end)
-		excludeselected3 = menu.action(tp, "!!!Exclude Selected ist AN!!!", {}, "drück drauf um nicht mehr Exclude selected an zu haben", function()
-			menu.trigger_commands("excludeselected off")
-		end)
-		excludeselected4 = menu.action(trolling, "!!!Exclude Selected ist AN!!!", {}, "drück drauf um nicht mehr Exclude selected an zu haben", function()
-			menu.trigger_commands("excludeselected off")
-		end)
-		excludeselected5 = menu.action(actionen, "!!!Exclude Selected ist AN!!!", {}, "drück drauf um nicht mehr Exclude selected an zu haben", function()
-			menu.trigger_commands("excludeselected off")
-		end)
+if not filesystem.exists(filesystem.store_dir() .. "\\Selfmade") then
+    filesystem.mkdir(filesystem.store_dir() .. "\\Selfmade")
+end
+if not filesystem.exists(filesystem.store_dir() .. "\\Selfmade\\playerhistory.txt") then
+    local file = io.open(filesystem.store_dir() .. "\\Selfmade\\playerhistory.txt", "w")
+    file:close()
+end
+
+menu.action(selfmadeplayerhistory, "safe lobby in file", {}, "",function()
+	local file = io.open(filepath, "a")
+	for players.list(false, true, true) as pid do
+		Pname = players.get_name(pid)
+   		file:write("["..os.date("%x", 906000490).. "] ".. Pname.. " IP: ".. tostring(soup.IpAddr(players.get_connect_ip(pid))).. "\n" )
+	end
+	file:close()
+end)
+menu.action(selfmadeplayerhistory, "clear textfile", {}, "",function()
+	local file = io.open(filepath, "w+")
+   	file:write()
+	file:close()
+end)]]
+
+menu.action(player_zeug, "Get Host", {}, "kickt die leute die vor dir host werden\njoa geht irgendwie geht halt nicht direkt",function()
+	local phostpos = players.get_host_queue_position(players.user())
+	local textline = ""
+	for players.list(false, true, true) as pid do
+		local hostposition = players.get_host_queue_position(pid)
+		if players.get_host() != pid then
+			if hostposition < phostpos then
+				if players.exists(pid) then
+					textline = textline.. "\n" ..players.get_name(pid).. "  :kicked"
+					menu.trigger_commands("kick"..players.get_name(pid))
+				end
+			end
+		end
+	end
+	if players.get_host() != players.user() then
+		menu.trigger_commands("kick"..players.get_name(players.get_host()))
+	end
+	if textline:len() > 0 then
+		textline = string.replace(textline, "\n", "", 1)
+		util.toast(textline)
+	end
+end)
+
+menu.action(player_zeug, "amount to get host", {}, "wie viele leute gekickt werden und ob ein freund dazwischen ist",function()
+	local phostpos = players.get_host_queue_position(players.user())
+	local numberofplayers = 0
+	local isfriend = false
+	for players.list(false, true, true) as pid do
+		local hostposition = players.get_host_queue_position(pid)
+		if hostposition < phostpos then
+			numberofplayers += 1
+			if PlayerisFriend(pid) then
+				isfriend = true
+			end
+		end
+	end
+	if isfriend then
+		util.toast(numberofplayers.. " Freund ist darunter")
 	else
-		excludeselected = false
+		util.toast(numberofplayers)
+	end
+end)
+
+local playerlisttable = {}
+local playersactiontable = {}
+local playersactionexcludeselectedtable = {}
+
+--[[menu.action(customselection, "toast player in list", {}, "", function(on_toggle)
+	for playersactiontable as pid do
+		util.toast(players.get_name(pid))
+	end
+end)]]
+
+excludeselectedtoggle = menu.toggle(customselection, "Exclude selected", {}, "dabei wirst du automatisch nicht mit gezählt", function(on_toggle)
+	if on_toggle then
+		excludeselected1 = menu.attach_after(dividercustom1,menu.action(menu.shadow_root(), "Exclude Selected ON", {}, "",function()
+			menu.set_value(excludeselectedtoggle, false)
+		end))
+		excludeselected2 = menu.attach_after(dividercustom2,menu.action(menu.shadow_root(), "Exclude Selected ON", {}, "",function()
+			menu.set_value(excludeselectedtoggle, false)
+		end))
+		excludeselected3 = menu.attach_after(dividercustom3,menu.action(menu.shadow_root(), "Exclude Selected ON", {}, "",function()
+			menu.set_value(excludeselectedtoggle, false)
+		end))
+		excludeselected4 = menu.attach_after(dividercustom4,menu.action(menu.shadow_root(), "Exclude Selected ON", {}, "",function()
+			menu.set_value(excludeselectedtoggle, false)
+		end))
+		excludeselected5 = menu.attach_after(dividercustom5,menu.action(menu.shadow_root(), "Exclude Selected ON", {}, "",function()
+			menu.set_value(excludeselectedtoggle, false)
+		end))
+		excludeselected = true
+	else
 		menu.delete(excludeselected1)
 		menu.delete(excludeselected2)
 		menu.delete(excludeselected3)
 		menu.delete(excludeselected4)
 		menu.delete(excludeselected5)
+		excludeselected = false
 	end
 end)
 
-menu.action(custselc, "seite reseten", {}, "passiert das bei mission ein fehler kommt einfach die seite hier mit reseten dann easy", function(pids)
-	for pids = 0, 31 do
-		if players.exists(pids) then
-		if menu.is_ref_valid(menu.ref_by_command_name("selected" ..pids)) then
-			menu.delete(cmd_id[pids])
-			util.yield(10)
-			if players.exists(pids) then
-				cmd_id[pids] = menu.toggle(custselc, tostring(players.get_name(pids)), {"selected" .. pids}, "PID - ".. pids, function(on_toggle)
-					if on_toggle then
-						selectedplayer[pids] = true
-						listfriendly[pids] = menu.action(friendly, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-							if players.user() and players.exists(pids) then
-								menu.trigger_commands("selected" .. pids .. " " .. "off")
-							else
-								menu.delete(listfriendly[pids])
-								menu.delete(listkicken[pids])
-								menu.delete(listtp[pids])
-								menu.delete(listtrolling[pids])
-								menu.delete(listgenerel[pids])
-							end
-						end)
-						listkicken[pids] = menu.action(kicken, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-							if players.user() and players.exists(pids) then
-								menu.trigger_commands("selected" .. pids .. " " .. "off")
-							else
-								menu.delete(listfriendly[pids])
-								menu.delete(listkicken[pids])
-								menu.delete(listtp[pids])
-								menu.delete(listtrolling[pids])
-								menu.delete(listgenerel[pids])
-							end
-						end)
-						listtp[pids] = menu.action(tp, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-							if players.user() and players.exists(pids) then
-								menu.trigger_commands("selected" .. pids .. " " .. "off")
-							else
-								menu.delete(listfriendly[pids])
-								menu.delete(listkicken[pids])
-								menu.delete(listtp[pids])
-								menu.delete(listtrolling[pids])
-								menu.delete(listgenerel[pids])
-							end
-						end)
-						listtrolling[pids] = menu.action(trolling, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-							if players.user() and players.exists(pids) then
-								menu.trigger_commands("selected" .. pids .. " " .. "off")
-							else
-								menu.delete(listfriendly[pids])
-								menu.delete(listkicken[pids])
-								menu.delete(listtp[pids])
-								menu.delete(listtrolling[pids])
-								menu.delete(listgenerel[pids])
-							end
-						end)
-						listgenerel[pids] = menu.action(actionen, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-							if players.user() and players.exists(pids) then
-								menu.trigger_commands("selected" .. pids .. " " .. "off")
-							else
-								menu.delete(listfriendly[pids])
-								menu.delete(listkicken[pids])
-								menu.delete(listtp[pids])
-								menu.delete(listtrolling[pids])
-								menu.delete(listgenerel[pids])
-							end
-						end)
-					else
-						selectedplayer[pids] = false
-						menu.delete(listfriendly[pids])	
-						menu.delete(listkicken[pids])
-						menu.delete(listtp[pids])
-						menu.delete(listtrolling[pids])
-						menu.delete(listgenerel[pids])
-					end
-				end)
-			end
-		end
-		end
-	end
-end)
---[[menu.toggle_loop(custselc, "refresh players", {}, "", function()
-	for pids = 0, 31 do
-		if players.exists(pids) then
-			local textline = "PID -"
-			local ePos = players.get_position(pids)
-			textline = textline.. " "..pids .."\nposition: X: "..math.floor(ePos.x).." Y: "..math.floor(ePos.y).. " Z:"..math.floor(ePos.z) 
-			if menu.is_ref_valid(cmd_id[pids]) then
-				menu.set_help_text(cmd_id[pids], textline)
-			end
-		end
-	end
-end)]]
-menu.divider(custselc, "Players")
+actionlistcustomselection = menu.list(customselection, "Actions", {}, "")
+actionlistcustomselectionteleport = menu.list(actionlistcustomselection, "TP", {}, "")
+actionlistcustomselectionfriendly = menu.list(actionlistcustomselection, "Friendly", {}, "")
+actionlistcustomselectiontrolling = menu.list(actionlistcustomselection, "Trolling", {}, "")
+actionlistcustomselectionkickcrash = menu.list(actionlistcustomselection, "Kick / crash", {}, "")
 
-menu.action(friendly, "automatisches healen ON", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-						  menu.trigger_commands("autoheal " .. GET_PLAYER_NAME(pids) .. " on")
-				util.yield()
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-						   menu.trigger_commands("autoheal " .. GET_PLAYER_NAME(pids) .. " on")
-				util.yield()
-			end
-		end
+-- Teleport things custom selection
+menu.action(actionlistcustomselectionteleport, "Teleport to me", {}, "teils möglich sehr bugy", function()
+	local textline = "Teleport for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("summon" .. players.get_name(pid))
+		util.yield(1000)
+		repeat
+			util.yield()
+			spectateplayer = players.get_spectate_target(players.user())
+		until spectateplayer == -1
 	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectionteleport, "Teleport to me Apatment", {}, "", function()
+	local textline = "Teleport (apartment) for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("aptme" .. players.get_name(pid))
+		util.yield(300)
+	end
+	util.toast(textline)
 end)
 
-menu.action(friendly, "automatisches healen OFF", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-						  menu.trigger_commands("autoheal " .. GET_PLAYER_NAME(pids) .. " off")
-				util.yield()
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-						   menu.trigger_commands("autoheal " .. GET_PLAYER_NAME(pids) .. " off")
-				util.yield()
-			end
-		end
-	end
-end)
-
-menu.action(friendly, "Nie Gefahndet ON", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-						  menu.trigger_commands("bail " .. GET_PLAYER_NAME(pids) .. " on")
-				util.yield()
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-						   menu.trigger_commands("bail " .. GET_PLAYER_NAME(pids) .. " on")
-				util.yield()
-			end
-		end
-	end
-end)
-
-menu.action(friendly, "Nie Gefahndet OFF", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-						  menu.trigger_commands("bail " .. GET_PLAYER_NAME(pids) .. " off")
-				util.yield()
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-						   menu.trigger_commands("bail " .. GET_PLAYER_NAME(pids) .. " off")
-				util.yield()
-			end
-		end
-	end
-end)
-
-menu.action(friendly, "Vom Rader Verschwinde ON", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-						  menu.trigger_commands("giveotr " .. GET_PLAYER_NAME(pids) .. " on")
-				util.yield()
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-						   menu.trigger_commands("giveotr " .. GET_PLAYER_NAME(pids) .. " on")
-				util.yield()
-			end
-		end
-	end
-end)
-
-menu.action(friendly, "Vom Rader Verschwinde OFF", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-						  menu.trigger_commands("giveotr " .. GET_PLAYER_NAME(pids) .. " off")
-				util.yield()
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-						   menu.trigger_commands("giveotr " .. GET_PLAYER_NAME(pids) .. " off")
-				util.yield()
-			end
-		end
-	end
-end)
-
-
-menu.action(kicken, "modder kicken", {}, "kicked alle die eine modder flag haben", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) and players.is_marked_as_modder(pids) then
-				if not PlayerisFriend(pids) then
-						  menu.trigger_commands("kick " .. GET_PLAYER_NAME(pids))
-					util.yield()
-				end
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) and players.is_marked_as_modder(pids) then
-				if not PlayerisFriend(pids) then
-						   menu.trigger_commands("kick " .. GET_PLAYER_NAME(pids))
-							util.yield()
-				end
-			end
-		end
-	end
-end)
-
-
-menu.action(kicken, "Kick", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-							menu.trigger_commands("kick " .. GET_PLAYER_NAME(pids))
-				util.yield()
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-						   menu.trigger_commands("kick " .. GET_PLAYER_NAME(pids))
-				util.yield()
-			end
-		end
-	end
-end)
-
-
-menu.action(kicken, "Crash", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				util.toast("SE Crash has been sent to " .. GET_PLAYER_NAME(pids), TOAST_ALL)
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				menu.trigger_commands("ngcrash" .. GET_PLAYER_NAME(pids))
-				util.toast("SE Crash has been sent to " .. GET_PLAYER_NAME(pids), TOAST_ALL)
-			end
-		end
-	end
-end)
-
-menu.action(tp, "Richtiges Teleportiren", {}, "Teleportiert die zu dir", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-				ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-				pos = players.get_position(players.user())
-				ppos = players.get_position(pids)
-				vehin = IS_PED_IN_ANY_VEHICLE(ped, true)
-				menu.trigger_commands("summon"..GET_PLAYER_NAME(pids))
-				if (VDIST2(pos.x,pos.y,pos.z,ppos.x,ppos.y,ppos.z) >= 1000000) then
-					util.yield(3500)
-					util.toast("TP " .. GET_PLAYER_NAME(pids))
-				else
-					util.toast("TP " .. GET_PLAYER_NAME(pids))
-					util.yield(2000)
-				end
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-				ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-				pos = players.get_position(players.user())
-				ppos = players.get_position(pids)
-				vehin = IS_PED_IN_ANY_VEHICLE(ped, true)
-				menu.trigger_commands("summon"..GET_PLAYER_NAME(pids))
-				if (VDIST2(pos.x,pos.y,pos.z,ppos.x,ppos.y,ppos.z) >= 1000000) then
-					util.yield(3500)
-					util.toast("TP " .. GET_PLAYER_NAME(pids))
-				else
-					util.toast("TP " .. GET_PLAYER_NAME(pids))
-					util.yield(2000)
-				end
-			end
-		end
-	end
-end)
-
-menu.action(tp, "apr Teleportiren", {}, "Teleportiert die in die nähe von dir in ein apartment", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-				local ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-				menu.trigger_commands("aptme" .. GET_PLAYER_NAME(pids))
-				util.toast("TP " .. GET_PLAYER_NAME(pids))
-				util.yield(2000)
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-				local ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-				menu.trigger_commands("aptme" .. GET_PLAYER_NAME(pids))
-				util.toast("TP " .. GET_PLAYER_NAME(pids))
-				util.yield(2000)
-			end
-		end
-	end
-end)
-
-menu.toggle(tp, "Apartments anzeigen", {}, "Die werden mit Zahlen angezeigt", function(on_toggle)
+menu.toggle(actionlistcustomselectionteleport, "Apartments anzeigen", {}, "Die werden mit Zahlen angezeigt", function(on_toggle)
 	if on_toggle then
 		menu.trigger_commands("showapartments " .. "on")
 	else
@@ -7362,292 +7213,291 @@ menu.toggle(tp, "Apartments anzeigen", {}, "Die werden mit Zahlen angezeigt", fu
 end)
 
 
-menu.action(tp, "auto Teleportiren", {}, "TP nur leute die in einem auto sitzen sonst nicht", function()
-	for pids = 0, 31 do
-		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-					if IS_PED_IN_ANY_VEHICLE(ped,true) then
-						menu.trigger_commands("demigodmode " .. "on")
-						menu.trigger_commands("summon " .. GET_PLAYER_NAME(pids))
-						util.toast("auto TP " .. GET_PLAYER_NAME(pids))
-						util.yield(2000)
-						menu.trigger_commands("demigodmode " .. "off")
-					else
-						menu.trigger_commands("spectate" .. GET_PLAYER_NAME(pids) .. " on")
-						util.yield(3000)
-						if IS_PED_IN_ANY_VEHICLE(ped,true) then
-							menu.trigger_commands("demigodmode " .. "on")
-							menu.trigger_commands("summon " .. GET_PLAYER_NAME(pids))
-							menu.trigger_commands("spectate" .. GET_PLAYER_NAME(pids) .. " off")
-							util.toast("auto TP " .. GET_PLAYER_NAME(pids))
-							util.yield(2000)
-							menu.trigger_commands("demigodmode " .. "off")
-						else
-							menu.trigger_commands("spectate" .. GET_PLAYER_NAME(pids) .. " off")
-							util.toast("ist nicht im auto " .. GET_PLAYER_NAME(pids))
-							util.yield(2000)
-						end
-					end
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-					if IS_PED_IN_ANY_VEHICLE(ped,true) then
-						menu.trigger_commands("demigodmode " .. "on")
-						menu.trigger_commands("summon " .. GET_PLAYER_NAME(pids))
-						util.toast("auto TP " .. GET_PLAYER_NAME(pids))
-						util.yield(2000)
-						menu.trigger_commands("demigodmode " .. "off")
-					else
-						menu.trigger_commands("spectate" .. GET_PLAYER_NAME(pids) .. " on")
-						util.yield(3000)
-						if IS_PED_IN_ANY_VEHICLE(ped,true) then
-							menu.trigger_commands("demigodmode " .. "on")
-							menu.trigger_commands("summon " .. GET_PLAYER_NAME(pids))
-							menu.trigger_commands("spectate" .. GET_PLAYER_NAME(pids) .. " off")
-							util.toast("auto TP " .. GET_PLAYER_NAME(pids))
-							util.yield(2000)
-							menu.trigger_commands("demigodmode " .. "off")
-						else
-							menu.trigger_commands("spectate" .. GET_PLAYER_NAME(pids) .. " off")
-							util.toast("ist nicht im auto " .. GET_PLAYER_NAME(pids))
-							util.yield(2000)
-						end
-					end
-			end
-		end
+-- Friendly things custom selection
+menu.action(actionlistcustomselectionfriendly, "Auto heal ON", {}, "", function()
+	local textline = "Auto heal ON for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("autoheal" .. players.get_name(pid) .. " on")
+		util.yield()
 	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectionfriendly, "Auto heal OFF", {}, "", function()
+	local textline = "Auto heal OFF for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("autoheal" .. players.get_name(pid) .. " off")
+		util.yield()
+	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectionfriendly, "Never wanted ON", {}, "", function()
+	local textline = "Never wanted ON for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("bail" .. players.get_name(pid) .. " on")
+		util.yield()
+	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectionfriendly, "Never wanted OFF", {}, "", function()
+	local textline = "Never wanted OFF for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("bail" .. players.get_name(pid) .. " off")
+		util.yield()
+	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectionfriendly, "OTR ON", {}, "", function()
+	local textline = "OTR on for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("giveotr" .. players.get_name(pid) .. " on")
+	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectionfriendly, "OTR OFF", {}, "", function()
+	local textline = "OTR OFF for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("giveotr" .. players.get_name(pid) .. " off")
+		util.yield()
+	end
+	util.toast(textline)
+end)
+-- Trolling things custom selection
+menu.action(actionlistcustomselectiontrolling, "Vehicle Kick", {}, "", function()
+	local textline = "Vehicle kick for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("vehkick" .. players.get_name(pid))
+		util.yield()
+	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectiontrolling, "Freeze ON", {}, "", function()
+	local textline = "Freeze ON for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("freeze" .. players.get_name(pid).. " on")
+		util.yield()
+	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectiontrolling, "Freeze ON", {}, "", function()
+	local textline = "Freeze OFF for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("freeze" .. players.get_name(pid).. " off")
+		util.yield()
+	end
+	util.toast(textline)
 end)
 
-
-menu.action(trolling, "Vehicle Kick", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-				local ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-				menu.trigger_commands("vehkick" .. GET_PLAYER_NAME(pids))
-				util.toast("Vehicle Kick has been sent to " .. GET_PLAYER_NAME(pids))
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-				local ped = GET_PLAYER_PED_SCRIPT_INDEX(pids)
-				menu.trigger_commands("vehkick" .. GET_PLAYER_NAME(pids))
-				util.toast("Vehicle Kick has been sent to " .. GET_PLAYER_NAME(pids))
-			end
+-- Kick / Crash things custom selection
+menu.action(actionlistcustomselectionkickcrash, "Modder Kicken", {}, "", function()
+	local textline = "Modder kick for:"
+	for playersactiontable as pid do
+		if players.is_marked_as_modder(pid) then
+			textline = textline.. "\n".. players.get_name(pid)
+			menu.trigger_commands("kick" .. players.get_name(pid))
+			util.yield()
 		end
 	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectionkickcrash, "Kicken", {}, "", function()
+	local textline = "Kick for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("kick" .. players.get_name(pid))
+		util.yield()
+	end
+	util.toast(textline)
+end)
+menu.action(actionlistcustomselectionkickcrash, "Crash", {}, "", function()
+	local textline = "Crash for:"
+	for playersactiontable as pid do
+		textline = textline.. "\n".. players.get_name(pid)
+		menu.trigger_commands("crash" .. players.get_name(pid))
+		menu.trigger_commands("crash" .. players.get_name(pid))
+		menu.trigger_commands("footlettuce" .. players.get_name(pid))
+		menu.trigger_commands("footlettuce" .. players.get_name(pid))
+		menu.trigger_commands("slaughter" .. players.get_name(pid))
+		menu.trigger_commands("slaughter" .. players.get_name(pid))
+		menu.trigger_commands("steamroll" .. players.get_name(pid))
+		menu.trigger_commands("steamroll" .. players.get_name(pid))
+		util.yield()
+	end
+	util.toast(textline)
 end)
 
-
-menu.action(trolling, "Freeze on", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-				menu.trigger_commands("freeze" .. GET_PLAYER_NAME(pids) .. " " .. "on")
-				util.toast("Freeze ist jetzt an " .. GET_PLAYER_NAME(pids))
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-				menu.trigger_commands("freeze" .. GET_PLAYER_NAME(pids) .. " " .. "on")
-				util.toast("Freeze ist jetzt an " .. GET_PLAYER_NAME(pids))
-			end
-		end
-	end
-end)
-
-
-menu.action(trolling, "Freeze off", {}, "", function()
-	for pids = 0, 31 do
-		if excludeselected then
-			if pids ~= players.user() and not selectedplayer[pids] and players.exists(pids) then
-				menu.trigger_commands("freeze" .. GET_PLAYER_NAME(pids) .. " " .. "off")
-				util.toast("Freeze ist jetzt aus für " .. GET_PLAYER_NAME(pids))
-			end
-		else
-			if pids ~= players.user() and selectedplayer[pids] and players.exists(pids) then
-				menu.trigger_commands("freeze" .. GET_PLAYER_NAME(pids) .. " " .. "off")
-				util.toast("Freeze ist jetzt aus für " .. GET_PLAYER_NAME(pids))
-			end
-		end
-	end
-end)
-
-menu.divider(friendly, "Selected Players")
-menu.divider(kicken, "Selected Players")
-menu.divider(tp, "Selected Players")
-menu.divider(trolling, "Selected Players")
-
-for pids = 0, 31 do
-	if players.exists(pids) then
-		cmd_id[pids] = menu.toggle(custselc, tostring(players.get_name(pids)), {"selected" .. pids}, "PID - ".. pids, function(on_toggle)
-			if on_toggle then
-				selectedplayer[pids] = true
-				listfriendly[pids] = menu.action(friendly, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-					if players.user() and players.exists(pids) then
-						menu.trigger_commands("selected" .. pids .. " " .. "off")
-					else
-						menu.delete(listfriendly[pids])
-						menu.delete(listkicken[pids])
-						menu.delete(listtp[pids])
-						menu.delete(listtrolling[pids])
-						menu.delete(listgenerel[pids])
-					end
-				end)
-				listkicken[pids] = menu.action(kicken, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-					if players.user() and players.exists(pids) then
-						menu.trigger_commands("selected" .. pids .. " " .. "off")
-					else
-						menu.delete(listfriendly[pids])
-						menu.delete(listkicken[pids])
-						menu.delete(listtp[pids])
-						menu.delete(listtrolling[pids])
-						menu.delete(listgenerel[pids])
-					end
-				end)
-				listtp[pids] = menu.action(tp, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-					if players.user() and players.exists(pids) then
-						menu.trigger_commands("selected" .. pids .. " " .. "off")
-					else
-						menu.delete(listfriendly[pids])
-						menu.delete(listkicken[pids])
-						menu.delete(listtp[pids])
-						menu.delete(listtrolling[pids])
-						menu.delete(listgenerel[pids])
-					end
-				end)
-				listtrolling[pids] = menu.action(trolling, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-					if players.user() and players.exists(pids) then
-						menu.trigger_commands("selected" .. pids .. " " .. "off")
-					else
-						menu.delete(listfriendly[pids])
-						menu.delete(listkicken[pids])
-						menu.delete(listtp[pids])
-						menu.delete(listtrolling[pids])
-						menu.delete(listgenerel[pids])
-					end
-				end)
-				listgenerel[pids] = menu.action(actionen, tostring(players.get_name(pids)), {}, "PID - ".. pids, function()
-					if players.user() and players.exists(pids) then
-						menu.trigger_commands("selected" .. pids .. " " .. "off")
-					else
-						menu.delete(listfriendly[pids])
-						menu.delete(listkicken[pids])
-						menu.delete(listtp[pids])
-						menu.delete(listtrolling[pids])
-						menu.delete(listgenerel[pids])
-					end
-				end)
-			else
-				selectedplayer[pids] = false
-				menu.delete(listfriendly[pids])	
-				menu.delete(listkicken[pids])
-				menu.delete(listtp[pids])
-				menu.delete(listtrolling[pids])
-				menu.delete(listgenerel[pids])
-			end
-		end)
-	end
-end
-
-local function update_join(pid)
-	--util.yield(300)
-local name = players.get_name(pid)
-cmd_id[pid] = menu.toggle(custselc, name, {"selected" .. pid}, "PID - ".. pid, function(on_toggle)
+dividercustom1 = menu.divider(actionlistcustomselection, "PLAYERS")
+dividercustom2 = menu.divider(actionlistcustomselectionteleport, "PLAYERS")
+dividercustom3 = menu.divider(actionlistcustomselectionfriendly, "PLAYERS")
+dividercustom4 = menu.divider(actionlistcustomselectiontrolling, "PLAYERS")
+dividercustom5 = menu.divider(actionlistcustomselectionkickcrash, "PLAYERS")
+menu.toggle(customselection, "load players", {}, "die liste wird die ganze zeit aktualisiert also vlt nicht dauer an lassen\nsollte aber nichts passieren wenn man es an lässt", function(on_toggle)
 	if on_toggle then
-		selectedplayer[pid] = true
-		listfriendly[pid] = menu.action(friendly, tostring(players.get_name(pid)), {}, "PID - ".. pid, function()
-			if players.user() and players.exists(pid) then
-				menu.trigger_commands("selected" .. pid .. " " .. "off")
-			else
-				menu.delete(listfriendly[pid])
-				menu.delete(listkicken[pid])
-				menu.delete(listtp[pid])
-				menu.delete(listtrolling[pid])
-				menu.delete(listgenerel[pid])
-			end
-		end)
-		listkicken[pid] = menu.action(kicken, tostring(players.get_name(pid)), {}, "PID - ".. pid, function()
-			if players.user() and players.exists(pid) then
-				menu.trigger_commands("selected" .. pid .. " " .. "off")
-			else
-				menu.delete(listfriendly[pid])
-				menu.delete(listkicken[pid])
-				menu.delete(listtp[pid])
-				menu.delete(listtrolling[pid])
-				menu.delete(listgenerel[pid])
-			end
-		end)
-		listtp[pid] = menu.action(tp, tostring(players.get_name(pid)), {}, "PID - ".. pid, function()
-			if players.user() and players.exists(pid) then
-				menu.trigger_commands("selected" .. pid .. " " .. "off")
-			else
-				menu.delete(listfriendly[pid])
-				menu.delete(listkicken[pid])
-				menu.delete(listtp[pid])
-				menu.delete(listtrolling[pid])
-				menu.delete(listgenerel[pid])
-			end
-		end)
-		listtrolling[pid] = menu.action(trolling, tostring(players.get_name(pid)), {}, "PID - ".. pid, function()
-			if players.user() and players.exists(pid) then
-				menu.trigger_commands("selected" .. pid .. " " .. "off")
-			else
-				menu.delete(listfriendly[pid])
-				menu.delete(listkicken[pid])
-				menu.delete(listtp[pid])
-				menu.delete(listtrolling[pid])
-				menu.delete(listgenerel[pid])
-			end
-		end)
-		listgenerel[pid] = menu.action(actionen, tostring(players.get_name(pid)), {}, "PID - ".. pid, function()
-			if players.user() and players.exists(pid) then
-				menu.trigger_commands("selected" .. pid .. " " .. "off")
-			else
-				menu.delete(listfriendly[pid])
-				menu.delete(listkicken[pid])
-				menu.delete(listtp[pid])
-				menu.delete(listtrolling[pid])
-				menu.delete(listgenerel[pid])
-			end
-		end)
+		creatplayerlistincustom = true
+		util.create_tick_handler(loadplayerlistcustom)
 	else
-				selectedplayer[pid] = false
-				menu.delete(listfriendly[pid])	
-				menu.delete(listkicken[pid])
-				menu.delete(listtp[pid])
-				menu.delete(listtrolling[pid])
-				menu.delete(listgenerel[pid])
+		creatplayerlistincustom = false
 	end
 end)
+playertable[-1] = menu.divider(customselection, "PLAYERS")
+
+function comma_value(n)
+	local left,num,right = string.match(n,'^([^%d]*%d)(%d*)(.-)$')
+	return left..(num:reverse():gsub('(%d%d%d)','%1,'):reverse())..right
 end
 
-GenerateFeatures = function(pid)
-cage = util.joaat("prop_gascage01")
-ladder = 1888301071
-ground = -1951226014
-attach = 1
-veh_to_attach = 1
-
-function v3_2(x, y, z)
-	if x == nil then
-		x = 0
+function loadplayerlistcustom()
+	if not creatplayerlistincustom then
+		for i = 0, 32 do
+			if playertable[i] != nil then
+				if menu.is_ref_valid(playertable[i]) then
+					tableremove(playerlisttable, i)
+					menu.delete(playertable[i])
+					menu.set_menu_name(playertable[-1], "PLAYERS")
+				end
+			end
+		end
+		handleplayeractionlist()
+		return false
 	end
-	if y == nil then
-		y = 0
+	local numberofplayersinlobby = 0
+	for players.list(true,true,true) as pid do
+		if players.exists(pid) then
+			numberofplayersinlobby += 1
+			local textline = "PID: ".. pid
+			local orgmemberstext = ""
+			local Pname = players.get_name(pid)
+			local Pnamewithtags = players.get_name_with_tags(pid)
+			local ipdata = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(pid))))
+			textline = textline.. "\nHost queue pos: ".. players.get_host_queue_position(pid)
+			if players.get_boss(pid) != -1 then
+				textline = textline.. "\nORG Type: ".. getorgtype(pid)
+				textline = textline.. "\nOwner: ".. players.get_name(players.get_boss(pid))
+				local orgmemberstable = getorganisationplayers(pid)
+				for orgmemberstable as pidorgs do
+					if players.get_boss(pid) != pidorgs then
+						orgmemberstext = orgmemberstext ..", ".. players.get_name(pidorgs)
+					end
+				end
+				orgmemberstext = string.replace(orgmemberstext, ", ", "" , 1)
+				if orgmemberstext:len() > 0 then
+					textline = textline.. "\nmembers: ".. orgmemberstext
+				end
+			end
+			textline = textline.. "\n"
+			textline = textline.. "\nRank: ".. players.get_rank(pid)
+			textline = textline.. "\nMoney: ".. comma_value(players.get_money(pid))
+			textline = textline.. "\nWallet: ".. comma_value(players.get_wallet(pid))
+			textline = textline.. "\nBank: ".. comma_value(players.get_bank(pid))
+			textline = textline.. "\nKD: ".. roundDecimals(players.get_kd(pid), 2)
+			textline = textline.. "\n"
+			textline = textline.. "\nIP: ".. tostring(soup.IpAddr(players.get_connect_ip(pid)))
+			textline = textline.. "\nLand: ".. ipdata.country
+			textline = textline.. "\nRegion: ".. ipdata.state
+			textline = textline.. "\nStadt: ".. ipdata.city
+			if not table.contains(playerlisttable, pid) then
+				table.insert(playerlisttable, pid)
+				local pidtoatach = getpidtoattach(pid)
+				playertable[pid] = menu.attach_after(playertable[pidtoatach] ,menu.toggle(menu.shadow_root(), Pname, {}, textline, function(on_toggle)
+				end))
+			else
+				if menu.is_ref_valid(playertable[pid]) then
+					menu.set_menu_name(playertable[pid], Pnamewithtags)
+					menu.set_help_text(playertable[pid], textline)
+				end
+			end
+		end
 	end
-	if z == nil then
-		z = 0
-	end
-end
+	handleplayeractionlist()
+	menu.set_menu_name(playertable[-1], "PLAYERS ["..numberofplayersinlobby.."]")
 end
 
-local InitialPlayersList = players.list(true, true, true)
-for i = 1, #InitialPlayersList do
-GenerateFeatures(InitialPlayersList[i])
+function handleplayeractionlist()
+	if excludeselected then
+		for pid = 0, 32 do
+			if playertable[pid] != nil then
+				if pid == players.user() then
+					tableremove(playersactiontable, pid)
+					goto end
+				end
+				if menu.is_ref_valid(playertable[pid]) then
+					if not menu.get_value(playertable[pid]) then
+						if not table.contains(playersactiontable, pid) then
+							deleteparents_in_custom(pid)
+							tableremove(playersactionexcludeselectedtable, pid)
+							table.insert(playersactiontable, pid)
+						end
+					else
+						if table.contains(playersactiontable, pid) then
+							deleteparents_in_custom(pid)
+							tableremove(playersactiontable, pid)
+							goto end
+						end
+						if not table.contains(playersactionexcludeselectedtable, pid) then
+							table.insert(playersactionexcludeselectedtable, pid)
+							
+							createparents_in_custom(pid, menu.get_help_text(playertable[pid]))
+						end
+						tableremove(playersactiontable, pid)
+					end
+				else
+					deleteparents_in_custom(pid)
+					tableremove(playersactiontable, pid)
+					tableremove(playersactionexcludeselectedtable, pid)
+				end
+			end
+			::end::
+		end
+	else
+		for pid = 0, 32 do
+			if playertable[pid] != nil then
+				if pid == players.user() then
+					tableremove(playersactiontable, pid)
+					goto end
+				end
+				if menu.is_ref_valid(playertable[pid]) then
+					if menu.get_value(playertable[pid]) then
+						if table.contains(playersactionexcludeselectedtable, pid) then
+							deleteparents_in_custom(pid)
+							tableremove(playersactionexcludeselectedtable, pid)
+							goto end
+						end
+						if not table.contains(playersactiontable, pid) then
+							createparents_in_custom(pid, menu.get_help_text(playertable[pid]))
+							table.insert(playersactiontable, pid)
+						end
+					else
+						deleteparents_in_custom(pid)
+						tableremove(playersactiontable, pid)
+						tableremove(playersactionexcludeselectedtable, pid)
+					end
+				else
+					deleteparents_in_custom(pid)
+					tableremove(playersactiontable, pid)
+					tableremove(playersactionexcludeselectedtable, pid)
+				end
+			end
+			::end::
+		end
+	end
 end
 
-players.on_join(GenerateFeatures)
-players.on_join(update_join)
+players.on_leave(function(pid)
+	if playertable[pid] != nil then
+		if menu.is_ref_valid(playertable[pid]) then
+			menu.delete(playertable[pid])
+			tableremove(playerlisttable, pid)
+		end
+	end
+end)
 
 menu.action(misc, "Firework test", {}, "", function()
 	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
