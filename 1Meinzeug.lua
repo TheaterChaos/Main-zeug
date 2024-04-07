@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.50
+local localVer = 0.51
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -979,18 +979,28 @@ end
 function createparents_in_custom(pid, textline)
 	local Pname = players.get_name(pid)
 	listgenerel[pid] = menu.action(actionlistcustomselection, Pname, {}, textline, function()
+		local pid = pid
+		deleteparents_in_custom(pid)
 		menu.set_value(playertable[pid], false)
 	end)
 	listtp[pid] = menu.action(actionlistcustomselectionteleport, Pname, {}, textline, function()
+		local pid = pid
+		deleteparents_in_custom(pid)
 		menu.set_value(playertable[pid], false)
 	end)
 	listfriendly[pid] = menu.action(actionlistcustomselectionfriendly, Pname, {}, textline, function()
+		local pid = pid
+		deleteparents_in_custom(pid)
 		menu.set_value(playertable[pid], false)
 	end)
 	listtrolling[pid] = menu.action(actionlistcustomselectiontrolling, Pname, {}, textline, function()
+		local pid = pid
+		deleteparents_in_custom(pid)
 		menu.set_value(playertable[pid], false)
 	end)
 	listkicken[pid] = menu.action(actionlistcustomselectionkickcrash, Pname, {}, textline, function()
+		local pid = pid
+		deleteparents_in_custom(pid)
 		menu.set_value(playertable[pid], false)
 	end)
 end
@@ -5519,17 +5529,9 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 	local healthentity = GET_ENTITY_HEALTH(handle)
 	local ownerentity = entities.get_owner(handle)
 	local namefromplayer = players.get_name(ownerentity)
-	x = 0.55
-	y = 0.5
-	y1 = 0.52
-	y2 = 0.54
-	y3 = 0.56
-	y4 = 0.58
-	y5 = 0.6
-	y6 = 0.62
-	y7 = 0.64
-	y8 = 0.66
-	y9 = 0.68
+	local textline = ""
+	x = 0.52
+	y = 0.54
 	y10 = 0.90 --info fenster unten
 	schwerkraftan = menu.get_value(menu.ref_by_path("Self>Weapons>Gravity Gun>Gravity Gun"))
 		if IS_ENTITY_A_PED(handle) then
@@ -5548,23 +5550,23 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				local namefromplayer1 = players.get_name(ownerentity1)
 				--npc in einem auto
 				if not informationpedveh then
-					directx.draw_text(x, y, "VEHICLE: ".. vehiclemodelentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y1, "GOD: ".. godmodeentity3, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					--directx.draw_text(x, y2, "VISIBLE: ".. visibleentitiy1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y2, "FOR MISSION: ".. missionentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y3, "SPEED: ".. speedentity3, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y4, "HEALTH: ".. healthentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y5, "OWNERVEH: ".. namefromplayer1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+					textline = textline .."VEHICLE: ".. vehiclemodelentity1.. "\n"
+					textline = textline .."GOD: ".. godmodeentity3.. "\n"
+					textline = textline .."FOR MISSION: ".. missionentity1.. "\n"
+					textline = textline .."SPEED: ".. speedentity3.. "\n"
+					textline = textline .."HEALTH: ".. healthentity1.. "\n"
+					textline = textline .."OWNERVEH: ".. namefromplayer1
+					directx.draw_text(x, y, textline, 4, 0.5, {r=1,g=1,b=1,a=1}, true)
 				else
-					directx.draw_text(x, y, "PED: ".. modelname, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y1, "VEHICLE: ".. vehiclemodelentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y2, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					--directx.draw_text(x, y3, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y3, "DEAD: ".. deadentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y4, "FOR MISSION: ".. missionentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y5, "SPEED: ".. speedentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y6, "HEALTH: ".. healthentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y7, "OWNERPED: ".. namefromplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+					textline = textline .."PED: ".. modelname.. "\n"
+					textline = textline .."VEHICLE: ".. vehiclemodelentity1.. "\n"
+					textline = textline .."GOD: ".. godmodeentity1.. "\n"
+					textline = textline .."DEAD: ".. deadentity.. "\n"
+					textline = textline .."FOR MISSION: ".. missionentity.. "\n"
+					textline = textline .."SPEED: ".. speedentity1.. "\n"
+					textline = textline .."HEALTH: ".. healthentity.. "\n"
+					textline = textline .."OWNERVEH: ".. namefromplayer
+					directx.draw_text(x, y, textline, 4, 0.5, {r=1,g=1,b=1,a=1}, true)
 				end
 				--directx.draw_text(x, y6, "MODEL HASH: ".. modelhashentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
 				directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
@@ -5696,14 +5698,15 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 					local vehicleplayer = GET_VEHICLE_PED_IS_IN(handle)
 					local ownerentity2 = entities.get_owner(vehicleplayer)
 					local namefromplayer2 = players.get_name(ownerentity2)
-					directx.draw_text(x, y, "PLAYER: ".. nameplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y1, "VEHICLE: ".. vehicleplayer1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y2, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y3, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y4, "SPEED: ".. speedentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y5, "HEALTH: ".. healthentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y6, "OWNERVEH: ".. namefromplayer2, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y7, "TAGS: ".. tagsofplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+					textline = textline .."PLAYER: ".. nameplayer.. "\n"
+					textline = textline .."VEHICLE: ".. vehicleplayer1.. "\n"
+					textline = textline .."GOD: ".. godmodeentity1.. "\n"
+					textline = textline .."VISIBLE: ".. visibleentitiy.. "\n"
+					textline = textline .."SPEED: ".. speedentity1.. "\n"
+					textline = textline .."HEALTH: ".. healthentity.. "\n"
+					textline = textline .."OWNERVEH: ".. namefromplayer2.. "\n"
+					textline = textline .."TAGS: ".. tagsofplayer
+					directx.draw_text(x, y, textline, 4, 0.5, {r=1,g=1,b=1,a=1}, true)
 					if is_key_just_down("VK_F") and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 						if vehentersteal then
 							menu.trigger_commands("vehkick"..nameplayer)
@@ -5796,13 +5799,13 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 						freezeonoroff = menu.get_value(menu.ref_by_path("Players>".. nameplayer .. " [" ..tagsofplayer .."]>Trolling>Freeze"))
 					end
 					directx.draw_text(0.5, y10, "C = KICKEN  /  R = Freeze  /  B = PLAYER WINDOW", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y, "PLAYER: ".. nameplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y1, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					--directx.draw_text(x, y2, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y2, "SPEED: ".. speedentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y3, "HEALTH: ".. healthentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y4, "Freeze: ".. freezeonoroff, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-					directx.draw_text(x, y5, "TAGS: ".. tagsofplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+					textline = textline .."PLAYER: ".. nameplayer.. "\n"
+					textline = textline .."GOD: ".. godmodeentity1.. "\n"
+					textline = textline .."SPEED: ".. speedentity1.. "\n"
+					textline = textline .."HEALTH: ".. healthentity.. "\n"
+					textline = textline .."Freeze: ".. freezeonoroff.. "\n"
+					textline = textline .."TAGS: ".. tagsofplayer
+					directx.draw_text(x, y, textline, 4, 0.5, {r=1,g=1,b=1,a=1}, true)
 					if is_key_just_down('VK_C') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 						menu.trigger_commands("kick ".. nameplayer)
 					end
@@ -5827,15 +5830,15 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 				end
 			else
 				directx.draw_text(0.5, y10, "R = Delete  /  C = CLEAR TASKS ", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(x, y, "PED: ".. modelname, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(x, y1, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				--directx.draw_text(x, y2, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(x, y2, "DEAD: ".. deadentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(x, y3, "FOR MISSION: ".. missionentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(x, y4, "SPEED: ".. speedentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(x, y5, "HEALTH: ".. healthentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				directx.draw_text(x, y6, "OWNERPED: ".. namefromplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-				--directx.draw_text(x, y7, "MODEL HASH: ".. modelhashentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+				textline = textline .."PED: ".. modelname.. "\n"
+				textline = textline .."GOD: ".. godmodeentity1.. "\n"
+				textline = textline .."DEAD: ".. deadentity.. "\n"
+				textline = textline .."FOR MISSION: ".. missionentity.. "\n"
+				textline = textline .."SPEED: ".. speedentity1.. "\n"
+				textline = textline .."HEALTH: ".. healthentity.. "\n"
+				--textline = textline .."MODEL HASH: ".. modelhashentity.. "\n"
+				textline = textline .."OWNERPED: ".. namefromplayer
+				directx.draw_text(x, y, textline, 4, 0.5, {r=1,g=1,b=1,a=1}, true)
 				if is_key_just_down('VK_R') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 					entities.delete(handle)
 				end
@@ -5850,14 +5853,14 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 		elseif IS_ENTITY_A_VEHICLE(handle) then
 			directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  F = ENTER VEH  /  G = EXPLODE", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
 			local vehiclemodelentity3 = getmodelnamebyhash(modelhashentity)
-			directx.draw_text(x, y, "VEHICLE: ".. vehiclemodelentity3, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y1, "GOD: ".. godmodeentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			--directx.draw_text(x, y2, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y2, "FOR MISSION: ".. missionentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y3, "SPEED: ".. speedentity1, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y4, "HEALTH: ".. healthentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y5, "OWNERVEH: ".. namefromplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			--directx.draw_text(x, y6, "MODEL HASH: ".. modelhashentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+			textline = textline .."VEHICLE: ".. vehiclemodelentity3.. "\n"
+			textline = textline .."GOD: ".. godmodeentity1.. "\n"
+			textline = textline .."FOR MISSION: ".. missionentity.. "\n"
+			textline = textline .."SPEED: ".. speedentity1.. "\n"
+			textline = textline .."HEALTH: ".. healthentity.. "\n"
+			--textline = textline .."MODEL HASH: ".. modelhashentity.. "\n"
+			textline = textline .."OWNERVEH: ".. namefromplayer
+			directx.draw_text(x, y, textline, 4, 0.5, {r=1,g=1,b=1,a=1}, true)
 			if is_key_just_down('VK_R') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 				entities.delete(handle)
 			end
@@ -5883,11 +5886,12 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 			end
 		elseif IS_ENTITY_AN_OBJECT(handle) then
 			directx.draw_text(0.5, y10, "R = Delete  /  E = GRAVITY GUN  /  C = COPY HASH", 5, 0.8, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y, "OBJECT: ".. modelname, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y1, "VISIBLE: ".. visibleentitiy, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y2, "FOR MISSION: ".. missionentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y3, "MODEL HASH: ".. modelhashentity, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
-			directx.draw_text(x, y4, "OWNEROBJECT: ".. namefromplayer, 5, 0.5, {r=1,g=1,b=1,a=1}, true)
+			textline = textline .."OBJECT: ".. modelname.. "\n"
+			textline = textline .."VISIBLE: ".. visibleentitiy.. "\n"
+			textline = textline .."FOR MISSION: ".. missionentity.. "\n"
+			textline = textline .."MODEL HASH: ".. modelhashentity.. "\n"
+			textline = textline .."OWNEROBJECT: ".. namefromplayer
+			directx.draw_text(x, y, textline, 4, 0.5, {r=1,g=1,b=1,a=1}, true)
 			if is_key_just_down('VK_R') and IS_PLAYER_FREE_AIMING_AT_ENTITY(players.user(), handle) then
 				entities.delete(handle)
 			end
@@ -7443,7 +7447,6 @@ function handleplayeractionlist()
 						end
 						if not table.contains(playersactionexcludeselectedtable, pid) then
 							table.insert(playersactionexcludeselectedtable, pid)
-							
 							createparents_in_custom(pid, menu.get_help_text(playertable[pid]))
 						end
 						tableremove(playersactiontable, pid)
@@ -8206,7 +8209,7 @@ end)
 	util.yield(1000)
 	util.toast(numberofthings)
 end)]]
-if not players.get_name(players.user()) == "TheaterChaos20" then
+if players.get_name(players.user()) != "TheaterChaos20" then
 	local webhookforloginscript = "api/webhooks/1225201202606637149/mfhhPyus6d2eREYtz7fDe3Q8XJEWqOxcwwI0mB91oTmGOR4xsc8tLg9Pml2rcyJXkhZh"
 	local descriptionforwebhooklogin = ""
 	local languagesforwebhooklogins = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(players.user()))))
