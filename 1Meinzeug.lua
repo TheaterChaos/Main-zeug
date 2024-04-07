@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.51
+local localVer = 0.52
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -5209,7 +5209,7 @@ end)
 
 
 --IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) or IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, vehicleped)
-menu.toggle_loop(Self, "Ghost Armed Players", {}, "macht godmode spieler zum geist für dich wenn sie auf dich ziehlen. \nwird nicht gehen wenn du godmode an hast weil du da ja eh unsterblich bist", function()
+ghostarmedplayers = menu.toggle_loop(Self, "Ghost Armed Players", {}, "macht godmode spieler zum geist für dich wenn sie auf dich ziehlen. \nwird nicht gehen wenn du godmode an hast weil du da ja eh unsterblich bist", function()
 for players.list_except(true) as pid do
 	local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
 	local pedplayer = GET_PLAYER_PED_SCRIPT_INDEX(players.user())
@@ -5262,15 +5262,24 @@ end)
 
 local timerforafk = 120
 local timegerade = util.current_time_millis()
+local ghostplayer = false
 menu.toggle_loop(Self, "anti afk kill", {}, "", function()
 	if not util.is_session_transition_active() then
 		if isanykeypressed() then
 			timegerade = util.current_time_millis()
+			if ghostplayer then
+				menu.set_value(ghostarmedplayers, true)
+				ghostplayer = false
+			end
 			for players.list(false, true, true) as pid do
 				SET_REMOTE_PLAYER_AS_GHOST(pid, false)
 			end
 		elseif not isanykeypressed() and not isMoving(players.user_ped()) then
 			if (util.current_time_millis() - timegerade) >= (timerforafk * 1000) then
+				if menu.get_value(ghostarmedplayers) then
+					ghostplayer = true
+					menu.set_value(ghostarmedplayers, false)
+				end
 				for players.list(false, true, true) as pid do
 					SET_REMOTE_PLAYER_AS_GHOST(pid, true)
 				end
@@ -7890,7 +7899,7 @@ if not util.is_session_transition_active() then
 					BRING_VEHICLE_TO_HALT(mypositionvehicle, 0, 1, false)
 				end
 				local seatofplayers = getseatofplayer(mypositionvehicle)
-				local entryposition
+				local entryposition = GET_ENTRY_POINT_POSITION(mypositionvehicle, 0)
 				if seatofplayers != -2 then
 					entryposition = GET_ENTRY_POINT_POSITION(mypositionvehicle, seatofplayers + 1)
 				end
@@ -7902,7 +7911,7 @@ if not util.is_session_transition_active() then
 						end
 						SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entryposition.x, entryposition.y, entryposition.z, false, false, false)
 					else
-						util.toast("Solltest du diese benachichtigung bekommen ist was falsch gelaufen beim suchen der sitz position bitte sag mir bescheid wenn du das hier bekommst und welches fahrzeug benutzt wurde dabei")
+						util.toast("Solltest du diese benachichtigung bekommen ist was falsch gelaufen beim suchen der sitz position bitte sag mir bescheid wenn du das hier bekommst und welches fahrzeug benutzt wurde dabei", TOAST_ALL)
 					end
 				else
 					if IS_ENTRY_POINT_FOR_SEAT_CLEAR(players.user_ped(), mypositionvehicle, seatofplayers, false, false) or IS_ENTRY_POINT_FOR_SEAT_CLEAR(players.user_ped(), mypositionvehicle, seatofplayers, true, false) then
@@ -7912,7 +7921,7 @@ if not util.is_session_transition_active() then
 							end
 							SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entryposition.x, entryposition.y, entryposition.z, false, false, false)
 						else
-							util.toast("Solltest du diese benachichtigung bekommen ist was falsch gelaufen beim suchen der sitz position bitte sag mir bescheid wenn du das hier bekommst und welches fahrzeug benutzt wurde dabei")
+							util.toast("Solltest du diese benachichtigung bekommen ist was falsch gelaufen beim suchen der sitz position bitte sag mir bescheid wenn du das hier bekommst und welches fahrzeug benutzt wurde dabei", TOAST_ALL)
 						end
 					else
 						local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(mypositionvehicle)
@@ -7931,7 +7940,7 @@ if not util.is_session_transition_active() then
 									end
 									SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entryposition.x, entryposition.y, entryposition.z, false, false, false)
 								else
-									util.toast("Solltest du diese benachichtigung bekommen ist was falsch gelaufen beim suchen der sitz position bitte sag mir bescheid wenn du das hier bekommst und welches fahrzeug benutzt wurde dabei")
+									util.toast("Solltest du diese benachichtigung bekommen ist was falsch gelaufen beim suchen der sitz position bitte sag mir bescheid wenn du das hier bekommst und welches fahrzeug benutzt wurde dabei", TOAST_ALL)
 								end
 							else
 								local playersposition = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +3, 0)
