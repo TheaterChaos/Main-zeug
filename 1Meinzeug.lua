@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.52
+local localVer = 0.53
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -454,6 +454,14 @@ function getVehicle(ped)
 	return IS_PED_SITTING_IN_ANY_VEHICLE(ped) and GET_VEHICLE_PED_IS_IN(ped, false)
 end
 
+function IS_PLAYER_PED(ped)
+	if GET_PED_TYPE(ped) < 4 then
+		return true
+	else
+		return false
+	end
+end
+
 function getTargetVehicleData(entity)
 	local vehicle = GET_VEHICLE_INDEX_FROM_ENTITY_INDEX(entity)
 	local driver = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
@@ -597,6 +605,38 @@ classes = {
 	[20]= "Commercial",
 	[21]= "Trains",
 	[22]= "IDK"}
+
+PedType = {
+	[0]= "PLAYER_0",
+	[1]= "PLAYER_1",
+	[2]= "NETWORK_PLAYER",
+	[3]= "PLAYER_2",
+	[4]= "CIVMALE",
+	[5]= "CIVFEMALE",
+	[6]= "COP",
+	[7]= "GANG_ALBANIAN",
+	[8]= "GANG_BIKER_1",
+	[9]= "GANG_BIKER_2",
+	[10]= "GANG_ITALIAN",
+	[11]= "GANG_RUSSIAN",
+	[12]= "GANG_RUSSIAN_2",
+	[13]= "GANG_IRISH",
+	[14]= "GANG_JAMAICAN",
+	[15]= "GANG_AFRICAN_AMERICAN",
+	[16]= "GANG_KOREAN",
+	[17]= "GANG_CHINESE_JAPANESE",
+	[18]= "GANG_PUERTO_RICAN",
+	[19]= "DEALER",
+	[20]= "MEDIC",
+	[21]= "FIREMAN",
+	[22]= "CRIMINAL",
+	[23]= "BUM",
+	[24]= "PROSTITUTE",
+	[25]= "SPECIAL",
+	[26]= "MISSION",
+	[27]= "SWAT",
+	[28]= "ANIMAL",
+	[29]= "ARMY"}
 
 
 --[[local function is_user_a_stand_user(pid)
@@ -3534,6 +3574,17 @@ menu.action(Entitymanagernearvehicleallpeds, "Freeze OFF", {}, "", function()
 		end
 	end
 end)
+menu.action(Entitymanagernearvehicleallpeds, "Remove weapons", {}, "", function()
+	for pedsdata as vehhandle do
+		local vehpointer = entities.handle_to_pointer(vehhandle)
+		local ePos = entities.get_position(vehpointer)
+		if getcontrole(vehhandle) then
+			REMOVE_ALL_PED_WEAPONS(vehhandle, false)
+		else
+			util.toast("konnte keine kontrolle bekommen")
+		end
+	end
+end)
 menu.divider(Entitymanagernearvehicleallpeds, "Friendly")
 menu.action(Entitymanagernearvehicleallpeds, "Heal/Revive", {}, "", function()
 	for pedsdata as vehhandle do
@@ -3688,6 +3739,7 @@ local maxDistancenearentitys = 200
 local onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switchsearchnearentitys, showdebugginfosnearentitys, showarsignalnearentitys = false, true, false, false, true, true
 local seattable = {}
 local seatzaehlerofseats = 0
+local numberfunctioninlist = 0
 
 function getnearvehicle()
 	if not enablednearvehicle then
@@ -3767,6 +3819,11 @@ function getnearvehicle()
 		if string.len(passangersinveh) > 0 then
 			infotextline = infotextline.. "\nPassangers: ".. passangersinveh
 		end
+		--if GET_BLIP_FROM_ENTITY(vehhandle) != 0 then
+			if GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(vehhandle)) == 1 then
+				textline = textline.. " {Enemie}"
+			end
+		--end
 		if GET_VEHICLE_ENGINE_HEALTH(vehhandle) < 0 then
 			textline = textline.. " {destroyed}"
 		end
@@ -3776,7 +3833,9 @@ function getnearvehicle()
 		if showdebugginfosnearentitys then
 			infotextline = infotextline.. "\nModelhash: ".. modelhash.. "\nWorldPosition: " .. "X:" ..math.floor(ePos.x) .. " Y:" ..math.floor(ePos.y) .. " Z:" ..math.floor(ePos.z)
 		end
-		local textlinemain = textline
+		infotextline = string.replace(infotextline, "true", "TRUE")
+		infotextline = string.replace(infotextline, "false", "FALSE")
+		textlinemain = textline
 		textline = textline:lower()
 		if switchsearchnearentitys then
 			if string.match(string.replace(textline, "["..dist.."]", ""), searchnearveh) and string.len(searchnearveh) > 0 then
@@ -4228,6 +4287,7 @@ function getnearvehicle()
 					util.toast("konnte keine kontrolle bekommen")
 				end
 			end)
+			numberfunctioninlist = numbertimercall
 			end
 		else
 			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
@@ -4239,7 +4299,7 @@ function getnearvehicle()
 					menu.set_help_text(veh[vehhandle], infotextline)
 				end
 			end
-			for i = 1, 21 do
+			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
@@ -4337,9 +4397,9 @@ function getnearpeds()
 		infotextline = infotextline.. "\nHealth: ".. GET_ENTITY_HEALTH(vehhandle)
 		infotextline = infotextline.. "\nArmour: ".. GET_PED_ARMOUR(vehhandle)
 		if IS_PED_ARMED(vehhandle ,7) then
-			infotextline = infotextline.. "\nWeapon out?: True"
+			infotextline = infotextline.. "\nWeapon out?: TRUE"
 		else
-			infotextline = infotextline.. "\nWeapon out?: False"
+			infotextline = infotextline.. "\nWeapon out?: FALSE"
 		end
 		infotextline = infotextline.. "\nVisible: ".. IS_ENTITY_VISIBLE(vehhandle)
 		if not GET_ENTITY_CAN_BE_DAMAGED(vehhandle) then
@@ -4352,12 +4412,22 @@ function getnearpeds()
 			textline = textline.. " {in veh}"
 			infotextline = infotextline.. "\nVehicle: ".. getmodelnamebyhash(entities.get_model_hash(GET_VEHICLE_PED_IS_IN(vehhandle)))
 		end
+		--if GET_BLIP_FROM_ENTITY(vehhandle) != 0 then
+			if GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(vehhandle)) == 1 or (GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(GET_VEHICLE_PED_IS_IN(vehhandle))) == 1) then
+				textline = textline.. " {Enemie}"
+			end
+		--end
 		if IS_PED_DEAD_OR_DYING(vehhandle) then
-			textline = textline.. " {dead}"
+			textline = textline.. " {Dead}"
+		end
+		if PedType[GET_PED_TYPE(vehhandle)] != nil then
+			infotextline = infotextline.. "\nPedType: ".. PedType[GET_PED_TYPE(vehhandle)]
 		end
 		if showdebugginfosnearentitys then
 			infotextline = infotextline.. "\nModelhash: ".. modelhash.. "\nWorldPosition: " .. "X:" ..math.floor(ePos.x) .. " Y:" ..math.floor(ePos.y) .. " Z:" ..math.floor(ePos.z)
 		end
+		infotextline = string.replace(infotextline, "true", "TRUE")
+		infotextline = string.replace(infotextline, "false", "FALSE")
 		textlinemain = textline
 		textline = textline:lower()
 		if switchsearchnearentitys then
@@ -4422,9 +4492,7 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = players.get_position(players.user())
 				local entitypPos = entities.get_position(entitypointer)
-				local dist = math.floor(mypos:distance(entitypPos))
 				ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 2, 1, true, false, 0.0, false)
 			end)
 			numbertimercall += 1
@@ -4433,9 +4501,6 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = players.get_position(players.user())
-				local entitypPos = entities.get_position(entitypointer)
-				local dist = math.floor(mypos:distance(entitypPos))
 				if getcontrole(entityhandle) then
 					SET_ENTITY_HEALTH(entityhandle, 0, 0)
 					FORCE_PED_MOTION_STATE(entityhandle, 0x0DBB071C, 0,0,0)
@@ -4449,9 +4514,6 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = players.get_position(players.user())
-				local entitypPos = entities.get_position(entitypointer)
-				local dist = math.floor(mypos:distance(entitypPos))
 				if getcontrole(entityhandle) then
 					FREEZE_ENTITY_POSITION(entityhandle, true)
 				else
@@ -4464,11 +4526,20 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = players.get_position(players.user())
-				local entitypPos = entities.get_position(entitypointer)
-				local dist = math.floor(mypos:distance(entitypPos))
 				if getcontrole(entityhandle) then
 					FREEZE_ENTITY_POSITION(entityhandle, false)
+				else
+					util.toast("konnte keine kontrolle bekommen")
+				end
+			end)
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Remove Weapons", {}, infotextline, function()
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				if getcontrole(entityhandle) then
+					REMOVE_ALL_PED_WEAPONS(entityhandle, false)
 				else
 					util.toast("konnte keine kontrolle bekommen")
 				end
@@ -4480,9 +4551,6 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = players.get_position(players.user())
-				local entitypPos = entities.get_position(entitypointer)
-				local dist = math.floor(mypos:distance(entitypPos))
 				if getcontrole(entityhandle) then
 					SET_ENTITY_INVINCIBLE(entityhandle, true)
 				else
@@ -4495,9 +4563,6 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = players.get_position(players.user())
-				local entitypPos = entities.get_position(entitypointer)
-				local dist = math.floor(mypos:distance(entitypPos))
 				if getcontrole(entityhandle) then
 					SET_ENTITY_INVINCIBLE(entityhandle, false)
 				else
@@ -4532,9 +4597,6 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = players.get_position(players.user())
-				local entitypPos = entities.get_position(entitypointer)
-				local dist = math.floor(mypos:distance(entitypPos))
 				if getcontrole(entityhandle) then
 					CLEAR_PED_TASKS_IMMEDIATELY(entityhandle)
 				else
@@ -4547,9 +4609,6 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = players.get_position(players.user())
-				local entitypPos = entities.get_position(entitypointer)
-				local dist = math.floor(mypos:distance(entitypPos))
 				if getcontrole(entityhandle) then
 					util.toast(GET_PED_MONEY(entityhandle))
 				else
@@ -4566,7 +4625,7 @@ function getnearpeds()
 				local entitypPos = entities.get_position(entitypointer)
 				local dist = math.floor(mypos:distance(entitypPos))
 				if getcontrole(entityhandle) then
-					SET_ENTITY_AS_MISSION_ENTITY(vehhandle)
+					SET_ENTITY_AS_MISSION_ENTITY(entityhandle)
 				else
 					util.toast("konnte keine kontrolle bekommen")
 				end
@@ -4581,8 +4640,8 @@ function getnearpeds()
 				local entitypPos = entities.get_position(entitypointer)
 				local dist = math.floor(mypos:distance(entitypPos))
 				local ent_ptr = memory.alloc_int()
-				memory.write_int(ent_ptr, vehhandle)
-				if getcontrole(vehhandle) then
+				memory.write_int(ent_ptr, entityhandle)
+				if getcontrole(entityhandle) then
 					SET_ENTITY_AS_NO_LONGER_NEEDED(ent_ptr)
 				else
 					util.toast("konnte keine kontrolle bekommen")
@@ -4594,8 +4653,6 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +4, 0)
-				local entitypPos = entities.get_position(entitypointer)
 				if getcontrole(entityhandle) then
 					SET_ENTITY_VISIBLE(entityhandle, true, 0)
 				else
@@ -4608,14 +4665,13 @@ function getnearpeds()
 				local entitypointer = vehpointer
 				local entityhash = modelhash
 				local entitiyname = modelname
-				local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +4, 0)
-				local entitypPos = entities.get_position(entitypointer)
 				if getcontrole(entityhandle) then
 					SET_ENTITY_VISIBLE(entityhandle, false, 0)
 				else
 					util.toast("konnte keine kontrolle bekommen")
 				end
 			end)
+			numberfunctioninlist = numbertimercall
 			end
 		else
 			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
@@ -4627,7 +4683,7 @@ function getnearpeds()
 					menu.set_help_text(veh[vehhandle], infotextline)
 				end
 			end
-			for i = 1, 16 do
+			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
@@ -4734,6 +4790,8 @@ function getnearobjects()
 		if showdebugginfosnearentitys then
 			infotextline = infotextline.. "\nModelhash: ".. modelhash.. "\nWorldPosition: " .. "X:" ..math.floor(ePos.x) .. " Y:" ..math.floor(ePos.y) .. " Z:" ..math.floor(ePos.z)
 		end
+		infotextline = string.replace(infotextline, "true", "TRUE")
+		infotextline = string.replace(infotextline, "false", "FALSE")
 		textlinemain = textline
 		textline = textline:lower()
 		if switchsearchnearentitys then
@@ -4845,6 +4903,7 @@ function getnearobjects()
 					util.toast("konnte keine kontrolle bekommen")
 				end
 			end)
+			numberfunctioninlist = numbertimercall
 			end
 		else
 			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
@@ -4856,7 +4915,7 @@ function getnearobjects()
 					menu.set_help_text(veh[vehhandle], infotextline)
 				end
 			end
-			for i = 1, 7 do
+			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
@@ -4952,6 +5011,8 @@ function getnearpickup()
 		if showdebugginfosnearentitys then
 			infotextline = infotextline.. "\nModelhash: ".. modelhash.. "\nWorldPosition: " .. "X:" ..math.floor(ePos.x) .. " Y:" ..math.floor(ePos.y) .. " Z:" ..math.floor(ePos.z)
 		end
+		infotextline = string.replace(infotextline, "true", "TRUE")
+		infotextline = string.replace(infotextline, "false", "FALSE")
 		textlinemain = textline
 		textline = textline:lower()
 		if switchsearchnearentitys then
@@ -5063,6 +5124,7 @@ function getnearpickup()
 					util.toast("konnte keine kontrolle bekommen")
 				end
 			end)
+			numberfunctioninlist = numbertimercall
 			end
 		else
 			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
@@ -5074,7 +5136,7 @@ function getnearpickup()
 					menu.set_help_text(veh[vehhandle], infotextline)
 				end
 			end
-			for i = 1, 7 do
+			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
@@ -5207,7 +5269,7 @@ menu.toggle_loop(Self, 'Shoot gods', {}, 'Disables godmode for other players whe
 	end
 end)
 
-
+local ghostplayertable = {}
 --IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) or IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, vehicleped)
 ghostarmedplayers = menu.toggle_loop(Self, "Ghost Armed Players", {}, "macht godmode spieler zum geist für dich wenn sie auf dich ziehlen. \nwird nicht gehen wenn du godmode an hast weil du da ja eh unsterblich bist", function()
 for players.list_except(true) as pid do
@@ -5218,16 +5280,27 @@ for players.list_except(true) as pid do
 	local vehicleped = GET_VEHICLE_PED_IS_IN(players.user_ped())
 	local pc = players.get_position(players.user())
 	local cc = players.get_position(pid)
-		if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PED_FACING_PED(ped, pedplayer, 10) or (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 10) and (not players.is_in_interior(pid)) then
+		if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PED_FACING_PED(ped, pedplayer, 15) and not players.is_in_interior(pid) then
 			if players.is_godmode(pid) and not godmodeon then
 				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
+				if not table.contains(ghostplayertable, pid) then
+					table.insert(ghostplayertable, pid)
+				end
 			end
-		--elseif IS_PED_ARMED(ped, 7) and (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 10) then
-		--	if players.is_godmode(pid) and not godmodeon then
-		--		SET_REMOTE_PLAYER_AS_GHOST(pid, true)
-		--	end
+		elseif (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 10) and not players.is_in_interior(pid) then
+			if players.is_godmode(pid) and not godmodeon then
+				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
+				if not table.contains(ghostplayertable, pid) then
+					table.insert(ghostplayertable, pid)
+				end
+			end
 		else
-			SET_REMOTE_PLAYER_AS_GHOST(pid, false)
+			if table.contains(ghostplayertable, pid) then
+				for ghostplayertable as pid do
+					SET_REMOTE_PLAYER_AS_GHOST(pid, false)
+					tableremove(ghostplayertable, pid)
+				end
+			end
 		end
 end
 end, function()
@@ -5269,10 +5342,15 @@ menu.toggle_loop(Self, "anti afk kill", {}, "", function()
 			timegerade = util.current_time_millis()
 			if ghostplayer then
 				menu.set_value(ghostarmedplayers, true)
+				for players.list(false, true, true) as pid do
+					SET_REMOTE_PLAYER_AS_GHOST(pid, false)
+				end
 				ghostplayer = false
 			end
-			for players.list(false, true, true) as pid do
-				SET_REMOTE_PLAYER_AS_GHOST(pid, false)
+			if not menu.get_value(ghostarmedplayers) then
+				for players.list(false, true, true) as pid do
+					SET_REMOTE_PLAYER_AS_GHOST(pid, false)
+				end
 			end
 		elseif not isanykeypressed() and not isMoving(players.user_ped()) then
 			if (util.current_time_millis() - timegerade) >= (timerforafk * 1000) then
@@ -5372,6 +5450,20 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		menu.trigger_command(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), false)
 		menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), false)
 		menu.trigger_command(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), false)
+		util.toast("Lock Weapons = false", TOAST_CONSOLE)
+		util.toast("Region Override = false", TOAST_CONSOLE)
+		util.toast("Pool Override = false", TOAST_CONSOLE)
+		util.toast("Seamless Session Switching = false", TOAST_CONSOLE)
+		util.toast("Don't Wait For Data Broadcast = false", TOAST_CONSOLE)
+		util.toast("Don't Wait For Mission Launcher = false", TOAST_CONSOLE)
+		util.toast("Don't Ask For Permission To Spawn = false", TOAST_CONSOLE)
+		util.toast("Skip Swoop Down = false", TOAST_CONSOLE)
+		util.toast("Delete Modded Pop Multiplier Areas = false", TOAST_CONSOLE)
+		util.toast("Block Entity Spam>Block Entity Spam = false", TOAST_CONSOLE)
+		util.toast("Join Group Override = Don't Override", TOAST_CONSOLE)
+		util.toast("Disable Restricted Areas 0 false", TOAST_CONSOLE)
+		util.toast("Lock Wanted Level = false", TOAST_CONSOLE)
+		util.toast("Host Token Spoofing = false", TOAST_CONSOLE)
 	else
 		zeugforthejob = false
 		if lockweapons1 then
@@ -5398,24 +5490,6 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
 		menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
 	end
-end)
-
-menu.action(Zeugforjob, "was deaktiviert wurde drück hier", {}, "zeigt was alles bei zeug für job aus machen aus gemacht wird", function()
-	util.toast("Lock Weapons = false", TOAST_CONSOLE)
-	util.toast("Region Override = false", TOAST_CONSOLE)
-	util.toast("Pool Override = false", TOAST_CONSOLE)
-	util.toast("Seamless Session Switching = false", TOAST_CONSOLE)
-	util.toast("Don't Wait For Data Broadcast = false", TOAST_CONSOLE)
-	util.toast("Don't Wait For Mission Launcher = false", TOAST_CONSOLE)
-	util.toast("Don't Ask For Permission To Spawn = false", TOAST_CONSOLE)
-	util.toast("Skip Swoop Down = false", TOAST_CONSOLE)
-	util.toast("Delete Modded Pop Multiplier Areas = false", TOAST_CONSOLE)
-	util.toast("Block Entity Spam>Block Entity Spam = false", TOAST_CONSOLE)
-	util.toast("Join Group Override = Don't Override", TOAST_CONSOLE)
-	util.toast("Disable Restricted Areas 0 false", TOAST_CONSOLE)
-	util.toast("Lock Wanted Level = false", TOAST_CONSOLE)
-	util.toast("Host Token Spoofing = false", TOAST_CONSOLE)
-	util.toast("Guck in deine console da steht alles. wenn du keine hast fick dich")
 end)
 
 function zeugwiederan()
@@ -5458,6 +5532,140 @@ menu.action(Zeugforjob, "Teleport Pickups To Me", {}, "teleportiert sachen zum a
     end
 end)
 
+NEAR_PED_CAM = menu.list(Zeugforjob, "Manage Nearby Peds And Cams", {}, "")
+
+menu.divider(NEAR_PED_CAM, "Peds")
+
+menu.toggle_loop(NEAR_PED_CAM, "Ignore You", {}, "Makes hostile peds (Included guards, polices, and gangs) ignore you even saw you. Except for the rare case, they don't shoot to you.", function()
+	SET_EVERYONE_IGNORE_PLAYER(players.user(), true)
+end, function()
+	SET_EVERYONE_IGNORE_PLAYER(players.user(), false)
+end)
+
+menu.action(NEAR_PED_CAM, "Remove Weapons", {}, "", function()
+	local numberofpeds = 0
+	for _, ped in pairs(entities.get_all_peds_as_handles()) do
+		if IS_PLAYER_PED(ped) or IS_ENTITY_DEAD(ped) then goto out end
+		if reactonredblips then
+			if GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(ped)) == 1 or (GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(GET_VEHICLE_PED_IS_IN(ped))) == 1) then goto getthem else goto out end
+		end
+		::getthem::
+		numberofpeds += 1
+		REMOVE_ALL_PED_WEAPONS(ped, true)
+		::out::
+	end
+	util.toast("Removed Weapons from ".. numberofpeds.. " Peds")
+end)
+
+menu.action(NEAR_PED_CAM, "Delete", {}, "", function()
+	local numberofpeds = 0
+	for _, ped in pairs(entities.get_all_peds_as_handles()) do
+		if IS_PLAYER_PED(ped) or IS_ENTITY_DEAD(ped) then goto out end
+		if reactonredblips then
+			if GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(ped)) == 1 or (GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(GET_VEHICLE_PED_IS_IN(ped))) == 1) then goto getthem else goto out end
+		end
+		::getthem::
+		numberofpeds += 1
+		entities.delete(ped)
+		::out::
+	end
+	util.toast("Deleted ".. numberofpeds.. " Peds")
+end)
+
+menu.action(NEAR_PED_CAM, "Kill", {}, "", function()
+	local numberofpeds = 0
+	for _, ped in pairs(entities.get_all_peds_as_handles()) do
+		if IS_PLAYER_PED(ped) or IS_ENTITY_DEAD(ped) then goto out end
+		if reactonredblips then
+			if GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(ped)) == 1 or GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(GET_VEHICLE_PED_IS_IN(ped))) == 1 then goto getthem else goto out end
+		end
+		::getthem::
+		numberofpeds += 1
+		SET_ENTITY_HEALTH(ped, 0, 0)
+		::out::
+	end
+	util.toast("Killed ".. numberofpeds.. " Peds")
+end)
+
+menu.action(NEAR_PED_CAM, "Shoot", {}, "", function()
+	local numberofpeds = 0
+	for _, ped in pairs(entities.get_all_peds_as_handles()) do
+		if IS_PLAYER_PED(ped) or IS_ENTITY_DEAD(ped) then goto out end
+		if reactonredblips then
+			if GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(ped)) == 1 or (GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(GET_VEHICLE_PED_IS_IN(ped))) == 1) then goto getthem else goto out end
+		end
+		::getthem::
+		if GET_VEHICLE_PED_IS_USING(ped) ~= 0 then CLEAR_PED_TASKS_IMMEDIATELY(ped) end
+		local PedPos = GET_ENTITY_COORDS(ped)
+		local AddPos = GET_ENTITY_COORDS(ped)
+		AddPos.z = AddPos.z + 1
+		numberofpeds += 1
+		SHOOT_SINGLE_BULLET_BETWEEN_COORDS(AddPos.x, AddPos.y, AddPos.z, PedPos.x, PedPos.y, PedPos.z, 1000, false, 0xC472FE2, players.user_ped(), false, true, 1000)
+		::out::
+	end
+	util.toast("Shoot ".. numberofpeds.. " Peds")
+end)
+
+
+menu.divider(NEAR_PED_CAM, "Cameras")
+
+AllCamLists = {
+	util.joaat("prop_cctv_cam_01a"),
+	util.joaat("prop_cctv_cam_01b"),
+	util.joaat("prop_cctv_cam_02a"),
+	util.joaat("prop_cctv_cam_03a"),
+	util.joaat("prop_cctv_cam_04a"),
+	util.joaat("prop_cctv_cam_04c"),
+	util.joaat("prop_cctv_cam_05a"),
+	util.joaat("prop_cctv_cam_06a"),
+	util.joaat("prop_cctv_cam_07a"),
+	util.joaat("prop_cs_cctv"),
+	util.joaat("p_cctv_s"),
+	util.joaat("hei_prop_bank_cctv_01"),
+	util.joaat("hei_prop_bank_cctv_02"),
+	util.joaat("ch_prop_ch_cctv_cam_02a"),
+	util.joaat("xm_prop_x17_server_farm_cctv_01"),
+}
+
+menu.action(NEAR_PED_CAM, "Taze", {}, "", function()
+	local numberofcams = 0
+	for _, ent in pairs(entities.get_all_objects_as_handles()) do
+		for __, cam in pairs(AllCamLists) do
+			if GET_ENTITY_MODEL(ent) == cam then
+				local CamPos = GET_ENTITY_COORDS(ent)
+				local AddPos = GET_ENTITY_COORDS(ent)
+				AddPos.z = AddPos.z + 1
+				numberofcams += 1
+				SHOOT_SINGLE_BULLET_BETWEEN_COORDS(AddPos.x, AddPos.y, AddPos.z, CamPos.x, CamPos.y, CamPos.z, 1000, false, 0x3656C8C1, players.user_ped(), false, true, 1000)
+			end
+		end
+	end
+	util.toast("Tazed ".. numberofcams.. " Cams")
+end)
+
+menu.action(NEAR_PED_CAM, "Delete", {}, "", function()
+	local numberofcams = 0
+	for _, cam in pairs(AllCamLists) do
+		for _, ent in pairs(entities.get_all_objects_as_handles()) do
+			if GET_ENTITY_MODEL(ent) == cam then
+				numberofcams += 1
+				entities.delete(ent)
+			end
+		end
+	end
+	util.toast("Deleted ".. numberofcams.. " Cams")
+end)
+
+menu.divider(NEAR_PED_CAM, "Settings")
+
+menu.toggle(NEAR_PED_CAM, "only react on red blips on map", {}, "Ausgeschloßen: cams, ignore you", function(on_toggle)
+	if on_toggle then
+		reactonredblips = true
+	else
+		reactonredblips = false
+	end
+end)
+
 function request_anim_dict(dict)
     request_time = os.time()
     if not DOES_ANIM_DICT_EXIST(dict) then
@@ -5471,28 +5679,6 @@ function request_anim_dict(dict)
         util.yield()
     end
 end
-
-menu.action(Zeugforjob, "Spawn object", {}, "spawned das object mit dem hash bei has number", function()
-	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
-	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, +1)
-	if hashnumber == nill or hashnumber != number then
-	else
-		util.toast(hashnumber)
-		entities.create_object(hashnumber, playeroffset)
-	end
-	if nameofobject != nill then
-		local hashofobj = util.joaat("ind_prop_firework_04")
-		entities.create_object(hashofobj, playeroffset)
-	end
-end)
-
-menu.text_input(Zeugforjob, "name of obj", {"nameofobj"}, "", function(input)
-	nameofobject = input
-end, '')
-
-menu.text_input(Zeugforjob, "hash number", {"hashnumber"}, "", function(input)
-	hashnumber = input
-end, '')
 
 menu.text_input(Self, "Claim auto", {"claimautoinput"}, "Schreib die zahl rein von dem auto das spawnen soll.\nsiehst du wenn du den command pvs benutzt dann kannst dein auto suchen und als befehlt steht dann welche zahl da ist", function(input)
 	name = input
@@ -7544,6 +7730,28 @@ menu.action(misc, "animation", {}, "", function()
 	CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
 end)
 
+menu.action(misc, "Spawn object", {}, "spawned das object mit dem hash bei has number", function()
+	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
+	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, +1)
+	if hashnumber == nill or hashnumber != number then
+	else
+		util.toast(hashnumber)
+		entities.create_object(hashnumber, playeroffset)
+	end
+	if nameofobject != nill then
+		local hashofobj = util.joaat("ind_prop_firework_04")
+		entities.create_object(hashofobj, playeroffset)
+	end
+end)
+
+menu.text_input(misc, "name of obj", {"nameofobj"}, "", function(input)
+	nameofobject = input
+end, '')
+
+menu.text_input(misc, "hash number", {"hashnumber"}, "", function(input)
+	hashnumber = input
+end, '')
+
 
 --[[  {
     "DictionaryName": "anim@mp_fireworks",
@@ -7635,19 +7843,8 @@ menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 	end
 end)
 
-menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 50]\ngib die kmh an auf die es boosten soll", 1,50, 1, 1, function(boost)
+menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 50]\nDamit wird die stärke eingestellt wie stark es dich boosten soll", 1,50, 1, 1, function(boost)
 	a = boost
-end)
-
-menu.toggle_loop(vehicle, "Stick to ground kake", {}, "", function()
-	vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
-	pPos = players.get_position(players.user())
-	getground = get_ground_z(pPos)
-	if getground ~= number then
-		if pPos.z >= (getground + 1) then
-			APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehicle, 1, 0.0, 0.0, -20, true, true, true, true)
-		end
-	end
 end)
 
 menu.click_slider(vehicle, "speed boost", {"selfboostsset"}, "[50 - 10000]\ngib die kmh an auf die es boosten soll", 50 ,10000, 0, 50, function(s)
