@@ -768,12 +768,6 @@ local parenttableforcustom = {
 	actionlistcustomselectiontrolling,
 	actionlistcustomselectionkickcrash}
 
-function v3(x, y, z)
-	if x == nil then x = 0 end
-	if y == nil then y = 0 end
-	if z == nil then z = 0 end
-end
-
 function send_script_event(first_arg, receiver, args)
 	table.insert(args, 1, first_arg)
 	util.trigger_script_event(1 << receiver, args)
@@ -8414,23 +8408,6 @@ menu.toggle_loop(Zeug_für_mich, "legit wanted level remove", {}, "", function()
 	end
 end)
 
---[[menu.toggle_loop(vehicle, "immer persönliches auto da", {}, "", function()
-	local persoveh = entities.get_user_personal_vehicle_as_handle()
-	local interioding = GET_INTERIOR_FROM_ENTITY(players.user_ped())
-	if persoveh == -1 and interioding == 0 and not IS_CUTSCENE_ACTIVE() then
-		util.yield(10000)
-		local persoveh = entities.get_user_personal_vehicle_as_handle()
-		if persoveh == -1 and interioding == 0 and not IS_CUTSCENE_ACTIVE() then
-			menu.trigger_command(menu.ref_by_path("Stand>Lua Scripts>".. SCRIPT_NAME ..">Self zeug>Claim all vehicles"))
-			util.toast("fahrzeug wird geliefert")
-			util.yield(5000)
-		end
-	end
-end)
-
---[[(JSkey.is_key_just_down('VK_R') or JSkey.is_control_just_pressed(0, 'INPUT_COVER'))
-
-]]
 local settings = menu.list(menu.my_root(), "Settings", {}, "", function(); end)
 	
 menu.action(settings, "update suchen", {}, "", function()
