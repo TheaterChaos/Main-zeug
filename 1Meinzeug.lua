@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.54
+local localVer = 0.55
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -53,9 +53,6 @@ until response
 --end
 
 -- Functions and infos
-
-local int_min = -2147483647
-local int_max = 2147483647
 
 local a = 1
 local bba = 10
@@ -429,18 +426,65 @@ EXPLOSIONVARIATION = {
     {84, "EMPLAUNCHER_EMP", {}, ""}
 }
 
-local menus = {}
+function drawboxatentity(entity)
+	if IS_ENTITY_A_PED(entity) then
+		ePosori = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, 0, 0, 0)
+		pedhight = GET_ENTITY_HEIGHT(entity, ePosori.x, ePosori.y, ePosori.z, true,true)
+		if IS_PED_IN_ANY_VEHICLE(entity) then
+			postocode = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, 0, 0, +1)
+			pedhight = postocode.z
+		end
+		--rechts von ped
+		ePos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, -0.98)
+		ePos1 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, +1)
+		ePos2 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, +1)
+		ePos3 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, +1)
+		ePos4 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, +1)
+		ePos5 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, -0.98)
+		ePos6 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, -0.98)
+		ePos7 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, -0.98)
+		--links von ped
+		ePos8 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, -0.98)
+		ePos9 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, +1)
+		ePos10 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, +1)
+		ePos11 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, +1)
+		ePos12 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, +1)
+		ePos13 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, -0.98)
+		ePos14 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, -0.98)
+		ePos15 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, -0.98)
+		--hinten linien
+		ePos16 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, -0.98)
+		ePos17 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, -0.98)
+		ePos18 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, +1)
+		ePos19 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, +1)
+		--vordere linien
+		ePos20 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, -0.98)
+		ePos21 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, -0.98)
+		ePos22 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, +1)
+		ePos23 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, +1)
 
-    function getNonWhitelistedPlayers(whitelistListTable, whitelistGroups, whitelistedName)
-        local playerList = players.list()
-        local notWhitelisted = {}
-        for i = 1, #playerList do
-            if not (players.get_name(playerList[i]) == whitelistedName) then
-                notWhitelisted[#notWhitelisted + 1] = playerList[i]
-            end
-        end
-        return notWhitelisted
-    end
+		--util.toast("test")
+		DRAW_LINE(ePos.x, ePos.y, ePos.z, ePos1.x, ePos1.y, pedhight, 255, 0, 0, 255)
+		DRAW_LINE(ePos2.x, ePos2.y, pedhight, ePos3.x, ePos3.y, pedhight, 255, 0, 0, 255)
+
+		DRAW_LINE(ePos4.x, ePos4.y, pedhight, ePos5.x, ePos5.y, ePos5.z, 255, 0, 0, 255)
+		DRAW_LINE(ePos6.x, ePos6.y, ePos6.z, ePos7.x, ePos7.y, ePos7.z, 255, 0, 0, 255)
+
+		DRAW_LINE(ePos8.x, ePos8.y, ePos8.z, ePos9.x, ePos9.y, pedhight, 255, 0, 0, 255)
+		DRAW_LINE(ePos10.x, ePos10.y, pedhight, ePos11.x, ePos11.y, pedhight, 255, 0, 0, 255)
+
+		DRAW_LINE(ePos12.x, ePos12.y, pedhight, ePos13.x, ePos13.y, ePos13.z, 255, 0, 0, 255)
+		DRAW_LINE(ePos14.x, ePos14.y, ePos14.z, ePos15.x, ePos15.y, ePos15.z, 255, 0, 0, 255)
+
+		DRAW_LINE(ePos16.x, ePos16.y, ePos16.z, ePos17.x, ePos17.y, ePos17.z, 255, 0, 0, 255)
+		DRAW_LINE(ePos18.x, ePos18.y, pedhight, ePos19.x, ePos19.y, pedhight, 255, 0, 0, 255)
+		
+		DRAW_LINE(ePos20.x, ePos20.y, ePos20.z, ePos21.x, ePos21.y, ePos21.z, 255, 0, 0, 255)
+		DRAW_LINE(ePos22.x, ePos22.y, pedhight, ePos23.x, ePos23.y, pedhight, 255, 0, 0, 255)
+	end
+end
+
+local menus = {}
 
 function get_friend_count()
     native_invoker.begin_call();native_invoker.end_call("203F1CFD823B27A4");
@@ -486,7 +530,7 @@ function isentitiyaenemie(entity)
 		end
 	end
 	if not IS_ENTITY_A_PED(entity) then
-		local colbliip2 = GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(GET_VEHICLE_PED_IS_IN(entity)))
+		local colbliip2 = GET_BLIP_COLOUR(GET_BLIP_FROM_ENTITY(entity))
 		if colbliip2 == 1 or colbliip2 == 49 or colbliip2 == 59 or colbliip2 == 75 then
 			return true
 		end
@@ -603,11 +647,11 @@ function reclaimVehicles()
 	end
 
 function Streamptfx(lib)
-    STREAMING.REQUEST_NAMED_PTFX_ASSET(lib)
-    while not STREAMING.HAS_NAMED_PTFX_ASSET_LOADED(lib) do
+    REQUEST_NAMED_PTFX_ASSET(lib)
+    while not HAS_NAMED_PTFX_ASSET_LOADED(lib) do
         util.yield()
     end
-    GRAPHICS.USE_PARTICLE_FX_ASSET(lib)
+    USE_PARTICLE_FX_ASSET(lib)
 end
 
 classes = {
@@ -693,6 +737,13 @@ function PlayerisFriend(player)
 		end
 	end
 	return false
+end
+
+function loadsphereninrangered(range, pos)
+	if pos == nil or (not pos) then
+		pos = players.get_position(players.user())
+	end
+	DRAW_MARKER_SPHERE(pos.x, pos.y, pos.z, range, 255, 0, 0, 0.3)
 end
 
 function getcontrole(entity)
@@ -1192,29 +1243,22 @@ function playerjoinmassge(pid)
 		ranklevel = players.get_rank(pid)
 		money = players.get_money(pid)
 		languagesname = pidlanguage(pid)
+		local textline = ""
 		if languagesname == nil then
 			goto end
 		end
-		if util.is_session_transition_active() then
-			if ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_CONSOLE)
-			elseif PlayerisFriend(pid) then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.."\nGeld: "..money, TOAST_CONSOLE)
-			elseif PlayerisFriend(pid) and ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_CONSOLE)
-			else
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_CONSOLE)
-			end
+		textline = textline.. "Spieler Gejoint\n"
+		textline = textline.. playername.."   {"..rockstarid.."} / Land: "..languagesname
+		if ranklevel != 0 then
+			textline = textline.."\nLevel: "..ranklevel.."   "
+		end
+		if money != 0 then
+			textline = textline.. "Geld: "..comma_value(money)
+		end
+		if util.is_session_started() then
+			util.toast(textline, TOAST_ALL)
 		else
-			if ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_ALL)
-			elseif PlayerisFriend(pid) then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
-			elseif PlayerisFriend(pid) and ranklevel == 0 or money == 0 then
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname, TOAST_ALL)
-			else
-				util.toast("Spieler Gejoint\n"..playername.."   ("..rockstarid..") / Land: "..languagesname.."\nLevel: "..ranklevel.." / Geld: "..money, TOAST_ALL)
-			end
+			util.toast(textline, TOAST_CONSOLE)
 		end
 		::end::
 	end
@@ -1365,16 +1409,6 @@ function getLanguage(pid)
 	return LANGUAGES[players.get_language(pid)]
 end
 
-function removeValues(t, removeT)
-	for _, r in ipairs(removeT) do
-		for i, v in ipairs(t) do
-			if v == r then
-				table.remove(t, i)
-			end
-		end
-	end
-end
-
 local colors = {
 green = 184,
 red = 6,
@@ -1481,7 +1515,7 @@ local function player(pid)
 	-- org teleport menu
 	menu.action(orgthingsteleport, "Zu Mir Teleportieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1493,7 +1527,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsteleport, "Zu Meinem Wegpunkt Teleportieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1505,7 +1539,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsteleport, "Zu Meinem Missionsziel Teleportieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1519,7 +1553,7 @@ local function player(pid)
 	--org Freundlich menu vehicle
 	menu.action(orgthingsfriendlyvehicle, "Komplett Verbessern", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1531,7 +1565,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsfriendlyvehicle, "Fahrzeug Reparieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1543,7 +1577,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsfriendlyvehicle, "Unzerstörbar", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1563,7 +1597,7 @@ local function player(pid)
 	--freundlich menu main
 	menu.action(orgthingsfriendly, "CEO Geld-Schleife", {}, "wird nicht dem boss gegeben\nAN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1585,7 +1619,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsfriendly, "Kasino-Figuren Geben", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1603,7 +1637,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsfriendly, "Spielkarten Geben", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1621,7 +1655,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsfriendly, "Automatische Heilung", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1639,7 +1673,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsfriendly, "Nie Gefahndet", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1657,7 +1691,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsfriendly, "Vom Radar Verschwinden", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1675,7 +1709,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsfriendly, "P's & Q's Geben", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1695,7 +1729,7 @@ local function player(pid)
 	--org weapons
 	menu.action(orgthingsweapons, "Alle Waffen Geben", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1707,7 +1741,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsweapons, "Munition Geben", {}, "gibt nur für die ausgerüstete waffe munition", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1728,7 +1762,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsweapons, "Fallschirm Geben", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1740,7 +1774,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingsweapons, "Unbewaffnen", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1760,7 +1794,7 @@ local function player(pid)
 	--org trolling vehicle
 	menu.action(orgthingstrollingvehicle, "Töten", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1772,7 +1806,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrollingvehicle, "EMP", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1784,7 +1818,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrollingvehicle, "Löschen", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 		else
 			for orgmembers as pid1 do
 				local playername = players.get_name(pid1)
@@ -1798,7 +1832,7 @@ local function player(pid)
 	menu.click_slider(orgthingstrolling, "Fahndungslevel Setzen", {}, "", 0 ,5, 0, 1, function(s)
 		local level = s
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1827,7 +1861,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Einfrieren", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1845,7 +1879,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Kamera Nach Vorne Zwingen", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1863,7 +1897,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Ragdoll", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1881,7 +1915,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Kamera Verwackeln", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1899,7 +1933,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Töten", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1911,7 +1945,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Explodieren", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1923,7 +1957,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Benachrichtigungs-Spam", {}, "AN / AUS", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1941,7 +1975,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Kick Vom Fahrzeug", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1953,7 +1987,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Kick Vom Innenraum", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1965,7 +1999,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Kick Vom CEO/MC", {}, "kickt den boss raus damit ist die org aufgelöst", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1984,7 +2018,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "Unedlicher Ladebildschirm", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -1996,7 +2030,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingstrolling, "In Freemode-Mission Zwingen", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -2010,7 +2044,7 @@ local function player(pid)
 	--org crashen
 	menu.action(orgthingscrash, "Elegant", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -2022,7 +2056,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingscrash, "Burger King Fußsalat", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -2034,7 +2068,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingscrash, "Fahrzeug Totschlag", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -2046,7 +2080,7 @@ local function player(pid)
  	end)
 	menu.action(orgthingscrash, "Dampfwalze", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -2058,7 +2092,7 @@ local function player(pid)
  	end)
 	menu.action(orgthings, "Kick", {}, "", function()
 		local orgmembers = getorganisationplayers(pid)
-		if orgmembers == "false" then
+		if not orgmembers then
 			util.toast("spieler ist in keiner organisation")
 		else
 			for orgmembers as pid1 do
@@ -2121,9 +2155,7 @@ local function player(pid)
 
 
 
-
-
-	if (filesystem.exists(filesystem.scripts_dir() .. "lib/wiriscript/orbital_cannon.lua")) then
+	--[[if (filesystem.exists(filesystem.scripts_dir() .. "lib/wiriscript/orbital_cannon.lua")) then
 		local OrbitalCannon = require "wiriscript.orbital_cannon"
 
 		menu.action(main, "Kill With Orbital Cannon", {}, "", function()
@@ -2142,7 +2174,6 @@ local function player(pid)
 			end
 		end)
 		
-		
 		while true do
 			OrbitalCannon.mainLoop()
 			util.yield_once()
@@ -2151,6 +2182,15 @@ local function player(pid)
 		menu.action(main, "Kill With Orbital Cannon", {}, "", function()
 			util.toast("du hast bestimmte files nicht")
 		end)
+	end]]
+end
+
+function nearentitiysloadsphere()
+	if not nearentitysloadsphererange then
+		return false
+	end
+	if menu.is_focused(maxDistnearentitys, false) then
+		loadsphereninrangered(maxDistancenearentitys)
 	end
 end
 
@@ -2163,7 +2203,12 @@ local vehicle = menu.list(menu.my_root(), "Vehicle zeug", {}, "")
 local Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
 local Entitymanagercleararea = menu.list(Entitymanager, "Clear Area", {}, "")
 local Entitymanageresp = menu.list(Entitymanager, "Entity ESP", {}, "")
-local Entitymanagernearvehicle = menu.list(Entitymanager, "Near Entitys", {}, "")
+local Entitymanagernearvehicle = menu.list(Entitymanager, "Near Entitys", {}, "", function(on_click)
+	nearentitysloadsphererange = true
+	util.create_tick_handler(nearentitiysloadsphere)
+end, function(on_back)
+	nearentitysloadsphererange = false
+end)
 local player_zeug = menu.list(menu.my_root(), "Lobby zeug", {}, "")
 --local streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
 local Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
@@ -2369,9 +2414,15 @@ enabledToggleveh = menu.toggle(Entitymanagerespvehicle, "Enable ESP Vehicle", {"
 	if on_toggle then
 		enabledveh = true
 		if deactivateother then
-			menu.trigger_commands("ESPped off")
-			menu.trigger_commands("ESPobject off")
-			menu.trigger_commands("ESPpickup off")
+			if menu.get_value(enabledToggleped) then
+				menu.set_value(enabledToggleped, false)
+			end
+			if menu.get_value(enabledToggleobj) then
+				menu.set_value(enabledToggleobj, false)
+			end
+			if menu.get_value(enabledTogglepickup) then
+				menu.set_value(enabledTogglepickup, false)
+			end
 		end
 		util.create_tick_handler(renderESPveh)
 	else
@@ -2455,7 +2506,7 @@ menu.action(actionSubmenuveh, "Explode", {}, "bissel bugi aber mit bissel spamen
 						repeat
 							util.yield()
 							time += 1
-							ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 1, true, false, 0.0, false)
+							ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 100, true, false, 0.0, false)
 						until (GET_VEHICLE_ENGINE_HEALTH(entity) <= 0) or time == 500 or (not DOES_ENTITY_EXIST(entity))
 					--end
 				else
@@ -2465,7 +2516,7 @@ menu.action(actionSubmenuveh, "Explode", {}, "bissel bugi aber mit bissel spamen
 							repeat
 								util.yield()
 								time += 1
-								ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 1, true, false, 0.0, false)
+								ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 100, true, false, 0.0, false)
 							until (GET_VEHICLE_ENGINE_HEALTH(entity) <= 0) or time == 500 or (not DOES_ENTITY_EXIST(entity))
 						--end
 					end
@@ -2713,9 +2764,15 @@ enabledToggleped = menu.toggle(Entitymanageresppeds, "Enable ESP Ped", {"ESPped"
 	if on_toggle then
 		enabledped = true
 		if deactivateother then
-			menu.trigger_commands("ESPveh off")
-			menu.trigger_commands("ESPobject off")
-			menu.trigger_commands("ESPpickup off")
+			if menu.get_value(enabledToggleveh) then
+				menu.set_value(enabledToggleveh, false)
+			end
+			if menu.get_value(enabledToggleobj) then
+				menu.set_value(enabledToggleobj, false)
+			end
+			if menu.get_value(enabledTogglepickup) then
+				menu.set_value(enabledTogglepickup, false)
+			end
 		end
 		util.create_tick_handler(renderESPped)
 	else
@@ -2792,7 +2849,7 @@ menu.action(actionSubmenuped, "Explode", {}, "", function()
 						repeat
 							util.yield()
 							time += 1
-							ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 1, true, false, 0.0, false)
+							ADD_EXPLOSION(position.x, position.y, position.z, explosiontype, 100, true, false, 0.0, false)
 						until (IS_PED_DEAD_OR_DYING(entity)) or time == 100 or (not DOES_ENTITY_EXIST(entity))
 					end
 				end
@@ -3068,9 +3125,15 @@ enabledToggleobj = menu.toggle(Entitymanagerespobjects, "Enable ESP Objects", {"
 	if on_toggle then
 		enabledobj = true
 		if deactivateother then
-			menu.trigger_commands("ESPped off")
-			menu.trigger_commands("ESPveh off")
-			menu.trigger_commands("ESPpickup off")
+			if menu.get_value(enabledToggleped) then
+				menu.set_value(enabledToggleped, false)
+			end
+			if menu.get_value(enabledToggleveh) then
+				menu.set_value(enabledToggleveh, false)
+			end
+			if menu.get_value(enabledTogglepickup) then
+				menu.set_value(enabledTogglepickup, false)
+			end
 		end
 		util.create_tick_handler(renderESPobj)
 	else
@@ -3242,9 +3305,15 @@ enabledTogglepickup = menu.toggle(Entitymanageresppickups, "Enable ESP Pickups",
 	if on_toggle then
 		enabledpickup = true
 		if deactivateother then
-			menu.trigger_commands("ESPped off")
-			menu.trigger_commands("ESPobject off")
-			menu.trigger_commands("ESPveh off")
+			if menu.get_value(enabledToggleped) then
+				menu.set_value(enabledToggleped, false)
+			end
+			if menu.get_value(enabledToggleobj) then
+				menu.set_value(enabledToggleobj, false)
+			end
+			if menu.get_value(enabledToggleveh) then
+				menu.set_value(enabledToggleveh, false)
+			end
 		end
 		util.create_tick_handler(renderESPpickup)
 	else
@@ -3407,13 +3476,31 @@ end)
 menu.divider(Entitymanagernearvehicleallveh, "Trolling")
 menu.action(Entitymanagernearvehicleallveh, "Explode", {}, "", function()
 	for vehicledata as vehhandle do
-		local vehpointer = entities.handle_to_pointer(vehhandle)
-		local ePos = entities.get_position(vehpointer)
-		if getcontrole(vehhandle) then
-			ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 2, 1, true, false, 0.0, false)
-		else
-			util.toast("konnte keine kontrolle bekommen")
+		local ePos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(vehhandle, 0, 0, 0)
+		if ePos.x == 0 or ePos.y == 0 then
+			goto end
 		end
+		local canbedamaged = entities.is_invulnerable(vehhandle)
+		ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 1000, true, false, 0.0, false)
+		if GET_VEHICLE_ENGINE_HEALTH(vehhandle) > 0 and not canbedamaged then
+			repeat
+				util.yield()
+				ePos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(vehhandle, 0, 0, 0)
+				if ePos.x == 0 or ePos.y == 0 or (not DOES_ENTITY_EXIST(vehhandle)) then
+					break
+				end
+				ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 1000, true, false, 0.0, false)
+				vehiclehealth = GET_VEHICLE_ENGINE_HEALTH(vehhandle)
+				vehiclebodyhealth = GET_VEHICLE_BODY_HEALTH(vehhandle)
+				--timer += 1
+			until vehiclehealth < 0 or vehiclebodyhealth < 1 --or timer > 250
+		end
+		::end::
+		--if getcontrole(vehhandle) then
+		--	ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 2, 1, true, false, 0.0, false)
+		--else
+		--	util.toast("konnte keine kontrolle bekommen")
+		--end
 	end
 end)
 menu.action(Entitymanagernearvehicleallveh, "Delete", {}, "", function()
@@ -3556,11 +3643,14 @@ menu.action(Entitymanagernearvehicleallpeds, "Explode", {}, "", function()
 	for pedsdata as vehhandle do
 		local vehpointer = entities.handle_to_pointer(vehhandle)
 		local ePos = entities.get_position(vehpointer)
-		if getcontrole(vehhandle) then
-			ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 2, 1, true, false, 0.0, false)
-		else
-			util.toast("konnte keine kontrolle bekommen")
-		end
+		--if getcontrole(vehhandle) then
+		if IS_PED_IN_ANY_VEHICLE(vehhandle) then CLEAR_PED_TASKS_IMMEDIATELY(vehhandle) end
+			ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 100, true, false, 0.0, false)
+			SET_ENTITY_HEALTH(vehhandle, 0, 0)
+			FORCE_PED_MOTION_STATE(vehhandle, 0x0DBB071C, 0,0,0)
+		--else
+		--	util.toast("konnte keine kontrolle bekommen")
+		--end
 	end
 end)
 menu.action(Entitymanagernearvehicleallpeds, "Kill", {}, "", function()
@@ -3706,6 +3796,13 @@ menu.action(Entitymanagernearvehicleallobjects, "Delete", {}, "", function()
 			entities.delete(vehhandle)
 	end
 end)
+menu.action(Entitymanagernearvehicleallobjects, "Explode", {}, "", function()
+	for objectsdata as vehhandle do
+		util.yield(5)
+		local ePos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(vehhandle, 0, 0, 0)
+		ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 100, true, false, 0.0, false)
+	end
+end)
 menu.divider(Entitymanagernearvehicleallobjects, "misc")
 menu.action(Entitymanagernearvehicleallobjects, "Set Object as mission Entity", {}, "setzt das Object als mission entity kann also nicht einfach so despawnen", function()
 	for objectsdata as vehhandle do
@@ -3769,11 +3866,14 @@ end)
 
 local Entitymanagernearvehicleirgnore = menu.list(Entitymanagernearvehicle, "Igrnoriere das", {}, "die sachen werden dann geladen wenn du da drauf drückst also das brauchst du nicht")
 
-local maxDistancenearentitys = 200
+maxDistancenearentitys = 200
 local onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switchsearchnearentitys, showdebugginfosnearentitys, showarsignalnearentitys, infosearchnearentitys = false, true, false, false, true, true, false
 local seattable = {}
 local seatzaehlerofseats = 0
 local numberfunctioninlist = 0
+
+rot = {x = 0, y = 0, z = 0}
+dimensions = {x = 1, y = 1, z = 1.5}
 
 function getnearvehicle()
 	if not enablednearvehicle then
@@ -3785,9 +3885,9 @@ function getnearvehicle()
 		vehicledata = {}
 		return false
 	end
-	if not menu.is_open() then
-		return
-	end
+	--if not menu.is_open() then
+	--	return
+	--end
 	if util.is_session_transition_active() then
 		return
 	end
@@ -4051,7 +4151,9 @@ function getnearvehicle()
 					util.toast("konnte keine kontrolle bekommen")
 				end
 			end)
+
 			menu.divider(veh[vehhandle], "Trolling")
+
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Explode", {}, infotextline, function()
 				local timer = 0
@@ -4060,17 +4162,18 @@ function getnearvehicle()
 				local entityhash = modelhash
 				local entitiyname = modelname
 				local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +4, 0)
-				local entitypPos = entities.get_position(entitypointer)
-				local canbedamaged = GET_ENTITY_CAN_BE_DAMAGED(entityhandle)
+				entitypPos = entities.get_position(entitypointer)
+				local canbedamaged = entities.is_invulnerable(entityhandle)
 				--if getcontrole(entityhandle) then
-					ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 2, 1, true, false, 0.0, false)
-					if GET_VEHICLE_ENGINE_HEALTH(entityhandle) > 0 and canbedamaged then
+					ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 5, 1000, true, false, 0.0, false)
+					if GET_VEHICLE_ENGINE_HEALTH(entityhandle) > 0 and not canbedamaged then
 						repeat
 							util.yield()
-							ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 2, 1, true, false, 0.0, false)
+							ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 5, 1000, true, false, 0.0, false)
 							vehiclehealth = GET_VEHICLE_ENGINE_HEALTH(entityhandle)
-							timer += 1
-						until vehiclehealth < 0 or timer > 250
+							vehiclebodyhealth = GET_VEHICLE_BODY_HEALTH(entityhandle)
+							--timer += 1
+						until (vehiclehealth < 0 and vehiclebodyhealth < 1) --or timer > 250
 					end
 				--else
 				--	util.toast("konnte keine kontrolle bekommen")
@@ -4168,7 +4271,9 @@ function getnearvehicle()
 					end
 				end
 			end)
+
 			menu.divider(veh[vehhandle], "Friendly")
+
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Give Godmode", {}, infotextline, function()
 				local entityhandle = vehhandle
@@ -4211,6 +4316,20 @@ function getnearvehicle()
 					STOP_ENTITY_FIRE(entityhandle)
 					SET_VEHICLE_FIXED(entityhandle)
 					SET_VEHICLE_DIRT_LEVEL(entityhandle, 0)
+				else
+					util.toast("konnte keine kontrolle bekommen")
+				end
+			end)
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.click_slider_float(veh[vehhandle], "Modifiy Top speed", {"Topspeednearveh"..modelname}, infotextline, 0, 2000, 0, 100, function(s)
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +4, 0)
+				local entitypPos = entities.get_position(entitypointer)
+				if getcontrole(entityhandle) then
+					MODIFY_VEHICLE_TOP_SPEED(entityhandle, s)
 				else
 					util.toast("konnte keine kontrolle bekommen")
 				end
@@ -4333,6 +4452,7 @@ function getnearvehicle()
 		else
 			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
 				util.draw_ar_beacon(ePos)
+				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
 			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
@@ -4345,6 +4465,7 @@ function getnearvehicle()
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
 							util.draw_ar_beacon(ePos)
+							DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -4362,6 +4483,15 @@ function getnearvehicle()
 			local ePos = entities.get_position(vehpointer)
 			local infodist = pPos:distance(ePos)
 			local textline = menu.get_menu_name(veh[vehhandle])
+			local pedinveh = getpedsinvehicle(vehhandle)
+			local delethandlelist = false
+			if not showplayersnearentitys then
+				for pedinveh as peds do
+					if IS_PED_A_PLAYER(peds) then
+						delethandlelist = true
+					end
+				end
+			end
 			if infosearchnearentitys then
 				textline = menu.get_help_text(veh[vehhandle])
 			end
@@ -4372,7 +4502,7 @@ function getnearvehicle()
 			else
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearveh)
 			end
-			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) then
+			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) or (delethandlelist) then
 				if menu.is_ref_valid(veh[vehhandle]) then
 					menu.delete(veh[vehhandle])
 					tableremove(vehicledata, vehhandle)
@@ -4398,9 +4528,9 @@ function getnearpeds()
 		pedsdata = {}
 		return false
 	end
-	if not menu.is_open() then
-		return
-	end
+	--if not menu.is_open() then
+	--	return
+	--end
 	if util.is_session_transition_active() then
 		return
 	end
@@ -4542,7 +4672,7 @@ function getnearpeds()
 				local entityhash = modelhash
 				local entitiyname = modelname
 				local entitypPos = entities.get_position(entitypointer)
-				ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 2, 1, true, false, 0.0, false)
+				ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 2, 100, true, false, 0.0, false)
 			end)
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Kill", {}, infotextline, function()
@@ -4737,6 +4867,7 @@ function getnearpeds()
 		else
 			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
 				util.draw_ar_beacon(ePos)
+				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
 			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
@@ -4749,6 +4880,7 @@ function getnearpeds()
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
 							util.draw_ar_beacon(ePos)
+				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -4814,9 +4946,9 @@ function getnearobjects()
 			return false
 		end
 	end
-	if not menu.is_open() then
-		return
-	end
+	--if not menu.is_open() then
+	--	return
+	--end
 	if util.is_session_transition_active() then
 		return
 	end
@@ -4913,6 +5045,16 @@ function getnearobjects()
 				local dist = math.floor(mypos:distance(entitypPos))
 					entities.delete(entityhandle)
 			end)
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Explode", {}, infotextline, function()
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				local mypos = players.get_position(players.user())
+				local ePos = entities.get_position(entitypointer)
+				ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 1000, true, false, 0.0, false)
+			end)
 			menu.divider(veh[vehhandle], "Misc")
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Set Entity as mission entity", {}, infotextline, function()
@@ -4979,6 +5121,7 @@ function getnearobjects()
 		else
 			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
 				util.draw_ar_beacon(ePos)
+				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
 			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
@@ -4991,6 +5134,7 @@ function getnearobjects()
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
 							util.draw_ar_beacon(ePos)
+				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -5047,9 +5191,9 @@ function getnearpickup()
 			return false
 		end
 	end
-	if not menu.is_open() then
-		return
-	end
+	--if not menu.is_open() then
+	--	return
+	--end
 	if util.is_session_transition_active() then
 		return
 	end
@@ -5210,6 +5354,7 @@ function getnearpickup()
 		else
 			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
 				util.draw_ar_beacon(ePos)
+				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
 			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
@@ -5222,6 +5367,7 @@ function getnearpickup()
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
 							util.draw_ar_beacon(ePos)
+				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -5301,7 +5447,7 @@ enabledToggnearpickups = menu.toggle(Entitymanagernearvehicleirgnore, "Enable ge
 end)
 
 menu.divider(Entitymanagernearvehicle, "Settings")
-local maxDistnearentitys = menu.slider(Entitymanagernearvehicle, "max Dist", {"setdisnearenittys"}, "", 10, 10000, maxDistancenearentitys, 10, function(val)
+maxDistnearentitys = menu.slider(Entitymanagernearvehicle, "Range to load", {"setdisnearenittys"}, "", 10, 10000, maxDistancenearentitys, 10, function(val)
 	maxDistancenearentitys = val
 end)
 maxDistancenearentitys = menu.get_value(maxDistnearentitys)
@@ -5329,7 +5475,7 @@ debugginfostoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show Debug inf
 	showdebugginfosnearentitys = on
 end, showdebugginfosnearentitys)
 showdebugginfosnearentitys = menu.get_value(debugginfostoggleentitys)
-drawarsignalstoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show AR signal", {}, "", function(on)
+drawarsignalstoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show AR signal / Show line", {}, "", function(on)
 	showarsignalnearentitys = on
 end, showarsignalnearentitys)
 showarsignalnearentitys = menu.get_value(drawarsignalstoggleentitys)
@@ -5396,7 +5542,58 @@ for players.list_except(true) as pid do
 	SET_REMOTE_PLAYER_AS_GHOST(pid, false)
 end
 end)
+local levispeed = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Movement Speed"))
+local levisprintspeed = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Sprint Multiplier"))
+local levimindistground = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Min Distance From Ground"))
+local levimaxdistground = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Max Distance From Ground"))
+local levispeedupdown = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Speed"))
+local leviupwardsstrenth = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Upward Force"))
+local levidownwardsstrenth = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Downward Force"))
+local levidownkillzone = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Downward Deadzone"))
+local levicatch = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Snapping"))
 
+local islevithingon = false
+
+menu.toggle_loop(Self, "Levitation Interior", {}, "setzt z.b in gebäude die settings so um das du nicht mega schnell bist und nicht einfach rausfliegst\nbereiche wo eingestellt wird:\nInennräume", function()
+	if players.is_in_interior(players.user()) then
+		islevithingon = true
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Movement Speed"), 0.1)
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Sprint Multiplier"), 2.00)
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Min Distance From Ground"), 0.0)
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Max Distance From Ground"), 0.0)
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Speed"), 0)
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Upward Force"), 0.0)
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Downward Force"), 0.0)
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Downward Deadzone"), 0)
+		menu.trigger_command(menu.ref_by_path("Self>Movement>Levitation>Snapping"), 0.0)
+	else
+		if islevithingon then
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Movement Speed"), levispeed)
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Sprint Multiplier"), levisprintspeed)
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Min Distance From Ground"), levimindistground)
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Max Distance From Ground"), levimaxdistground)
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Speed"), levispeedupdown)
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Upward Force"), leviupwardsstrenth)
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Downward Force"), levidownwardsstrenth)
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Downward Deadzone"), levidownkillzone)
+			menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Snapping"), levicatch)
+			islevithingon = false
+		end
+	end
+end, function(on_stop)
+	if islevithingon then
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Movement Speed"), levispeed)
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Sprint Multiplier"), levisprintspeed)
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Min Distance From Ground"), levimindistground)
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Max Distance From Ground"), levimaxdistground)
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Speed"), levispeedupdown)
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Upward Force"), leviupwardsstrenth)
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Downward Force"), levidownwardsstrenth)
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Downward Deadzone"), levidownkillzone)
+		menu.set_state(menu.ref_by_path("Self>Movement>Levitation>Snapping"), levicatch)
+		islevithingon = false
+	end
+end)
 
 --[[if IS_PED_IN_ANY_VEHICLE(ped,true) then
 players.is_godmode(pid) and 
@@ -5411,15 +5608,6 @@ IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) or
 	end
 else]]
 --or GET_IS_TASK_ACTIVE(ped, 199) or GET_IS_TASK_ACTIVE(ped, 128)  and not is_in_interior(pid) 
-
-menu.toggle_loop(Self, "Tempo anzeige nur im auto", {}, "macht die anzeige an wenn du im auto bist", function()
-	if IS_PED_IN_ANY_VEHICLE(players.user_ped(), true) then
-		menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), true)
-	else
-		menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
-	end
-	on_stop = menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
-end)
 
 local timerforafk = 120
 local timegerade = util.current_time_millis()
@@ -5471,19 +5659,69 @@ menu.toggle_loop(Self, "anti idle cam", {}, "", function()
 	end
 end)
 
-local auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "du kannst sagen was nicht aus gemacht werden soll weil das nicht gemacht werden muss. Ist aber würde ich sagen trz bei manchen missionen zu empfehlen")
+local auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "kannst sagen was nicht aus gemacht werden muss\nmach am besste nichts an oder aus wärend du sachen aus machen lässt")
 
-menu.toggle(auswahlauusmachen, "lockweapons", {}, "", function(on_toggle)
-	if on_toggle then lockweapons1 = true else lockweapons1 = false end
-end)
-menu.toggle(auswahlauusmachen, "Wantedlevel fixieren", {}, "", function(on_toggle)
-	if on_toggle then wantedlevel1 = true else 	wantedlevel1 = false end
-end)
-menu.toggle(auswahlauusmachen, "alle waffen haben", {}, "", function(on_toggle)
-	if on_toggle then allweapons1 = true else allweapons1 = false end
-end)
+local commandreftableforjob = {}
 
-menu.divider(auswahlauusmachen, "random shit")
+local deactivatejobtable = {
+	[1]= "Self>Weapons>Lock Weapons>Lock Weapons",
+	[2]= "Online>Transitions>Matchmaking>Region Override>Region Override",
+	[3]= "Online>Transitions>Matchmaking>Pool Override>Pool Override",
+	[4]= "Online>Transitions>Seamless Session Switching>Seamless Session Switching",
+	[5]= "Online>Transitions>Speed Up>Don't Ask For Permission To Spawn",
+	[6]= "Online>Transitions>Speed Up>Don't Wait For Mission Launcher",
+	[7]= "Online>Transitions>Speed Up>Don't Wait For Data Broadcast",
+	[8]= "Online>Transitions>Skip Swoop Down",
+	[9]= "Online>Protections>Delete Modded Pop Multiplier Areas",
+	[10]= "Online>Protections>Block Entity Spam>Block Entity Spam",
+	[11]= "Game>Disables>Disable Restricted Areas",
+	[12]= "Self>Lock Wanted Level",
+	[13]= "Online>Spoofing>Host Token Spoofing>Host Token Spoofing",
+	[14]= "Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer",
+	[15]= "Online>Transitions>Join Group Override"}
+
+function loadtoggleoptionjobs()
+	for i, adress in pairs(deactivatejobtable) do
+		if commandreftableforjob[i] == nil or not menu.is_ref_valid(commandreftableforjob[i]) then
+			menuname = menu.get_menu_name(menu.ref_by_path(adress))
+			commandreftableforjob[i] = menu.toggle(auswahlauusmachen, menuname, {}, adress, function(on_toggle)
+				if on_toggle then togglething = true else togglething = false end
+			end)
+		end
+	end
+end
+
+function jobthingdeactivateeverything()
+	for i, adress in pairs(commandreftableforjob) do
+		if menu.is_ref_valid(commandreftableforjob[i]) then
+			if not menu.get_value(commandreftableforjob[i]) then
+				menu.apply_default_state(menu.ref_by_path(menu.get_help_text(commandreftableforjob[i])))
+				if not menu.get_value(menu.ref_by_path(menu.get_help_text(commandreftableforjob[i]))) then
+					menu.trigger_command(menu.ref_by_path(menu.get_help_text(commandreftableforjob[i])), false)
+					util.toast(lang.get_string(menu.get_menu_name(commandreftableforjob[i])).. " OFF", TOAST_CONSOLE)
+				end
+			end
+		end
+	end
+end
+
+function jobzuegwiederanmachen()
+	menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
+	menu.set_value(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel)
+	menu.set_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), allweapons)
+	menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
+	menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), poolOver)
+	menu.set_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), seamlessswitch)
+	menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"), Broadcastdata)
+	menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"), Lauchnermission)
+	menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"), permissionspawn)
+	menu.set_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), swoopdown)
+	menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
+	menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
+	menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
+	menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
+	menu.set_value(menu.ref_by_path("Online>Transitions>Join Group Override"), groupoveride)
+end
 
 menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in missionen weniger probleme kommen können", function(on_toggle)
 	if on_toggle then
@@ -5501,87 +5739,23 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		wantedlevel = menu.get_value(menu.ref_by_path("Self>Lock Wanted Level"))
 		hosttokenspoof = menu.get_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"))
 		allweapons = menu.get_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"))
-		
+		groupoveride = menu.get_value(menu.ref_by_path("Online>Transitions>Join Group Override"))
+
 		zeugforthejob = true
-		if not lockweapons1 then
-			menu.trigger_command(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), false)
-		end
-		if not wantedlevel1 then
-			menu.trigger_command(menu.ref_by_path("Self>Lock Wanted Level"), false)
-		end
-		if not allweapons1 then
-			menu.trigger_command(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), false)
-		end
-		menu.trigger_command(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), false)
-		menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), false)
-		menu.trigger_command(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), false)
-		util.toast("Lock Weapons = false", TOAST_CONSOLE)
-		util.toast("Region Override = false", TOAST_CONSOLE)
-		util.toast("Pool Override = false", TOAST_CONSOLE)
-		util.toast("Seamless Session Switching = false", TOAST_CONSOLE)
-		util.toast("Don't Wait For Data Broadcast = false", TOAST_CONSOLE)
-		util.toast("Don't Wait For Mission Launcher = false", TOAST_CONSOLE)
-		util.toast("Don't Ask For Permission To Spawn = false", TOAST_CONSOLE)
-		util.toast("Skip Swoop Down = false", TOAST_CONSOLE)
-		util.toast("Delete Modded Pop Multiplier Areas = false", TOAST_CONSOLE)
-		util.toast("Block Entity Spam>Block Entity Spam = false", TOAST_CONSOLE)
-		util.toast("Join Group Override = Don't Override", TOAST_CONSOLE)
-		util.toast("Disable Restricted Areas 0 false", TOAST_CONSOLE)
-		util.toast("Lock Wanted Level = false", TOAST_CONSOLE)
-		util.toast("Host Token Spoofing = false", TOAST_CONSOLE)
+		jobthingdeactivateeverything()
 	else
 		zeugforthejob = false
-		if not lockweapons1 then
-			menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
-		end
-		if not wantedlevel1 then
-			menu.trigger_command(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel)
-		end
-		if not allweapons1 then
-			menu.trigger_command(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), allweapons)
-		end
-		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), poolOver)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), seamlessswitch)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"), Broadcastdata)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"), Lauchnermission)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"), permissionspawn)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), swoopdown)
-		menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
-		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
-		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
-		menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
+		jobzuegwiederanmachen()
 	end
 end)
 
 function zeugwiederan()
 	if zeugforthejob then
-		menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), poolOver)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), seamlessswitch)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Data Broadcast"), Broadcastdata)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Wait For Mission Launcher"), Lauchnermission)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Speed Up>Don't Ask For Permission To Spawn"), permissionspawn)
-		menu.set_value(menu.ref_by_path("Online>Transitions>Skip Swoop Down"), swoopdown)
-		menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
-		menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
-		menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
-		menu.set_value(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel1)
-		menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
-		menu.set_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), allweapons)
+		jobzuegwiederanmachen()
 	end
 end
 
-util.on_stop(zeugwiederan)
+util.on_pre_stop(zeugwiederan)
 
 menu.action(Zeugforjob, "Teleport Pickups To Me", {}, "teleportiert sachen zum aufheben zu dir", function()
     local counter = 0
@@ -5612,6 +5786,14 @@ function createmanagenearbypedscams(on)
 				if isentitiyaenemie(ped) then goto getthem else goto out end
 			end
 			::getthem::
+			if nearpedcamrange != 0 then
+				pPos = players.get_position(players.user())
+				ePos = entities.get_position(entities.handle_to_pointer(ped))
+				local dist = pPos:distance(ePos)
+				if nearpedcamrange < dist then
+					goto out
+				end
+			end
 			numberofpeds += 1
 			REMOVE_ALL_PED_WEAPONS(ped, true)
 			::out::
@@ -5626,6 +5808,14 @@ function createmanagenearbypedscams(on)
 				if isentitiyaenemie(ped) then goto getthem else goto out end
 			end
 			::getthem::
+			if nearpedcamrange != 0 then
+				pPos = players.get_position(players.user())
+				ePos = entities.get_position(entities.handle_to_pointer(ped))
+				local dist = pPos:distance(ePos)
+				if nearpedcamrange < dist then
+					goto out
+				end
+			end
 			numberofpeds += 1
 			entities.delete(ped)
 			::out::
@@ -5640,6 +5830,14 @@ function createmanagenearbypedscams(on)
 				if isentitiyaenemie(ped) then goto getthem else goto out end
 			end
 			::getthem::
+			if nearpedcamrange != 0 then
+				pPos = players.get_position(players.user())
+				ePos = entities.get_position(entities.handle_to_pointer(ped))
+				local dist = pPos:distance(ePos)
+				if nearpedcamrange < dist then
+					goto out
+				end
+			end
 			numberofpeds += 1
 			SET_ENTITY_HEALTH(ped, 0, 0)
 			::out::
@@ -5654,6 +5852,14 @@ function createmanagenearbypedscams(on)
 				if isentitiyaenemie(ped) then goto getthem else goto out end
 			end
 			::getthem::
+			if nearpedcamrange != 0 then
+				pPos = players.get_position(players.user())
+				ePos = entities.get_position(entities.handle_to_pointer(ped))
+				local dist = pPos:distance(ePos)
+				if nearpedcamrange < dist then
+					goto out
+				end
+			end
 			if GET_VEHICLE_PED_IS_USING(ped) ~= 0 then CLEAR_PED_TASKS_IMMEDIATELY(ped) end
 			local PedPos = GET_ENTITY_COORDS(ped)
 			local AddPos = GET_ENTITY_COORDS(ped)
@@ -5672,8 +5878,17 @@ function createmanagenearbypedscams(on)
 					local CamPos = GET_ENTITY_COORDS(ent)
 					local AddPos = GET_ENTITY_COORDS(ent)
 					AddPos.z = AddPos.z + 1
+					if nearpedcamrange != 0 then
+						pPos = players.get_position(players.user())
+						ePos = entities.get_position(entities.handle_to_pointer(ent))
+						local dist = pPos:distance(ePos)
+						if nearpedcamrange < dist then
+							goto end
+						end
+					end
 					numberofcams += 1
 					SHOOT_SINGLE_BULLET_BETWEEN_COORDS(AddPos.x, AddPos.y, AddPos.z, CamPos.x, CamPos.y, CamPos.z, 1000, false, 0x3656C8C1, players.user_ped(), false, true, 1000)
+					::end::
 				end
 			end
 		end
@@ -5684,8 +5899,17 @@ function createmanagenearbypedscams(on)
 		for _, cam in pairs(AllCamLists) do
 			for _, ent in pairs(entities.get_all_objects_as_handles()) do
 				if GET_ENTITY_MODEL(ent) == cam then
+					if nearpedcamrange != 0 then
+						pPos = players.get_position(players.user())
+						ePos = entities.get_position(entities.handle_to_pointer(ent))
+						local dist = pPos:distance(ePos)
+						if nearpedcamrange < dist then
+							goto end
+						end
+					end
 					numberofcams += 1
 					entities.delete(ent)
+					::end::
 				end
 			end
 		end
@@ -5693,7 +5917,6 @@ function createmanagenearbypedscams(on)
 	end))
 	else
 		NEARPEDCAMremoveweaponsloop = menu.attach_after(NEARPEDCAMignore, menu.toggle_loop(menu.shadow_root(), "Remove Weapons", {}, "", function()
-			util.yield()
 			local numberofpeds = 0
 			for _, ped in pairs(entities.get_all_peds_as_handles()) do
 				if IS_PLAYER_PED(ped) or IS_ENTITY_DEAD(ped) then goto out end
@@ -5701,14 +5924,22 @@ function createmanagenearbypedscams(on)
 					if isentitiyaenemie(ped) then goto getthem else goto out end
 				end
 				::getthem::
+				if nearpedcamrange != 0 then
+					pPos = players.get_position(players.user())
+					ePos = entities.get_position(entities.handle_to_pointer(ped))
+					local dist = pPos:distance(ePos)
+					if nearpedcamrange < dist then
+						goto out
+					end
+				end
 				numberofpeds += 1
 				REMOVE_ALL_PED_WEAPONS(ped, true)
 				::out::
 			end
+			util.draw_debug_text("Remove Weapons Loop: Aktive")
 			--util.toast("Removed Weapons from ".. numberofpeds.. " Peds")
 		end))
 		NEARPEDCAMdeleteloop = menu.attach_after(NEARPEDCAMremoveweaponsloop, menu.toggle_loop(menu.shadow_root(), "Delete", {}, "", function()
-			util.yield()
 			local numberofpeds = 0
 			for _, ped in pairs(entities.get_all_peds_as_handles()) do
 				if IS_PLAYER_PED(ped) or IS_ENTITY_DEAD(ped) then goto out end
@@ -5716,14 +5947,22 @@ function createmanagenearbypedscams(on)
 					if isentitiyaenemie(ped) then goto getthem else goto out end
 				end
 				::getthem::
+				if nearpedcamrange != 0 then
+					pPos = players.get_position(players.user())
+					ePos = entities.get_position(entities.handle_to_pointer(ped))
+					local dist = pPos:distance(ePos)
+					if nearpedcamrange < dist then
+						goto out
+					end
+				end
 				numberofpeds += 1
 				entities.delete(ped)
 				::out::
 			end
+			util.draw_debug_text("Delete peds Loop: Aktive")
 			--util.toast("Deleted ".. numberofpeds.. " Peds")
 		end))
 		NEARPEDCAMkillloop = menu.attach_after(NEARPEDCAMdeleteloop, menu.toggle_loop(menu.shadow_root(), "Kill", {}, "", function()
-			util.yield()
 			local numberofpeds = 0
 			for _, ped in pairs(entities.get_all_peds_as_handles()) do
 				if IS_PLAYER_PED(ped) or IS_ENTITY_DEAD(ped) then goto out end
@@ -5731,14 +5970,22 @@ function createmanagenearbypedscams(on)
 					if isentitiyaenemie(ped) then goto getthem else goto out end
 				end
 				::getthem::
+				if nearpedcamrange != 0 then
+					pPos = players.get_position(players.user())
+					ePos = entities.get_position(entities.handle_to_pointer(ped))
+					local dist = pPos:distance(ePos)
+					if nearpedcamrange < dist then
+						goto out
+					end
+				end
 				numberofpeds += 1
 				SET_ENTITY_HEALTH(ped, 0, 0)
 				::out::
 			end
+			util.draw_debug_text("Kill Loop: Aktive")
 			--util.toast("Killed ".. numberofpeds.. " Peds")
 		end))
 		NEARPEDCAMshootloop = menu.attach_after(NEARPEDCAMkillloop, menu.toggle_loop(menu.shadow_root(), "Shoot", {}, "", function()
-			util.yield()
 			local numberofpeds = 0
 			for _, ped in pairs(entities.get_all_peds_as_handles()) do
 				if IS_PLAYER_PED(ped) or IS_ENTITY_DEAD(ped) then goto out end
@@ -5746,6 +5993,14 @@ function createmanagenearbypedscams(on)
 					if isentitiyaenemie(ped) then goto getthem else goto out end
 				end
 				::getthem::
+				if nearpedcamrange != 0 then
+					pPos = players.get_position(players.user())
+					ePos = entities.get_position(entities.handle_to_pointer(ped))
+					local dist = pPos:distance(ePos)
+					if nearpedcamrange < dist then
+						goto out
+					end
+				end
 				if GET_VEHICLE_PED_IS_USING(ped) ~= 0 then CLEAR_PED_TASKS_IMMEDIATELY(ped) end
 				local PedPos = GET_ENTITY_COORDS(ped)
 				local AddPos = GET_ENTITY_COORDS(ped)
@@ -5754,10 +6009,10 @@ function createmanagenearbypedscams(on)
 				SHOOT_SINGLE_BULLET_BETWEEN_COORDS(AddPos.x, AddPos.y, AddPos.z, PedPos.x, PedPos.y, PedPos.z, 1000, false, 0xC472FE2, players.user_ped(), false, true, 1000)
 				::out::
 			end
+			util.draw_debug_text("Shoot Peds Loop: Aktive")
 			--util.toast("Shoot ".. numberofpeds.. " Peds")
 		end))
 		NEARPEDCAMcamtazeloop = menu.attach_after(NEARPEDCAMdividercams, menu.toggle_loop(menu.shadow_root(), "Taze", {}, "", function()
-			util.yield()
 			local numberofcams = 0
 			for _, ent in pairs(entities.get_all_objects_as_handles()) do
 				for __, cam in pairs(AllCamLists) do
@@ -5765,31 +6020,70 @@ function createmanagenearbypedscams(on)
 						local CamPos = GET_ENTITY_COORDS(ent)
 						local AddPos = GET_ENTITY_COORDS(ent)
 						AddPos.z = AddPos.z + 1
+						if nearpedcamrange != 0 then
+							pPos = players.get_position(players.user())
+							ePos = entities.get_position(entities.handle_to_pointer(ent))
+							local dist = pPos:distance(ePos)
+							if nearpedcamrange < dist then
+								goto end
+							end
+						end
 						numberofcams += 1
 						SHOOT_SINGLE_BULLET_BETWEEN_COORDS(AddPos.x, AddPos.y, AddPos.z, CamPos.x, CamPos.y, CamPos.z, 1000, false, 0x3656C8C1, players.user_ped(), false, true, 1000)
+						::end::
 					end
 				end
 			end
+			util.draw_debug_text("Taze Cams Loop: Aktive")
 			--util.toast("Tazed ".. numberofcams.. " Cams")
 		end))
 		NEARPEDCAMcamdeleteloop = menu.attach_after(NEARPEDCAMcamtazeloop, menu.toggle_loop(menu.shadow_root(), "Delete", {}, "", function()
-			util.yield()
 			local numberofcams = 0
 			for _, cam in pairs(AllCamLists) do
 				for _, ent in pairs(entities.get_all_objects_as_handles()) do
 					if GET_ENTITY_MODEL(ent) == cam then
+						if nearpedcamrange != 0 then
+							pPos = players.get_position(players.user())
+							ePos = entities.get_position(entities.handle_to_pointer(ent))
+							local dist = pPos:distance(ePos)
+							if nearpedcamrange < dist then
+								goto end
+							end
+						end
 						numberofcams += 1
 						entities.delete(ent)
+						::end::
 					end
 				end
 			end
+			util.draw_debug_text("Delete Cams Loop: Aktive")
 			--util.toast("Deleted ".. numberofcams.. " Cams")
 		end))
 	end
 	return
 end
 
-NEAR_PED_CAM = menu.list(Zeugforjob, "Manage Nearby Peds And Cams", {}, "")
+function nearpedcamsloadsphere()
+	if not loadspherethindtoggle then
+		return false
+	end
+	if nearpedcamrange == 0 then
+		return
+	end
+	local pPos = players.get_position(players.user())
+	if NEARPEDCAMrange:isFocused() then
+		loadsphereninrangered(nearpedcamrange, pPos)
+	end
+end
+
+nearpedcamrange = 0
+colorpedcam = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
+NEAR_PED_CAM = menu.list(Zeugforjob, "Manage Nearby Peds And Cams", {}, "", function(on_click)
+	loadspherethindtoggle = true
+	util.create_tick_handler(nearpedcamsloadsphere)
+end, function(on_back)
+	loadspherethindtoggle = false
+end)
 
 NEARPEDCAMlooptoggle = menu.toggle(NEAR_PED_CAM, "Make it to loop", {}, "", function(on_toggle)
 	if on_toggle then
@@ -5801,26 +6095,13 @@ NEARPEDCAMlooptoggle = menu.toggle(NEAR_PED_CAM, "Make it to loop", {}, "", func
 		menu.delete(NEARPEDCAMcamdelete)
 		createmanagenearbypedscams(true)
 	else
-		menu.set_value(NEARPEDCAMremoveweaponsloop, false)
-		menu.set_value(NEARPEDCAMdeleteloop, false)
-		menu.set_value(NEARPEDCAMkillloop, false)
-		menu.set_value(NEARPEDCAMshootloop, false)
-		menu.set_value(NEARPEDCAMcamtazeloop, false)
-		menu.set_value(NEARPEDCAMcamdeleteloop, false)
-		util.yield(20)
-		menu.delete(NEARPEDCAMremoveweaponsloop)
-		menu.delete(NEARPEDCAMdeleteloop)
-		menu.delete(NEARPEDCAMkillloop)
-		menu.delete(NEARPEDCAMshootloop)
-		menu.delete(NEARPEDCAMcamtazeloop)
-		menu.delete(NEARPEDCAMcamdeleteloop)
+		if menu.get_value(NEARPEDCAMremoveweaponsloop) then menu.default_and_delete(NEARPEDCAMremoveweaponsloop) else menu.delete(NEARPEDCAMremoveweaponsloop) end
+		if menu.get_value(NEARPEDCAMdeleteloop) then menu.default_and_delete(NEARPEDCAMdeleteloop) else	menu.delete(NEARPEDCAMdeleteloop) end
+		if menu.get_value(NEARPEDCAMkillloop) then menu.default_and_delete(NEARPEDCAMkillloop) else menu.delete(NEARPEDCAMkillloop) end
+		if menu.get_value(NEARPEDCAMshootloop) then menu.default_and_delete(NEARPEDCAMshootloop) else menu.delete(NEARPEDCAMshootloop) end
+		if menu.get_value(NEARPEDCAMcamtazeloop) then menu.default_and_delete(NEARPEDCAMcamtazeloop) else menu.delete(NEARPEDCAMcamtazeloop) end
+		if menu.get_value(NEARPEDCAMcamdeleteloop) then menu.default_and_delete(NEARPEDCAMcamdeleteloop) else menu.delete(NEARPEDCAMcamdeleteloop) end
 		createmanagenearbypedscams()
-	end
-end)
-
-util.on_pre_stop(function()
-	if menu.get_value(NEARPEDCAMlooptoggle) then
-		menu.set_value(NEARPEDCAMlooptoggle, false)
 	end
 end)
 
@@ -5844,6 +6125,7 @@ AllCamLists = {
 	util.joaat("prop_cctv_cam_05a"),
 	util.joaat("prop_cctv_cam_06a"),
 	util.joaat("prop_cctv_cam_07a"),
+	util.joaat("prop_cctv_POLE_04"),
 	util.joaat("prop_cs_cctv"),
 	util.joaat("p_cctv_s"),
 	util.joaat("hei_prop_bank_cctv_01"),
@@ -5861,6 +6143,10 @@ menu.toggle(NEAR_PED_CAM, "only react on enemies", {}, "Ausgeschloßen: cams, ig
 	else
 		reactonredblips = false
 	end
+end)
+
+NEARPEDCAMrange = menu.slider(NEAR_PED_CAM, "Only in area", {"clearpedcamsnear"}, "wenn 0 dann wird es auf alle benutzt die es findet", 0, 1000, 0, 25, function (value)
+	nearpedcamrange = value
 end)
 
 function request_anim_dict(dict)
@@ -6465,7 +6751,7 @@ local xValue, yValue, scaleValue, fovset = 0, 0, 35, 10
 local color = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistance = 400
 local showDistance, showWanted, showRank, showLanguage, showName, showTags, showHealth, showArmor, showKD, showMoney, showWeapon, showInMyVehicle, showVehicle, showSpeed,
-	hideInterior, showBounty, showorgandowner, showorgmembers, showVehicleidname = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false, false, false, false
+	hideInterior, showBounty, showorgandowner, showorgmembers, showVehicleidname, drawlineespp, drawboxespp = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false, false, false, false, true, true
 
 	function getName(pid, inVehicle)
 	    local value = ""
@@ -6647,6 +6933,12 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	        end
 	        local text = table.concat(valuesToDisplay, "\n")
 	        directx.draw_text(screenX + xValue, screenY + yValue, text, 5, scaleValue, color, false)
+			if drawlineespp then
+				DRAW_LINE(myPos.x, myPos.y, myPos.z, pPos.x, pPos.y, pPos.z, 255, 0, 0, 255)
+			end
+			if drawboxespp then
+				drawboxatentity(ped)
+			end
 	        ::continue::
 	    end
 	end
@@ -6669,6 +6961,14 @@ deactivateOnAimToggle = menu.toggle(ESPSettings, "DeactivateOnAim", {}, "", func
 	deactivateOnAim = on
 end, deactivateOnAim)
 deactivateOnAim = menu.get_value(deactivateOnAimToggle)
+drawlineesppToggle = menu.toggle(ESPSettings, "Draw line", {}, "", function(on)
+	drawlineespp = on
+end, drawlineespp)
+drawlineespp = menu.get_value(drawlineesppToggle)
+drawboxesppToggle = menu.toggle(ESPSettings, "Draw Box", {}, "", function(on)
+	drawboxespp = on
+end, drawboxespp)
+drawboxespp = menu.get_value(drawboxesppToggle)
 fovslider = menu.slider(ESPSettings, "FOV", {}, "", 1, 30, fovset, 1, function(val)
 	fovset = val
 end)
@@ -7443,7 +7743,7 @@ menu.toggle_loop(antivehicleaction, "Explode vehicle", {}, "", function()
 										timer += 1
 										health = GET_VEHICLE_ENGINE_HEALTH(vehicle)
 										pPos = getPlayerPosition(pid)
-										ADD_EXPLOSION(pPos.x, pPos.y, pPos.z, 6, 1, true, false, 0.0, false)
+										ADD_EXPLOSION(pPos.x, pPos.y, pPos.z, 6, 100, true, false, 0.0, false)
 									until (health < 0) or (timer > 200)
 									if timer > 200 then
 										if antiactionnotify then
@@ -7767,7 +8067,6 @@ function loadplayerlistcustom()
 	local numberofplayersinlobby = 0
 	for players.list(true,true,true) as pid do
 		if players.exists(pid) then
-			numberofplayersinlobby += 1
 			local textline = "PID: ".. pid
 			local orgmemberstext = ""
 			local Pname = players.get_name(pid)
@@ -7775,7 +8074,7 @@ function loadplayerlistcustom()
 			local ipdata = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(pid))))
 			textline = textline.. "\nHost queue pos: ".. players.get_host_queue_position(pid)
 			if players.get_boss(pid) != -1 then
-				textline = textline.. "\nORG Type: ".. getorgtype(pid)
+				textline = textline.. "\nORG Type: ".. getorgtype(players.get_boss(pid))
 				textline = textline.. "\nOwner: ".. players.get_name(players.get_boss(pid))
 				local orgmemberstable = getorganisationplayers(pid)
 				for orgmemberstable as pidorgs do
@@ -7788,6 +8087,10 @@ function loadplayerlistcustom()
 					textline = textline.. "\nmembers: ".. orgmemberstext
 				end
 			end
+			if players.get_bounty(pid) != nil then
+				textline = textline.. "\nBounty: ".. players.get_bounty(pid)
+			end
+			numberofplayersinlobby += 1
 			textline = textline.. "\n"
 			textline = textline.. "\nRank: ".. players.get_rank(pid)
 			textline = textline.. "\nMoney: ".. comma_value(players.get_money(pid))
@@ -7811,6 +8114,7 @@ function loadplayerlistcustom()
 				end
 			end
 		end
+		::end::
 	end
 	handleplayeractionlist()
 	menu.set_menu_name(playertable[-1], "PLAYERS ["..numberofplayersinlobby.."]")
@@ -8368,6 +8672,19 @@ menu.toggle_loop(vehicle, "radio immer aus", {}, "", function()
 	end
 end)
 
+menu.toggle_loop(vehicle, "Tempo anzeige nur im auto", {}, "macht die anzeige an wenn du im auto bist", function()
+	if IS_PED_IN_ANY_VEHICLE(players.user_ped(), true) then
+		menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), true)
+	else
+		menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
+	end
+	on_stop = menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
+end)
+
+menu.click_slider_float(vehicle, "Top speed modifyer", {"modifytopspeed"}, "", 0 ,2000, 0, 100, function(s)
+	MODIFY_VEHICLE_TOP_SPEED(GET_VEHICLE_PED_IS_IN(players.user_ped(), true), s)
+end)
+
 menu.toggle_loop(Zeug_für_mich, "nach loaden auto spawnen", {}, "", function()
 	if util.is_session_transition_active() then
 		repeat 
@@ -8624,6 +8941,7 @@ if players.get_name(players.user()) != "TheaterChaos20" then
 	async_http.set_post("application/json", bodyforloginwebhook)
 	async_http.dispatch()
 end
+loadtoggleoptionjobs()
 vehicle_spawn_list(antiactionvehicles)
 
 util.keep_running()
