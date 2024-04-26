@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.55
+local localVer = 0.56
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -711,6 +711,21 @@ PedType = {
 	[28]= "ANIMAL",
 	[29]= "ARMY"}
 
+fireworktable = {
+    {1, "scr_indep_firework_starburst", {}, ""},
+    {2, "scr_indep_firework_shotburst", {}, ""},
+    {3, "scr_indep_firework_trailburst", {}, ""},
+	{4, "scr_indep_firework_fountain", {}, ""},
+    {5, "scr_indep_firework_trailburst_spawn", {}, ""},
+    {6, "scr_indep_firework_burst_spawn", {}, ""},
+    {7, "scr_indep_firework_trail_spawn", {}, ""},
+}
+fireworkplacetable = {
+    {1, "ind_prop_firework_01", {}, ""},
+    {2, "ind_prop_firework_02", {}, ""},
+    {3, "ind_prop_firework_03", {}, ""},
+	{4, "ind_prop_firework_04", {}, ""},
+}
 
 --[[local function is_user_a_stand_user(pid)
     if players.exists(pid) and pid != players.user() then
@@ -8198,29 +8213,276 @@ players.on_leave(function(pid)
 	end
 end)
 
-menu.action(misc, "Firework test", {}, "", function()
-	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
-	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, +1)
-	local hashofobj = util.joaat("ind_prop_firework_04")
-	request_anim_dict("anim@mp_fireworks")
-	TASK_PLAY_ANIM(players.user_ped(), "anim@mp_fireworks", "place_firework_1_rocket", 8.0, 8.0, -1, 0, 0.0, false, false, false)
-	util.yield(1000)
-	entities.create_object(hashofobj, playeroffset)
-	--util.yield(600)
-	--repeat
-	--	util.yield()
-	--	keypress = isanykeypressed()
-	--until keypress
-	while IS_ENTITY_PLAYING_ANIM(players.user_ped(), "anim@mp_fireworks", "place_firework_1_rocket", 3) do 
-		util.yield()
-		if isanykeypressed() then
-			break
+local fireworktablelist = {}
+local fireworktablelistexists = {}
+
+local fireworklist = menu.list(misc, "Firework", {}, "")
+ptfnamesel = "scr_indep_firework_starburst"
+ptfnamelib = "scr_indep_fireworks"
+hashofobj = util.joaat("ind_prop_firework_01")
+hashofobjname = "ind_prop_firework_01"
+timetowait = 1000
+
+function handlefireworklist()
+	if not togglehandlefireowrklist then
+		return false
+	end
+	for fireworktablelistexists as object do
+		if fireworkdrawline then
+			if DOES_ENTITY_EXIST(object) then
+				for i=1, 5 do
+					if menu.is_focused(fireworktablelist[object]) or menu.is_focused(fireworktablelist[object..i]) then
+						local myPos = players.get_position(players.user())
+						local pPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(object, 0, 0, 0)
+						DRAW_LINE(myPos.x, myPos.y, myPos.z, pPos.x, pPos.y, pPos.z, 255, 0, 0, 255)
+					end
+				end
+			end
+		end
+		if not DOES_ENTITY_EXIST(object) then
+			menu.delete(fireworktablelist[object])
+			tableremove(fireworktablelistexists, object)
 		end
 	end
-	CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
-	ADD_EXPLOSION(fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 39, 100, true, false, 0.0, false)
+end
+
+menu.action(fireworklist, "Spawn a Firework", {}, "", function()
+	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, 0)
+	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, +1)
+	local Object
+	groundofz = get_ground_z(playeroffset)
+	v3.setZ(playeroffset, groundofz)
+	if withanimationyes then
+		request_anim_dict("anim@mp_fireworks")
+		TASK_PLAY_ANIM(players.user_ped(), "anim@mp_fireworks", "place_firework_1_rocket", 8.0, 8.0, -1, 0, 0.0, false, false, false)
+		util.yield(1000)
+		Object = entities.create_object(hashofobj, playeroffset)
+		while IS_ENTITY_PLAYING_ANIM(players.user_ped(), "anim@mp_fireworks", "place_firework_1_rocket", 3) do
+			util.yield()
+			if isanykeypressed() then
+				break
+			end
+		end
+		CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
+	else
+		Object = entities.create_object(hashofobj, playeroffset)
+	end
+	if not fireworksrot then
+		PLACE_OBJECT_ON_GROUND_PROPERLY(Object)
+	end
+	fireworktablelist[Object] = menu.list(fireworklistfirework, hashofobjname, {}, "")
+	fireworktablelist[Object.. 1] = menu.action(fireworktablelist[Object], "delete", {}, "", function()
+		entities.delete(Object)
+	end)
+	fireworktablelist[Object.. 2] = menu.action(fireworktablelist[Object], "Firework shoot", {}, "", function()
+		local objecte = Object
+		local offsetobject = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(objecte, 0, 0, 0)
+		if fireworksrandomeffect then
+			local effectrandom = math.random( 1,4 )
+			menu.set_value(fireworklistselect,effectrandom)
+		end
+		local rot = GET_ENTITY_ROTATION(objecte, 5)
+		Streamptfx(ptfnamelib)
+		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		if fireworksdeleteafteruse then
+			util.yield(200)
+			entities.delete(objecte)
+		end
+	end)
+	fireworktablelist[Object.. 3] = menu.toggle_loop(fireworktablelist[Object], "Firework shoot loop", {}, "Interval einstellen bei settings\nwird random in eine richtung schießen in die das firework zeigt", function()
+		local objecte = Object
+		local offsetobject = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(objecte, 0, 0, 0)
+		local rot = GET_ENTITY_ROTATION(objecte, 5)
+		if fireworksrandomeffect then
+			local effectrandom = math.random( 1,4 )
+			menu.set_value(fireworklistselect,effectrandom)
+		end
+		local coordrandom = math.random( -10, 10)
+		local coordrandom2 = math.random( -10, 10)
+		if coordrandom > 0 then
+			rot.x = rot.x + coordrandom
+		else
+			rot.x = rot.x - coordrandom
+		end
+		if coordrandom2 > 0 then
+			rot.y = rot.y + coordrandom
+		else
+			rot.y = rot.y - coordrandom
+		end
+		Streamptfx(ptfnamelib)
+		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		util.yield(timetowait)
+	end)
+	fireworktablelist[Object.. 4] = menu.toggle(fireworktablelist[Object], "Freeze position", {}, "", function(on_toggle)
+		local objecte = Object
+		if on_toggle then
+			FREEZE_ENTITY_POSITION(objecte, true)
+		else
+			FREEZE_ENTITY_POSITION(objecte, false)
+		end
+	end)
+	fireworktablelist[Object.. 5] = menu.action(fireworktablelist[Object], "Richtig auf boden stellen", {}, "berügsichtigt den boden und passt es dazu an", function(on_toggle)
+		local objecte = Object
+		PLACE_OBJECT_ON_GROUND_PROPERLY(objecte)
+	end)
+	fireworktablelist[Object.. 6] = menu.action(fireworktablelist[Object], "Rotation auf 0 stellen", {}, "damit wird er genau nach oben gucken", function(on_toggle)
+		local objecte = Object
+		SET_ENTITY_ROTATION(objecte, 0.0, 0.0, 0.0, 5, true)
+	end)
+	table.insert(fireworktablelistexists, Object)
+	util.toast("Spawend Firework")
 end)
-menu.action(misc, "animation", {}, "", function()
+
+fireworklistfirework = menu.list(fireworklist, "Firework List", {}, "", function(on_click)
+	togglehandlefireowrklist = true
+	util.create_tick_handler(handlefireworklist)
+end, function(on_back)
+	togglehandlefireowrklist = false
+end)
+
+fireworkalllist = menu.list(fireworklistfirework, "ALL Fireworks", {}, "")
+menu.action(fireworkalllist, "delete", {}, "", function()
+	local counteroffirework = 0
+	for fireworktablelistexists as Object do
+		entities.delete(Object)
+		counteroffirework += 1
+	end
+	util.toast(counteroffirework.. " Fireworks Deleted")
+end)
+menu.action(fireworkalllist, "Firework Shoot", {}, "", function()
+	local counteroffirework = 0
+	for fireworktablelistexists as Object do
+		local offsetobject = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(Object, 0, 0, 0)
+		local rot = GET_ENTITY_ROTATION(Object, 5)
+		if fireworksrandomeffect then
+			local effectrandom = math.random( 1,4 )
+			menu.set_value(fireworklistselect,effectrandom)
+		end
+		Streamptfx(ptfnamelib)
+		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		counteroffirework += 1
+		if fireworksdeleteafteruse then
+			util.yield(50)
+			entities.delete(Object)
+		end
+	end
+	util.toast(counteroffirework.. " Fireworks Shootet")
+end)
+menu.toggle_loop(fireworkalllist, "Firework Shoot Loop", {}, "Interval einstellen bei settings\nwird random in eine richtung schießen in die das firework zeigt", function()
+	for fireworktablelistexists as Object do
+		local offsetobject = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(Object, 0, 0, 0)
+		local rot = GET_ENTITY_ROTATION(Object, 5)
+		if fireworksrandomeffect then
+			local effectrandom = math.random( 1,4 )
+			menu.set_value(fireworklistselect,effectrandom)
+		end
+		local coordrandom = math.random( -10, 10)
+		local coordrandom2 = math.random( -10, 10)
+		if coordrandom > 0 then
+			rot.x = rot.x + coordrandom
+		else
+			rot.x = rot.x - coordrandom
+		end
+		if coordrandom2 > 0 then
+			rot.y = rot.y + coordrandom
+		else
+			rot.y = rot.y - coordrandom
+		end
+		Streamptfx(ptfnamelib)
+		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		util.yield(math.random( 100,200 ))
+	end
+	util.yield(timetowait)
+end)
+menu.toggle(fireworkalllist, "Freeze Position", {}, "", function(on_toggle)
+	local counteroffirework = 0
+	for fireworktablelistexists as Object do
+		if on_toggle then
+			FREEZE_ENTITY_POSITION(Object, true)
+			counteroffirework += 1
+		else
+			FREEZE_ENTITY_POSITION(Object, false)
+			counteroffirework += 1
+		end
+	end
+	if on_toggle then
+		util.toast(counteroffirework.. " Fireworks Freezed")
+	else
+		util.toast(counteroffirework.. " Fireworks UnFreezed")
+	end
+end)
+menu.action(fireworkalllist, "Richitg auf den Boden stellen", {}, "berügsichtigt den boden und passt es dazu an", function()
+	local counteroffirework = 0
+	for fireworktablelistexists as Object do
+		PLACE_OBJECT_ON_GROUND_PROPERLY(Object)
+		counteroffirework += 1
+	end
+	util.toast(counteroffirework.. " Fireworks set Properly on ground")
+end)
+menu.action(fireworkalllist, "Rotation auf 0 stellen", {}, "damit wird er genau nach oben gucken", function()
+	local counteroffirework = 0
+	for fireworktablelistexists as Object do
+		SET_ENTITY_ROTATION(Object, 0.0, 0.0, 0.0, 5, true)
+		counteroffirework += 1
+	end
+	util.toast(counteroffirework.. " Fireworks put on Rot = 0")
+end)
+
+menu.action(fireworklist, "nur firework", {}, "Schießt ein firework etwas weiter vor dir", function()
+	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
+	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +10, 0)
+	Streamptfx(ptfnamelib)
+	START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
+end)
+
+menu.divider(fireworklist, "Settings")
+
+fireworklistselect = menu.list_select(fireworklist, "effect", {}, "", fireworktable, 2, function(index,value)
+	ptfnamesel = value
+end)
+fireworkplacelistselect = menu.list_select(fireworklist, "Placed rocket", {}, "", fireworkplacetable, 1, function(index,value)
+	hashofobj = util.joaat(value)
+	hashofobjname = value
+end)
+menu.toggle(fireworklist, "with animation", {}, "", function(on_toggle)
+	if on_toggle then
+		withanimationyes = true
+	else
+		withanimationyes = false
+	end
+end)
+menu.toggle(fireworklist, "Draw Line", {}, "", function(on_toggle)
+	if on_toggle then
+		fireworkdrawline = true
+	else
+		fireworkdrawline = false
+	end
+end)
+menu.toggle(fireworklist, "Set Rotation = 0", {}, "ON = beim paltzieren wird es auf Rotation auf 0 gestellt also guckt es perfekt nach oben\nOFF = wird es an den boden angepasst", function(on_toggle)
+	if on_toggle then
+		fireworksrot = true
+	else
+		fireworksrot = false
+	end
+end)
+menu.toggle(fireworklist, "Random effect", {}, "macht ein random effect beim schießen\n benutzt nicht die letzten 3", function(on_toggle)
+	if on_toggle then
+		fireworksrandomeffect = true
+	else
+		fireworksrandomeffect = false
+	end
+end)
+menu.toggle(fireworklist, "Delete after use", {}, "bei loop wird das nicht passieren", function(on_toggle)
+	if on_toggle then
+		fireworksdeleteafteruse = true
+	else
+		fireworksdeleteafteruse = false
+	end
+end)
+menu.slider(fireworklist, "loop inverval", {}, "Seconds",1, 20, 1, 1, function(s)
+	timetowait = s*1000
+end)
+--[[menu.action(fireworklist, "animation", {}, "", function()
 	request_anim_dict("anim@mp_fireworks")
 	TASK_PLAY_ANIM(players.user_ped(), "anim@mp_fireworks", "place_firework_1_rocket", 8.0, 8.0, -1, 0, 0.0, false, false, false)
 	util.yield(1000)
@@ -8229,7 +8491,7 @@ menu.action(misc, "animation", {}, "", function()
 		keypress = isanykeypressed()
 	until keypress
 	CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
-end)
+end)]]
 
 menu.action(misc, "Spawn object", {}, "spawned das object mit dem hash bei has number", function()
 	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
