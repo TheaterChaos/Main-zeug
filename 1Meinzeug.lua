@@ -8217,6 +8217,7 @@ local fireworktablelist = {}
 local fireworktablelistexists = {}
 
 local fireworklist = menu.list(misc, "Firework", {}, "")
+local fireworkcolourselect = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 ptfnamesel = "scr_indep_firework_starburst"
 ptfnamelib = "scr_indep_fireworks"
 hashofobj = util.joaat("ind_prop_firework_01")
@@ -8284,6 +8285,7 @@ menu.action(fireworklist, "Spawn a Firework", {}, "", function()
 		local rot = GET_ENTITY_ROTATION(objecte, 5)
 		Streamptfx(ptfnamelib)
 		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 		if fireworksdeleteafteruse then
 			util.yield(200)
 			entities.delete(objecte)
@@ -8311,6 +8313,7 @@ menu.action(fireworklist, "Spawn a Firework", {}, "", function()
 		end
 		Streamptfx(ptfnamelib)
 		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 		util.yield(timetowait)
 	end)
 	fireworktablelist[Object.. 4] = menu.toggle(fireworktablelist[Object], "Freeze position", {}, "", function(on_toggle)
@@ -8360,6 +8363,7 @@ menu.action(fireworkalllist, "Firework Shoot", {}, "", function()
 		end
 		Streamptfx(ptfnamelib)
 		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 		counteroffirework += 1
 		if fireworksdeleteafteruse then
 			util.yield(50)
@@ -8376,6 +8380,7 @@ menu.toggle_loop(fireworkalllist, "Firework Shoot Loop", {}, "Interval einstelle
 			local effectrandom = math.random( 1,4 )
 			menu.set_value(fireworklistselect,effectrandom)
 		end
+		--local colour1, colour2, colour3 = math.random( 100,255 ), math.random( 100,255 ), math.random( 100,255 )
 		local coordrandom = math.random( -10, 10)
 		local coordrandom2 = math.random( -10, 10)
 		if coordrandom > 0 then
@@ -8390,6 +8395,7 @@ menu.toggle_loop(fireworkalllist, "Firework Shoot Loop", {}, "Interval einstelle
 		end
 		Streamptfx(ptfnamelib)
 		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 		util.yield(math.random( 100,200 ))
 	end
 	util.yield(timetowait)
@@ -8433,6 +8439,32 @@ menu.action(fireworklist, "nur firework", {}, "Schießt ein firework etwas weite
 	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +10, 0)
 	Streamptfx(ptfnamelib)
 	START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
+	SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
+end)
+
+menu.toggle_loop(fireworklist, "Random firework arround you", {}, "schießt random Firework arround you", function()
+	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
+	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +10, 0)
+	if fireworksrandomeffect then
+		local effectrandom = math.random( 1,4 )
+		menu.set_value(fireworklistselect,effectrandom)
+	end
+	local coordrandom = math.random( -20, 20)
+	local coordrandom2 = math.random( -20, 20)
+	if coordrandom > 0 then
+		fireowrkpos.x = fireowrkpos.x + coordrandom
+	else
+		fireowrkpos.x = fireowrkpos.x - coordrandom
+	end
+	if coordrandom2 > 0 then
+		fireowrkpos.y = fireowrkpos.y + coordrandom
+	else
+		fireowrkpos.y = fireowrkpos.y - coordrandom
+	end
+	Streamptfx(ptfnamelib)
+	START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
+	SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
+	util.yield(200)
 end)
 
 menu.divider(fireworklist, "Settings")
@@ -8444,6 +8476,10 @@ fireworkplacelistselect = menu.list_select(fireworklist, "Placed rocket", {}, ""
 	hashofobj = util.joaat(value)
 	hashofobjname = value
 end)
+fireworkcolourlist = menu.colour(fireworklist, "Colour", {}, "", fireworkcolourselect, true, function(s)
+	fireworkcolourselect = s
+end)
+menu.inline_rainbow(fireworkcolourlist)
 menu.toggle(fireworklist, "with animation", {}, "", function(on_toggle)
 	if on_toggle then
 		withanimationyes = true
@@ -8514,18 +8550,6 @@ end, '')
 menu.text_input(misc, "hash number", {"hashnumber"}, "", function(input)
 	hashnumber = input
 end, '')
-
-
---[[  {
-    "DictionaryName": "anim@mp_fireworks",
-    "Animations": [
-      "place_firework_1_rocket",
-      "place_firework_2_cylinder",
-      "place_firework_box2",
-      "place_firework_3_box",
-      "place_firework_4_cone"
-    ]
-  },]]
 
 -- settings
 
