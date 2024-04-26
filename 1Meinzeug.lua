@@ -8284,7 +8284,7 @@ menu.action(fireworklist, "Spawn a Firework", {}, "", function()
 		end
 		local rot = GET_ENTITY_ROTATION(objecte, 5)
 		Streamptfx(ptfnamelib)
-		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
 		SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 		if fireworksdeleteafteruse then
 			util.yield(200)
@@ -8312,7 +8312,7 @@ menu.action(fireworklist, "Spawn a Firework", {}, "", function()
 			rot.y = rot.y - coordrandom
 		end
 		Streamptfx(ptfnamelib)
-		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
 		SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 		util.yield(timetowait)
 	end)
@@ -8362,7 +8362,7 @@ menu.action(fireworkalllist, "Firework Shoot", {}, "", function()
 			menu.set_value(fireworklistselect,effectrandom)
 		end
 		Streamptfx(ptfnamelib)
-		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
 		SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 		counteroffirework += 1
 		if fireworksdeleteafteruse then
@@ -8394,7 +8394,7 @@ menu.toggle_loop(fireworkalllist, "Firework Shoot Loop", {}, "Interval einstelle
 			rot.y = rot.y - coordrandom
 		end
 		Streamptfx(ptfnamelib)
-		START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
+		START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, offsetobject.x, offsetobject.y, offsetobject.z,  rot.x, rot.y, rot.z, 1.0, false, false, false, false)
 		SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 		util.yield(math.random( 100,200 ))
 	end
@@ -8438,7 +8438,7 @@ menu.action(fireworklist, "nur firework", {}, "Schießt ein firework etwas weite
 	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
 	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +10, 0)
 	Streamptfx(ptfnamelib)
-	START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
+	START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
 	SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 end)
 
@@ -8462,7 +8462,7 @@ menu.toggle_loop(fireworklist, "Random firework arround you", {}, "schießt rand
 		fireowrkpos.y = fireowrkpos.y - coordrandom
 	end
 	Streamptfx(ptfnamelib)
-	START_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
+	START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
 	SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 	util.yield(200)
 end)
