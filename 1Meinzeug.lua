@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.56
+local localVer = 0.57
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -8241,6 +8241,8 @@ function handlefireworklist()
 			end
 		end
 		if not DOES_ENTITY_EXIST(object) then
+			menu.set_value(fireworktablelist[object.. 3], false)
+			util.yield(20)
 			menu.delete(fireworktablelist[object])
 			tableremove(fireworktablelistexists, object)
 		end
@@ -8464,7 +8466,7 @@ menu.toggle_loop(fireworklist, "Random firework arround you", {}, "schießt rand
 	Streamptfx(ptfnamelib)
 	START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(ptfnamesel, fireowrkpos.x, fireowrkpos.y, fireowrkpos.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
 	SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
-	util.yield(200)
+	util.yield(400)
 end)
 
 menu.divider(fireworklist, "Settings")
@@ -8515,7 +8517,7 @@ menu.toggle(fireworklist, "Delete after use", {}, "bei loop wird das nicht passi
 		fireworksdeleteafteruse = false
 	end
 end)
-menu.slider(fireworklist, "loop inverval", {}, "Seconds",1, 20, 1, 1, function(s)
+menu.slider(fireworklist, "loop inverval", {"fireworkinterval"}, "Seconds",1, 20, 1, 1, function(s)
 	timetowait = s*1000
 end)
 --[[menu.action(fireworklist, "animation", {}, "", function()
