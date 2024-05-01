@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.57
+local localVer = 0.58
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -105,6 +105,8 @@ veh = {}
 --[[for i = 0, 300 do
 	veh[i] = 0
 end]]
+
+antivehactiontablelist = {}
 
 vehinfotab = {}
 for i = 0, 300 do
@@ -1190,8 +1192,8 @@ function isanykeypressed()
 end
 
 function isMoving(ped)
-	if not IS_PED_IN_ANY_VEHICLE(ped, true) and GET_ENTITY_SPEED(ped) > 1 then return true end
-	if GET_ENTITY_SPEED(GET_VEHICLE_PED_IS_IN(ped, false)) > 1 then return true end
+	if not IS_PED_IN_ANY_VEHICLE(ped, true) and GET_ENTITY_SPEED(ped) > 5 then return true end
+	if GET_ENTITY_SPEED(GET_VEHICLE_PED_IS_IN(ped, false)) > 5 then return true end
 end
 
 function getseatofplayer(vehicle)
@@ -1510,7 +1512,7 @@ local function player(pid)
 	local ptfx = {lib = 'scr_rcbarry2', sel = 'scr_clown_appears'}
 	menu.toggle_loop(spam, 'PTFX Spam', {"ptfxspam"}, 'PTFX Spam', function ()
     local targets = GET_PLAYER_PED_SCRIPT_INDEX(pid)
-    local tar1 = ENTITY.GET_ENTITY_COORDS(targets, true)
+    local tar1 = GET_ENTITY_COORDS(targets, true)
     Streamptfx(ptfx.lib)
     GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD( ptfx.sel, tar1.x, tar1.y, tar1.z + 1, 0, 0, 0, 10.0, true, true, true)
 	end)
@@ -2229,6 +2231,7 @@ local player_zeug = menu.list(menu.my_root(), "Lobby zeug", {}, "")
 local Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
 local customselection = menu.list(menu.my_root(), "Custom Selection", {}, "")
 local misc = menu.list(menu.my_root(), "Misc", {}, "")
+local Menyoveh = menu.list(menu.my_root(), "Menyoo vehicle/maps spawn", {}, "only xml,ini files")
 local frendlist = menu.list(misc, "friend list", {"fl"}, "")
 local players_list = menu.list(misc, "Players", {}, "")
 
@@ -3428,24 +3431,28 @@ local searchnearpeds = ""
 local searchnearobjects = ""
 local searchnearpickups = ""
 local Entitymanagernearvehiclevehicles = menu.list(Entitymanagernearvehicle, "vehicles", {}, "", function(on_click)
-	menu.set_value(enabledToggnearvehicle, true)
+	enablednearvehicle  = true
+	util.create_tick_handler(getnearvehicle)
 end, function(on_back)
-	menu.set_value(enabledToggnearvehicle, false)
+	enablednearvehicle  = false
 end)
 local Entitymanagernearvehiclepeds = menu.list(Entitymanagernearvehicle, "Peds", {}, "", function(on_click)
-	menu.set_value(enabledToggnearpeds, true)
+	enablednearpeds  = true
+	util.create_tick_handler(getnearpeds)
 end, function(on_back)
-	menu.set_value(enabledToggnearpeds, false)
+	enablednearpeds  = false
 end)
 local Entitymanagernearvehicleobjects = menu.list(Entitymanagernearvehicle, "Objects", {}, "", function(on_click)
-	menu.set_value(enabledToggnearobjects, true)
+	enablednearobjects  = true
+	util.create_tick_handler(getnearobjects)
 end, function(on_back)
-	menu.set_value(enabledToggnearobjects, false)
+	enablednearobjects  = false
 end)
 local Entitymanagernearvehiclepickup = menu.list(Entitymanagernearvehicle, "Pickups", {}, "", function(on_click)
-	menu.set_value(enabledToggnearpickups, true)
+	enablednearpickups  = true
+	util.create_tick_handler(getnearpickup)
 end, function(on_back)
-	menu.set_value(enabledToggnearpickups, false)
+	enablednearpickups  = false
 end)
 
 menu.text_input(Entitymanagernearvehiclevehicles, "Search", {"Searchnearveh"}, "", function(input)
@@ -3615,6 +3622,58 @@ menu.action(Entitymanagernearvehicleallveh, "Repair", {}, "", function()
 	end
 end)
 menu.divider(Entitymanagernearvehicleallveh, "Misc")
+local savingvehrunning = false
+menu.text_input(Entitymanagernearvehicleallveh, "Save vehicle / adds number to it", {"saveallveh"}, "", function(input)
+	local numbertoadd = 0
+	local mypos = players.get_position(players.user())
+	local wasinveh = IS_PED_IN_ANY_VEHICLE(players.user_ped())
+	local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
+	local seatofplayer = getseatofplayer(vehicleofped)
+	for _, vehhandle in pairs(vehicledata) do
+		local modelname = getmodelnamebyhash(entities.get_model_hash(vehhandle))
+		savingvehrunning = true
+		freeseat = getfreevehsteat(vehhandle)
+		if GET_VEHICLE_PED_IS_IN(players.user_ped()) == vehhandle then
+			numbertoadd += 1
+			menu.trigger_commands("savevehicle "..input.." ".. numbertoadd)
+			util.toast("VEH: ".. modelname.. " Saved as ".. input.." ".. numbertoadd)
+			goto end
+		end
+			if freeseat then
+				SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
+				util.yield(20)
+				numbertoadd += 1
+				menu.trigger_commands("savevehicle "..input.." ".. numbertoadd)
+				util.toast("VEH: ".. modelname.. " Saved as ".. input.." ".. numbertoadd)
+				util.yield(10)
+			else
+				util.toast(modelname.. " Ist voll es wird übersprungen")
+			end
+		::end::
+	end
+	savingvehrunning = false
+	if wasinveh then
+		if DOES_ENTITY_EXIST(vehicleofped) then
+			if vehicleofped == GET_VEHICLE_PED_IS_IN(players.user_ped()) then
+				goto stopprocess
+			end
+			if IS_VEHICLE_SEAT_FREE(vehicleofped, seatofplayer, false) then
+				SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, seatofplayer)
+			else
+				getfreesetincar = getfreevehsteat(vehicleofped)
+				if getfreesetincar then
+					SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, getfreesetincar)
+				else
+					SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
+				end
+			end
+		end
+	else
+		SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
+	end
+	::stopprocess::
+	menu.set_value(menu.ref_by_command_name("saveallveh"), "")
+end)
 menu.action(Entitymanagernearvehicleallveh, "Set vehicle as mission Entity", {}, "setzt das vehicle als mission entity kann also nicht einfach so despawnen", function()
 	for vehicledata as vehhandle do
 		if getcontrole(vehhandle) then
@@ -3878,9 +3937,6 @@ menu.action(Entitymanagernearvehicleallpickups, "Set Pickup as no longer needed"
 	end
 end)
 
-
-local Entitymanagernearvehicleirgnore = menu.list(Entitymanagernearvehicle, "Igrnoriere das", {}, "die sachen werden dann geladen wenn du da drauf drückst also das brauchst du nicht")
-
 maxDistancenearentitys = 200
 local onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switchsearchnearentitys, showdebugginfosnearentitys, showarsignalnearentitys, infosearchnearentitys = false, true, false, false, true, true, false
 local seattable = {}
@@ -3906,6 +3962,9 @@ function getnearvehicle()
 	if util.is_session_transition_active() then
 		return
 	end
+	if savingvehrunning then
+		return
+	end
 	local allpointer = entities.get_all_vehicles_as_pointers()
 	for _, vehpointer in pairs(allpointer) do
 		local vehhandle = entities.pointer_to_handle(vehpointer)
@@ -3923,7 +3982,7 @@ function getnearvehicle()
 		if onlymissionnearentitys and not ismissionentity then
 			goto continue
 		end
-		if infodist > maxDistancenearentitys then
+		if dist > maxDistancenearentitys then
 			goto continue
 		end
 		if showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0) then
@@ -4374,13 +4433,19 @@ function getnearvehicle()
 				local entitypPos = entities.get_position(entitypointer)
 				local dist = math.floor(mypos:distance(entitypPos))
 				freeseat = getfreevehsteat(entityhandle)
-				if freeseat ~= number then
+				if GET_VEHICLE_PED_IS_IN(players.user_ped()) == entityhandle then
+					menu.trigger_commands("savevehicle "..input)
+					util.toast("VEH: ".. entitiyname.. " Saved as ".. input)
+					goto end
+				end
+				if freeseat then
 					if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
 						local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
 						local seatofplayer = getseatofplayer(vehicleofped)
 						SET_PED_INTO_VEHICLE(players.user_ped(), entityhandle, freeseat)
 						util.yield(20)
 						menu.trigger_commands("savevehicle "..input)
+						util.toast("VEH: ".. entitiyname.. " Saved as ".. input)
 						util.yield(20)
 						if DOES_ENTITY_EXIST(vehicleofped) then
 							if IS_VEHICLE_SEAT_FREE(vehicleofped, seatofplayer, false) then
@@ -4398,10 +4463,14 @@ function getnearvehicle()
 						SET_PED_INTO_VEHICLE(players.user_ped(), entityhandle, freeseat)
 						util.yield(20)
 						menu.trigger_commands("savevehicle "..input)
+						util.toast("VEH: ".. entitiyname.. " Saved as ".. input)
 						util.yield(10)
 						SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
 					end
+				else
+					util.toast("Es gibt kein sitzplatz für dich")
 				end
+				::end::
 				menu.set_value(menu.ref_by_command_name("save"..modelname), "")
 			end)
 			numbertimercall += 1
@@ -5149,7 +5218,7 @@ function getnearobjects()
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
 						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
 							util.draw_ar_beacon(ePos)
-				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
+							DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -5426,43 +5495,8 @@ function getnearpickup()
 	::end::
 end
 
-
-enabledToggnearvehicle = menu.toggle(Entitymanagernearvehicleirgnore, "Enable get vehicles", {}, "", function(on_toggle)
-	if on_toggle then
-		enablednearvehicle  = true
-		util.create_tick_handler(getnearvehicle)
-	else
-		enablednearvehicle  = false
-	end
-end)
-
-enabledToggnearpeds = menu.toggle(Entitymanagernearvehicleirgnore, "Enable get Peds", {}, "", function(on_toggle)
-	if on_toggle then
-		enablednearpeds  = true
-		util.create_tick_handler(getnearpeds)
-	else
-		enablednearpeds  = false
-	end
-end)
-enabledToggnearobjects = menu.toggle(Entitymanagernearvehicleirgnore, "Enable get obj", {}, "", function(on_toggle)
-	if on_toggle then
-		enablednearobjects  = true
-		util.create_tick_handler(getnearobjects)
-	else
-		enablednearobjects  = false
-	end
-end)
-enabledToggnearpickups = menu.toggle(Entitymanagernearvehicleirgnore, "Enable get pickups", {}, "", function(on_toggle)
-	if on_toggle then
-		enablednearpickups  = true
-		util.create_tick_handler(getnearpickup)
-	else
-		enablednearpickups  = false
-	end
-end)
-
 menu.divider(Entitymanagernearvehicle, "Settings")
-maxDistnearentitys = menu.slider(Entitymanagernearvehicle, "Range to load", {"setdisnearenittys"}, "", 10, 10000, maxDistancenearentitys, 10, function(val)
+maxDistnearentitys = menu.slider(Entitymanagernearvehicle, "Range to load", {"setdistnearenittys"}, "", 10, 10000, maxDistancenearentitys, 10, function(val)
 	maxDistancenearentitys = val
 end)
 maxDistancenearentitys = menu.get_value(maxDistnearentitys)
@@ -5552,7 +5586,7 @@ for players.list_except(true) as pid do
 			end
 		end
 end
-end, function()
+end, function(on_stop)
 for players.list_except(true) as pid do
 	SET_REMOTE_PLAYER_AS_GHOST(pid, false)
 end
@@ -5629,7 +5663,13 @@ local timegerade = util.current_time_millis()
 local ghostplayer = false
 menu.toggle_loop(Self, "anti afk kill", {}, "", function()
 	if not util.is_session_transition_active() then
-		if isanykeypressed() then
+		local ismovingon = false
+		if IS_PED_IN_ANY_VEHICLE(players.user_ped()) and not GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_USING(players.user_ped()), -1) == players.user_ped() then
+			if isMoving(players.user_ped()) then
+				ismovingon = true
+			end
+		end
+		if isanykeypressed() or ismovingon  then
 			timegerade = util.current_time_millis()
 			if ghostplayer then
 				menu.set_value(ghostarmedplayers, true)
@@ -5643,7 +5683,7 @@ menu.toggle_loop(Self, "anti afk kill", {}, "", function()
 					SET_REMOTE_PLAYER_AS_GHOST(pid, false)
 				end
 			end
-		elseif not isanykeypressed() and not isMoving(players.user_ped()) then
+		elseif not isanykeypressed() then
 			if (util.current_time_millis() - timegerade) >= (timerforafk * 1000) then
 				if menu.get_value(ghostarmedplayers) then
 					ghostplayer = true
@@ -6712,6 +6752,7 @@ menu.toggle_loop(Entitymanagercleararea, "Delete all", {"deleteall"}, "", functi
 	clearAreaOfEntities("veh", CLEAR_AREA_RANGE)
 	clearAreaOfEntities("obj", CLEAR_AREA_RANGE)
 	clearAreaOfEntities("pickup", CLEAR_AREA_RANGE)
+	util.yield(200)
 end)
 menu.action(Entitymanagercleararea, "Clear ALL Ropes", {"clearropes"}, "", function()
     for i = 0, 100 do
@@ -7453,7 +7494,7 @@ notifyactionToggle = menu.toggle(antivehiclesettings, "Notify bekommen", {}, "",
 end, antiactionnotify)
 antiactionnotify = menu.get_value(notifyactionToggle)
 
-menu.text_input(antiactionvehicles, "addveh", {"addtoantiveh"}, "WICHITG!!!!!!\ndort muss der id name vom auto rein.\num zu schauen wie der id name ist geh zum spawn menu von stand und gib das fahrzeug ein was du willst dann steht dort als befehl der id name\nich habe bei meinem esp ein anzeige gemacht wo man sehen kann was der name ist (id name)", function(input)
+--[[menu.text_input(antiactionvehicles, "addveh", {"addtoantiveh"}, "WICHITG!!!!!!\ndort muss der id name vom auto rein.\num zu schauen wie der id name ist geh zum spawn menu von stand und gib das fahrzeug ein was du willst dann steht dort als befehl der id name\nich habe bei meinem esp ein anzeige gemacht wo man sehen kann was der name ist (id name)", function(input)
 	local hash = util.joaat(input)
 	for util.get_vehicles() as vehicles do
 		local hashveh = util.joaat(vehicles.name)
@@ -7467,23 +7508,26 @@ menu.text_input(antiactionvehicles, "addveh", {"addtoantiveh"}, "WICHITG!!!!!!\n
 		end
 	end
 	menu.set_value(menu.ref_by_command_name("addtoantiveh"), "")
-end)
+end)]]
+
 local searchvehciletable = {}
 function clearsearchlist()
 	for searchvehciletable as vehicle do
 		local hash = util.joaat(vehicle)
-		local valid = menu.is_ref_valid(menu.ref_by_command_name("antivehiclesearchactivate"..hash))
+		local valid = menu.is_ref_valid(antivehactiontablelist[hash])
 			if valid then
 				--menu.delete(menu.ref_by_command_name("antivehiclesearchactivate"..hash))
-				menu.delete(veh[hash])
+				menu.delete(antivehactiontablelist[hash])
 				menu.collect_garbage()
-				util.yield()
+				--util.yield()
 			end
 	end
 	searchvehciletable = {}
 end
 
 antivehiclessearch = menu.list(antiactionvehicles, "Search", {}, "")
+
+menu.divider(antiactionvehicles, "VEHICLE")
 
 searchclreaactionToggle = menu.toggle(antivehiclessearch, "Auto clear search", {}, "", function(on)
 	antiactionsearchclear = on
@@ -7492,6 +7536,15 @@ antiactionsearchclear = menu.get_value(searchclreaactionToggle)
 
 menu.action(antivehiclessearch, "Clear list", {}, "", function()
 	clearsearchlist()
+	--util.toast(menu.get_active_list_cursor_text(true, true))
+	stringtoread = string.replace(menu.get_active_list_cursor_text(true, true), "2/", "")
+	if tonumber(stringtoread) > 3 then
+		for _, ref in pairs(menu.get_children(antivehiclessearch)) do
+			if _ > 3 then
+				menu.delete(ref)
+			end
+		end
+	end
 end)
 searchforvehicleantiveh = menu.text_input(antivehiclessearch, "Search", {"searchofvehicles"}, "such nicht während es gerade die aktuelle suche läd = mega läg vlt auch fehler", function(input)
 	if antiactionsearchclear then
@@ -7507,8 +7560,11 @@ searchforvehicleantiveh = menu.text_input(antivehiclessearch, "Search", {"search
 		stringsetting = stringsetting:lower()
 		input = input:lower()
 		if string.match(stringsetting, input) then --or string.match(vehicle.name, input) then
+			if table.contains(searchvehciletable, vehicle.name) then
+				goto dontcreate
+			end
 			table.insert(searchvehciletable, vehicle.name)
-			veh[hash] = menu.action(antivehiclessearch,vehiclename .."  [".. vehicle.name.."]" , {"antivehiclesearchactivate"..hash}, "drück einfach drauf", function()
+			antivehactiontablelist[hash] = menu.action(antivehiclessearch,vehiclename .."  [".. vehicle.name.."]" , {"antivehiclesearchactivate"..hash}, "drück einfach drauf", function()
 				local hash1 = hash
 				local vehiclena = vehiclename
 					local getvalue = menu.get_value(menu.ref_by_command_name("antivehicle"..hash))
@@ -7521,6 +7577,7 @@ searchforvehicleantiveh = menu.text_input(antivehiclessearch, "Search", {"search
 				end
 			end)
 		end
+		::dontcreate::
 	end
 	::end::
 	menu.set_help_text(searchforvehicleantiveh, "such nicht während es gerade die aktuelle suche läd = mega läg vlt auch fehler\nLastInput: "..input)
@@ -8273,6 +8330,7 @@ menu.action(fireworklist, "Spawn a Firework", {}, "", function()
 	if not fireworksrot then
 		PLACE_OBJECT_ON_GROUND_PROPERLY(Object)
 	end
+	entities.set_can_migrate(Object, false)
 	fireworktablelist[Object] = menu.list(fireworklistfirework, hashofobjname, {}, "")
 	fireworktablelist[Object.. 1] = menu.action(fireworktablelist[Object], "delete", {}, "", function()
 		entities.delete(Object)
@@ -8328,10 +8386,12 @@ menu.action(fireworklist, "Spawn a Firework", {}, "", function()
 	end)
 	fireworktablelist[Object.. 5] = menu.action(fireworktablelist[Object], "Richtig auf boden stellen", {}, "berügsichtigt den boden und passt es dazu an", function(on_toggle)
 		local objecte = Object
+		getcontrole(objecte)
 		PLACE_OBJECT_ON_GROUND_PROPERLY(objecte)
 	end)
 	fireworktablelist[Object.. 6] = menu.action(fireworktablelist[Object], "Rotation auf 0 stellen", {}, "damit wird er genau nach oben gucken", function(on_toggle)
 		local objecte = Object
+		getcontrole(objecte)
 		SET_ENTITY_ROTATION(objecte, 0.0, 0.0, 0.0, 5, true)
 	end)
 	table.insert(fireworktablelistexists, Object)
@@ -8405,6 +8465,7 @@ end)
 menu.toggle(fireworkalllist, "Freeze Position", {}, "", function(on_toggle)
 	local counteroffirework = 0
 	for fireworktablelistexists as Object do
+		getcontrole(Object)
 		if on_toggle then
 			FREEZE_ENTITY_POSITION(Object, true)
 			counteroffirework += 1
@@ -8422,6 +8483,7 @@ end)
 menu.action(fireworkalllist, "Richitg auf den Boden stellen", {}, "berügsichtigt den boden und passt es dazu an", function()
 	local counteroffirework = 0
 	for fireworktablelistexists as Object do
+		getcontrole(Object)
 		PLACE_OBJECT_ON_GROUND_PROPERLY(Object)
 		counteroffirework += 1
 	end
@@ -8430,6 +8492,7 @@ end)
 menu.action(fireworkalllist, "Rotation auf 0 stellen", {}, "damit wird er genau nach oben gucken", function()
 	local counteroffirework = 0
 	for fireworktablelistexists as Object do
+		getcontrole(Object)
 		SET_ENTITY_ROTATION(Object, 0.0, 0.0, 0.0, 5, true)
 		counteroffirework += 1
 	end
@@ -8468,6 +8531,1535 @@ menu.toggle_loop(fireworklist, "Random firework arround you", {}, "schießt rand
 	SET_PARTICLE_FX_NON_LOOPED_COLOUR(fireworkcolourselect.r, fireworkcolourselect.g, fireworkcolourselect.b)
 	util.yield(400)
 end)
+
+
+
+
+
+
+
+slaxdom = require("lib/slaxdom")
+--slaxml = require("lib/slaxml")
+--lunajson = require("lunajson")
+local iniparser = require("iniparser")
+local fail_text = "This file failed to load properly and may be of an unsupported format. Please submit a bug report on Discord and attach the vehicle you just tried loading."
+local instruction_text = "\nHold shift and ctrl while clicking an option to delete this item from your directory.\nHold space and click an option to add this itemto your favorites."
+
+
+function request_anim_dict(dict)
+    request_time = os.time()
+    if not DOES_ANIM_DICT_EXIST(dict) then
+        return
+    end
+    REQUEST_ANIM_DICT(dict)
+    while not HAS_ANIM_DICT_LOADED(dict) do
+        if os.time() - request_time >= 10 then
+            break
+        end
+        util.yield()
+    end
+end
+
+function request_model_load(hash)
+    request_time = os.time()
+    if not IS_MODEL_VALID(hash) then
+        return
+    end
+   	REQUEST_MODEL(hash)
+    while not HAS_MODEL_LOADED(hash) do
+        if os.time() - request_time >= 10 then
+            break
+        end
+        util.yield()
+    end
+end
+
+function hasValue( tbl, str )
+    local f = false
+    for i = 1, #tbl do
+        if type( tbl[i] ) == "table" then
+            f = hasValue( tbl[i], str )  --  return value from recursion
+            if f then break end  --  if it returned true, break out of loop
+        elseif tbl[i] == str then
+            return true
+        end
+    end
+    return f
+end
+
+function split_str(inputstr, sep)
+    return string.split(inputstr, sep)
+end
+
+function to_boolean(text)
+    if text == 'true' or text == "1" then
+        return true
+    end
+    return false
+end
+
+function get_element_text(el)
+    local pieces = {}
+    for _,n in ipairs(el.kids) do
+      if n.type=='element' then pieces[#pieces+1] = get_element_text(n)
+      elseif n.type=='text' then pieces[#pieces+1] = n.value
+      end
+    end
+    return table.concat(pieces)
+end
+
+store_dir = filesystem.store_dir() .. '\\LanceSpooner\\'
+
+if not filesystem.is_dir(store_dir) then
+    filesystem.mkdirs(store_dir)
+    if not SCRIPT_SILENT_START then
+        util.toast("Welcome to LanceSpooner!")
+        util.toast("Put your vehicles and maps into Lua Scripts / store / LanceSpooner / vehicles or maps :)")
+    end
+end
+
+if filesystem.is_dir(filesystem.scripts_dir() .. '\\menyoo vehicles') or filesystem.is_dir(filesystem.scripts_dir() .. '\\menyoo maps') and not SCRIPT_SILENT_START then
+    --util.toast("You have the old menyoo vehicles directory! Things have moved.")
+    --util.toast("Put your vehicles and maps into Lua Scripts / store / LanceSpooner / vehicles or maps to be able to spawn them :). Remove the old directory to remove this message.")
+end
+
+vehicles_dir = store_dir .. '\\vehicles\\'
+if not filesystem.is_dir(vehicles_dir) then
+    filesystem.mkdir(vehicles_dir)
+end
+
+
+maps_dir = store_dir .. '\\maps\\'
+if not filesystem.is_dir(maps_dir) then
+    filesystem.mkdir(maps_dir)
+end
+
+function parse_xml(path)
+    -- does this path even exist?
+    if not filesystem.exists(path) then
+        util.toast("Error parsing XML. File doesn\'t exist?")
+        return
+    end
+    -- break file into string
+    local xml = io.open(path):read('*all')
+    -- dom that shit ;)
+    local dom = slaxdom:dom(xml, {stripWhitespace=true})
+    -- return our dominant superior ;)
+    return dom
+end
+
+all_vehicles = {}
+all_maps = {}
+
+favorite_vehicles = {}
+favorite_maps = {}
+
+function search_vehicle(query)
+    local finds = {}
+    for i, path in ipairs(filesystem.list_files(vehicles_dir)) do
+        local v_name = path:gsub(vehicles_dir, '')
+        if string.endswith(v_name, '.ini') or string.endswith(v_name, '.xml') or string.endswith(v_name, '.json') then
+            if string.contains(string.lower(v_name), query) then
+                finds[#finds + 1] = v_name
+            end
+        end
+    end
+    return finds
+end
+
+function search_map(query)
+    local finds = {}
+    for i, path in ipairs(filesystem.list_files(maps_dir)) do
+        local m_name = path:gsub(maps_dir, '')
+        if string.endswith(m_name, '.xml')then
+            if string.contains(string.lower(m_name), query) then
+                finds[#finds + 1] = m_name
+            end
+        end
+    end
+    return finds
+end
+
+local v_search_results_action 
+local m_search_results_action
+
+function get_file_type(file_path)
+    local _, _, ext = string.match(file_path, "(.-)([^\\/]-%.?)[.]([^%.\\/]*)$")
+    return ext
+end
+
+menu.divider(Menyoveh, "Vehicles")
+
+menu.action(Menyoveh, "Search vehicle", {"lssearchv"}, "", function(click_type)
+    menu.show_command_box("lssearchv" .. " ")
+    end, function(on_command)
+        local results = search_vehicle(on_command)
+        if #results == 0 then 
+            util.toast("No results :(")
+        else
+            menu.set_list_action_options(v_search_results_action, results)
+            menu.trigger_commands("lsvsearchresults")
+        end
+end)
+
+function load_vehicle(path)
+    local ext = get_file_type(path) 
+    pluto_switch ext do 
+        case "xml": 
+            menyoo_load_vehicle(path)
+            break 
+        case "ini":
+            ini_load_vehicle(path:gsub(vehicles_dir, ''))
+            break 
+        case "json":
+            --json_load_vehicle(path)
+            util.toast("das ist eine json file die geht nicht")
+            break 
+       -- pluto_default:
+         --   util.toast("This is not a supported file.")
+    end
+end
+
+function load_map(path)
+    local ext = get_file_type(path) 
+    pluto_switch ext do 
+        case "xml": 
+            menyoo_load_map(path)
+            break
+       -- pluto_default:
+          --  util.toast("This is not a supported file.")
+    end
+end
+
+function favorite_vehicle(file_name)
+    local full_path = vehicles_dir .. '\\' .. file_name
+    local half_path = vehicles_dir .. '\\'
+    os.rename(full_path, half_path .. '[F] ' .. file_name)
+    util.toast(file_name .. " added to favorites!")
+    get_all_vehicles_in_dir()
+end
+
+function favorite_map(file_name)
+    local full_path = maps_dir .. '\\' .. file_name
+    local half_path = maps_dir .. '\\'
+    os.rename(full_path, half_path .. '[F] ' .. file_name)
+    util.toast(file_name .. " added to favorites!")
+    get_all_maps_in_dir()
+end
+
+local load_vehicle_action = menu.list_action(Menyoveh, "Load vehicle", {}, "Load a vehicle. " .. instruction_text, all_vehicles, function(index, value)
+    local path = vehicles_dir .. '\\' .. value
+    if util.is_key_down(0x10) and util.is_key_down(0x11) then
+        os.remove(path)
+        util.toast(value .. " deleted! :)")
+        get_all_vehicles_in_dir()
+    elseif util.is_key_down(0x20) then 
+        favorite_vehicle(value)
+    else
+        load_vehicle(vehicles_dir .. '\\' .. value)
+    end
+end)
+
+loaded_vehicles_root = menu.list(Menyoveh, "Currently loaded vehicles", {"lancespoonerloadedvehicles"}, "Vehicles you have spawned")
+
+
+menu.divider(Menyoveh, "Maps")
+menu.action(Menyoveh, "Search map", {"lssearchmap"}, "", function(click_type)
+    menu.show_command_box("lssearchmap" .. " ")
+    end, function(on_command)
+        local results = search_map(on_command)
+        if #results == 0 then 
+            util.toast("No results :(")
+        else
+            menu.set_list_action_options(m_search_results_action, results)
+            menu.trigger_commands("lsmsearchresults")
+        end
+end)
+
+local load_map_action = menu.list_action(Menyoveh, "Load map", {}, "Load a map. " .. instruction_text, all_maps, function(index, value)
+    local path = maps_dir .. '\\' .. value
+    if util.is_key_down(0x10) and util.is_key_down(0x11) then
+        os.remove(path)
+        util.toast(value .. " deleted! :)")
+        get_all_maps_in_dir()
+    elseif util.is_key_down(0x20) then 
+        favorite_map(value)
+    else
+        load_map(path)
+    end
+end)
+loaded_maps_root = menu.list(Menyoveh, "Currently loaded maps", {"lancespoonerloadedmaps"}, "Maps you have loaded")
+
+menu.divider(Menyoveh, "Favorites")
+
+local load_favorite_vehicle_action = menu.list_action(Menyoveh, "Favorite vehicles", {}, "Load a vehicle.", favorite_vehicles, function(index, value)
+    load_vehicle(vehicles_dir .. '\\' .. value)
+end)
+
+local load_favorite_map_action = menu.list_action(Menyoveh, "Favorite maps", {}, "Load a map.", favorite_maps, function(index, value)
+    load_map(maps_dir .. '\\' .. value)
+end)
+
+function get_all_vehicles_in_dir()
+    local temp_vehicles = {}
+    local temp_favorite_vehicles = {}
+    local temp_favorite_maps = {}
+    local supported_formats = {'.xml', '.ini', '.json'}
+    for i, path in ipairs(filesystem.list_files(vehicles_dir)) do
+        for _, fmt in pairs(supported_formats) do 
+            if string.match(path:gsub(vehicles_dir, ''), fmt) then
+                temp_vehicles[#temp_vehicles + 1] = path:gsub(vehicles_dir, '')
+                if string.startswith(path:gsub(vehicles_dir, ''), '[F]') then 
+                    temp_favorite_vehicles[#temp_favorite_vehicles+1] = path:gsub(vehicles_dir, '')
+                end
+            end
+        end
+    end
+
+    all_vehicles = temp_vehicles
+    favorite_vehicles = temp_favorite_vehicles
+    menu.set_list_action_options(load_vehicle_action, all_vehicles)
+    menu.set_list_action_options(load_favorite_vehicle_action, favorite_vehicles)
+end
+
+function get_all_maps_in_dir()
+    local temp_maps = {}
+    local temp_favorite_maps = {}
+    for i, path in ipairs(filesystem.list_files(maps_dir)) do
+        if string.match(path:gsub(maps_dir, ''), '.xml') then
+            temp_maps[#temp_maps + 1] = path:gsub(maps_dir, '')
+            if string.startswith(path:gsub(maps_dir, ''), '[F]') then 
+                temp_favorite_maps[#temp_favorite_maps+1] = path:gsub(maps_dir, '')
+            end
+        end
+    end
+
+
+    all_maps = temp_maps
+    favorite_maps = temp_favorite_maps
+    menu.set_list_action_options(load_map_action, all_maps)
+    menu.set_list_action_options(load_favorite_map_action, favorite_maps)
+end
+
+get_all_vehicles_in_dir()
+get_all_maps_in_dir()
+
+util.create_thread(function()
+    while true do
+        get_all_vehicles_in_dir()
+        get_all_maps_in_dir()
+        util.yield(5000)
+    end
+end)
+
+menu.divider(Menyoveh, "Misc")
+v_search_results = {}
+v_search_results_action = menu.list_action(Menyoveh, "Vehicle search results", {"lsvsearchresults"}, instruction_text, v_search_results, function(index, value)
+    local path = vehicles_dir .. '\\' .. value
+    if util.is_key_down(0x10) and util.is_key_down(0x11) then
+        os.remove(path)
+        util.toast(value .. " deleted! :)")
+        get_all_vehicles_in_dir()
+        menu.set_list_action_options(v_search_results_action, {})
+    elseif util.is_key_down(0x20) then 
+        favorite_vehicle(value)
+        menu.set_list_action_options(v_search_results_action, {})
+    else
+        load_vehicle(path)
+    end
+end)
+
+m_search_results = {}
+m_search_results_action = menu.list_action(Menyoveh, "Map search results", {"lsmsearchresults"}, instruction_text, m_search_results, function(index, value)
+    local path = maps_dir .. '\\' .. value
+    if util.is_key_down(0x10) and util.is_key_down(0x11) then
+        os.remove(path)
+        util.toast(value .. " deleted! :)")
+        get_all_maps_in_dir()
+        menu.set_list_action_options(m_search_results_action, {})
+    elseif util.is_key_down(0x20) then 
+        favorite_map(value)
+        menu.set_list_action_options(m_search_results_action, {})
+    else
+        menyoo_load_map(path)
+    end
+end)
+
+function menyoo_preprocess_ped(ped, att_data, entity_initial_handles)
+    local ped_data = {}
+    isped = true
+    entity = ped
+    menyoo_preprocess_entity(ped, att_data)
+    if #entity_initial_handles > 0 then
+        entity_initial_handles[att_data['InitialHandle']] = ped
+    end
+    for a,b in pairs(att_data['PedProperties'].kids) do
+        local name = b.name
+        local val = get_element_text(b)
+        if name == 'PedProps' or name == 'PedComps' or name == 'TaskSequence' then
+            ped_data[name] = b 
+        else
+            ped_data[name] = val
+        end
+    end
+    local task_data = {}
+    if att_data['TaskSequence'] ~= nil then
+        for a,b in pairs(att_data['TaskSequence'].kids) do
+            for c,d in pairs(b.kids) do
+                task_data[d.name] = get_element_text(d)
+            end
+        end
+    end
+    local props = menyoo_build_properties_table(ped_data['PedProps'].kids)
+    for k,v in pairs(props) do
+        k = k:gsub('_', '')
+        v = split_str(v, ',')
+        SET_PED_PROP_INDEX(ped, k, tonumber(v[1]), tonumber(v[2]), true, 0)
+    end
+    local comps = menyoo_build_properties_table(ped_data['PedComps'].kids)
+    for k,v in pairs(comps) do
+        k = k:gsub('_', '')
+        v = split_str(v, ',')
+        SET_PED_COMPONENT_VARIATION(ped, k, tonumber(v[1]), tonumber(v[2]), tonumber(v[2]))
+    end
+    SET_PED_CAN_RAGDOLL(ped, to_boolean(ped_data['CanRagdoll']))
+	if ped_data['Armour'] != nil then
+    	SET_PED_ARMOUR(ped, ped_data['Armour'])
+	end
+    GIVE_WEAPON_TO_PED(ped, ped_data['CurrentWeapon'], 999, false, true)
+    -- skipping over relationship groups, fuck that shit, seriously
+    -- anim shit
+    if task_data['AnimDict'] ~= nil then
+        request_anim_dict(task_data['AnimDict'])
+        local duration = tonumber(task_data['Duration'])
+        local flag = tonumber(task_data['Flag'])
+        local speed = tonumber(task_data['Speed'])
+        TASK_PLAY_ANIM(ped, task_data['AnimDict'], task_data['AnimName'], 8.0, 8.0, duration, flag, speed, false, false, false)
+    elseif ped_data['AnimDict'] ~= nil then
+        request_anim_dict(ped_data['AnimDict'])
+        TASK_PLAY_ANIM(ped, ped_data['AnimDict'], ped_data['AnimName'], 8.0, 8.0, -1, 1, 1.0, false, false, false)
+    end
+end
+
+function nil_handler(val, default)
+    if val == nil then
+        val = default
+    end
+    return val
+end
+
+function menyoo_preprocess_entity(entity, data)
+    data['Dynamic'] = nil_handler(data['Dynamic'], true)
+    data['FrozenPos'] = nil_handler(data['FrozenPos'], true)
+    data['OpacityLevel'] = nil_handler(data['OpacityLevel'], 255)
+    data['IsInvincible'] = nil_handler(data['IsInvincible'], false)
+    data['IsVisible'] = nil_handler(data['IsVisible'], true)
+    data['HasGravity'] = nil_handler(data['HasGravity'], false)
+    data['IsBulletProof'] = nil_handler(data['IsBulletProof'], false)
+    data['IsFireProof'] = nil_handler(data['IsFireProof'], false)
+    data['IsExplosionProof'] = nil_handler(data['IsExplosionProof'], false)
+    data['IsMeleeProof'] = nil_handler(data['IsMeleeProof'], false)
+    FREEZE_ENTITY_POSITION(entity, to_boolean(data['FrozenPos']))
+    if tonumber(data['OpacityLevel']) ~= 255 then 
+        SET_ENTITY_ALPHA(entity, tonumber(data['OpacityLevel']), false)
+    end
+    SET_ENTITY_INVINCIBLE(entity, to_boolean(data['IsInvincible']))
+    SET_ENTITY_VISIBLE(entity, to_boolean(data['IsVisible']), 0)
+    SET_ENTITY_HAS_GRAVITY(entity, to_boolean(data['HasGravity']))
+    SET_ENTITY_PROOFS(entity, to_boolean(data['IsBulletProof']), to_boolean(data['IsFireProof']), to_boolean(data['IsExplosionProof']), false, to_boolean(data['IsMeleeProof']), false, true, false)
+end
+
+function menyoo_preprocess_car(vehicle, data)
+    local colors = menyoo_build_properties_table(data['Colours'].kids)
+    local neons = menyoo_build_properties_table(data['Neons'].kids)
+    local doorsopen = menyoo_build_properties_table(data['DoorsOpen'].kids)
+    local doorsbroken = menyoo_build_properties_table(data['DoorsBroken'].kids)
+    if data['TyresBursted'] ~= nil then
+        local tyresbursted = menyoo_build_properties_table(data['TyresBursted'].kids)
+        for k,v in pairs(tyresbursted) do
+            -- fucking menyoo.. here they go mixing up wheel indexes with strings
+            k = k:gsub('_', '')
+            local cure_menyoo_aids = {['FrontLeft'] = 0, ['FrontRight'] = 1, [2] = 2, [3] = 3, ['BackLeft'] = 4, ['BackRight'] = 5, [6]=6, [7]=7, [8]=8}
+			if cure_menyoo_aids[k] != nil then
+				SET_VEHICLE_TYRE_BURST(vehicle, cure_menyoo_aids[k], false, 0.0)
+			end
+        end
+    end
+    local mods = menyoo_build_properties_table(data['Mods'].kids)
+    local mod_extras = menyoo_build_properties_table(data['ModExtras'].kids)
+    if mod_extras ~= nil then 
+        for k,v in pairs(mod_extras) do
+            k = k:gsub('_', '')
+            SET_VEHICLE_EXTRA(vehicle, k, not to_boolean(v))
+        end
+    end
+    
+    for k,v in pairs(neons) do
+        local comp = {['Left']=0, ['Right']=1, ['Front']=2, ['Back']=3}
+		if comp[k] != nil then
+       	 	SET_VEHICLE_NEON_ENABLED(vehicle, comp[k], to_boolean(v))
+		end
+    end
+
+    SET_VEHICLE_WHEEL_TYPE(vehicle, tonumber(data['WheelType']))
+    for k,v in pairs(mods) do
+        k = k:gsub('_', '')
+        v = split_str(v, ',')
+		if tonumber(v[1]) != nil then
+        	SET_VEHICLE_MOD(vehicle, tonumber(k), tonumber(v[1]), to_boolean(v[2]))
+		end
+    end
+
+
+    for k,v in pairs(colors) do
+        colors[k] = tonumber(v)
+    end
+
+    SET_VEHICLE_COLOURS(vehicle, colors['Primary'], colors['Secondary'])
+    SET_VEHICLE_EXTRA_COLOURS(vehicle, colors['Pearl'], colors['Rim'])
+    SET_VEHICLE_TYRE_SMOKE_COLOR(vehicle, colors['tyreSmoke_R'], colors['tyreSmoke_G'], colors['tyreSmoke_B'])
+    SET_VEHICLE_EXTRA_COLOUR_5(vehicle, colors['LrInterior'])
+    SET_VEHICLE_EXTRA_COLOUR_6(vehicle, colors['LrDashboard'])
+    local livery = tonumber(data['Livery'])
+    if livery == -1 then
+        livery = 0
+    end
+    SET_VEHICLE_LIVERY(vehicle, livery)
+    SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, data['NumberPlateText'])
+	if tonumber(data['NumberPlateTextIndex']) != nil then
+    	SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(vehicle, tonumber(data['NumberPlateTextIndex']))
+	end
+    -- wheel invis here
+    -- engine sound name here
+    SET_VEHICLE_WINDOW_TINT(vehicle, tonumber(data['WindowTint']))
+    SET_VEHICLE_TYRES_CAN_BURST(vehicle, to_boolean(data['BulletProofTyres']))
+     SET_VEHICLE_DIRT_LEVEL(vehicle, tonumber(data['DirtLevel']))
+    SET_VEHICLE_ENVEFF_SCALE(vehicle, tonumber(data['PaintFade']))
+    SET_CONVERTIBLE_ROOF_LATCH_STATE(vehicle, tonumber(data['RoofState']))
+    SET_VEHICLE_SIREN(vehicle, to_boolean(data['SirenActive']))
+    SET_VEHICLE_ENGINE_ON(vehicle, to_boolean(data['EngineOn']), true, false)
+    -- not sure how to set lights on
+    SET_VEHICLE_RADIO_LOUD(vehicle, to_boolean(data['IsRadioLoud']))
+	if tonumber(data['LockStatus']) != nil then
+    	SET_VEHICLE_DOORS_LOCKED(vehicle, tonumber(data['LockStatus']))
+	end
+    if data['EngineHealth'] ~= nil then
+        SET_VEHICLE_ENGINE_HEALTH(vehicle, tonumber(data['EngineHealth']))
+    end
+end
+
+function menyoo_build_properties_table(kids)
+    if kids ~= nil then
+        local table = {}
+        for k,v in pairs(kids) do
+            local name = v.name
+            local val = get_element_text(v)
+            table[name] = val
+        end
+        return table
+    end
+    return nil
+end
+
+function get_net_objects()
+	local objects <const> = entities.get_all_objects_as_handles()
+	local net_objects <const> = {}
+	for i = 1, #objects do
+		if NETWORK_GET_ENTITY_IS_NETWORKED(objects[i]) then
+			net_objects[#net_objects + 1] = objects[i]
+		end
+	end
+	return net_objects
+end
+
+function get_net_peds()
+	local peds <const> = entities.get_all_peds_as_handles()
+	local net_peds <const> = {}
+	for i = 1, #peds do
+		if NETWORK_GET_ENTITY_IS_NETWORKED(peds[i]) then
+			net_peds[#net_peds + 1] = peds[i]
+		end
+	end
+	return net_peds
+end
+
+function get_net_vehicles()
+	local vehicles <const> = entities.get_all_vehicles_as_handles()
+	local net_vehicles <const> = {}
+	for i = 1, #vehicles do
+		if NETWORK_GET_ENTITY_IS_NETWORKED(vehicles[i]) then
+			net_vehicles[#net_vehicles + 1] = vehicles[i]
+		end
+	end
+	return net_vehicles
+end
+
+local function send_spawn_counter_msg(counterobj, counterped, counterveh)
+	util.toast(string.format("%s\n%s: %i\n%s: %i\n%s: %i", 
+		"Spawned", 
+		"Peds",
+		counterped,
+		"Vehicles",
+		counterveh,
+		"Objects",
+		counterobj),
+        TOAST_ALL
+	)
+end
+
+local function get_max_networked_vehicles()
+	return GET_MAX_NUM_NETWORK_VEHICLES() > 128 and 128 or GET_MAX_NUM_NETWORK_VEHICLES()
+end
+
+local function send_is_networked_msg(counterobj, counterped, counterveh, network_status)
+	if network_status == "is_networked" then
+		util.toast("The map/vehicle will be visible to other people.", TOAST_ALL)
+	elseif counterobj <= GET_MAX_NUM_NETWORK_OBJECTS() and counterped <= GET_MAX_NUM_NETWORK_PEDS() and counterveh <= get_max_networked_vehicles() then
+		util.toast("The map/vehicle can be networked if you clear all entities. Currently there are other networked entities taking up space.", TOAST_ALL)
+	else
+		util.toast(
+			string.format(
+				"The map/vehicle won't be visible to other players, it has too many entities. Networked maps/vehicles supports max:\n%i objects\n%i vehicles\n%i peds.",
+				GET_MAX_NUM_NETWORK_OBJECTS(),
+				get_max_networked_vehicles(),
+				GET_MAX_NUM_NETWORK_PEDS()
+			), TOAST_ALL
+		)
+	end
+end
+
+
+function menyoo_load_map(path)
+    local all_entities = {}
+    util.toast("Your map is loading!...")
+    local entity_initial_handles = {}
+    local xml_tbl = parse_xml(path).root
+    local counterobj, counterped, counterveh = 0, 0, 0
+    -- n appears to be the enum of the kid, k is the actual kid table
+    local data = {}
+    for a,b in pairs(xml_tbl.kids) do
+        local vproperties = {}
+        local pproperties = {}
+        local name = b.name
+        local isvehicle = false
+        local isped = false
+        if name == 'ReferenceCoords' then
+            for k,v in pairs(b.kids) do
+                if v.name == 'X' then
+                    mmblip_x = tonumber(get_element_text(v))
+                elseif v.name == 'Y' then
+                    mmblip_y = tonumber(get_element_text(v))
+                elseif v.name == 'Z' then
+                    mmblip_z = tonumber(get_element_text(v))
+                end
+            end
+            mmblip = ADD_BLIP_FOR_COORD(mmblip_x, mmblip_y, mmblip_z)
+            SET_BLIP_SPRITE(mmblip, 77)
+            SET_BLIP_COLOUR(mmblip, 48)
+        end
+        if name == 'Placement' then
+            for c,d in pairs(b.kids) do
+                if d.name == 'PositionRotation' then
+                    for e, f in pairs(d.kids) do
+                        data[f.name] = get_element_text(f)
+                    end
+                elseif d.name == 'VehicleProperties' then
+                    isvehicle = true
+                    for n, p in pairs(d.kids) do
+                        local prop_name = p.name
+                        if prop_name == 'Colours' or prop_name == 'Neons' or prop_name == 'Mods' or prop_name == 'DoorsOpen' or prop_name == 'DoorsBroken' or prop_name == 'TyresBursted' then
+                            vproperties[prop_name] = p
+                        else
+                            vproperties[prop_name]  = get_element_text(p)
+                        end
+                    end
+                elseif d.name == 'PedProperties' then
+                    isped = true
+                    pproperties[d.name] = d
+                else
+                    data[d.name] = get_element_text(d)
+                end
+            end
+            mmpos = {}
+            mmpos.x = tonumber(data['X'])
+            mmpos.y = tonumber(data['Y'])
+            mmpos.z = tonumber(data['Z'])
+            mmrot = {}
+            mmrot.pi = tonumber(data['Pitch'])
+            mmrot.ro = tonumber(data['Roll'])
+            mmrot.ya = tonumber(data['Yaw'])
+            if IS_MODEL_VALID(data['ModelHash']) then
+                local mment = 0
+                if isvehicle then
+                    request_model_load(data['ModelHash'])
+                    mment = entities.create_vehicle(data['ModelHash'], mmpos, mmrot.ya)
+                    entities.set_can_migrate(mment, false)
+                    menyoo_preprocess_entity(mment, data)
+                    menyoo_preprocess_car(mment, vproperties)
+                    counterveh += 1
+                elseif isped then
+                    request_model_load(data['ModelHash'])
+                    mment = entities.create_ped(0, data['ModelHash'], mmpos, mmrot.ya)
+                    entities.set_can_migrate(mment, false)
+                    menyoo_preprocess_ped(mment, pproperties, {})
+                    menyoo_preprocess_entity(mment, data)
+                    counterped += 1
+                else
+                    request_model_load(data['ModelHash'])
+                    mment = entities.create_object(data['ModelHash'], mmpos)
+                    entities.set_can_migrate(mment, false)
+                    menyoo_preprocess_entity(mment, data)
+                    counterobj += 1
+                end
+                table.insert(all_entities, mment)
+                SET_ENTITY_ROTATION(mment, mmrot.pi, mmrot.ro, mmrot.ya, 2, true)
+            else
+                util.toast("Some invalid models were found. Make sure you aren\'t using XML\'s that require mods.")
+            end
+        end
+    end
+    if mmblip == nil then 
+        util.toast("There was an issue loading this map. Make sure the XML is a Menyoo XML.")
+        return 
+    end
+    mm_maproot = menu.list(loaded_maps_root, path:gsub(maps_dir, "") .. ' [' .. mmblip .. ']', {"lancespoonerloadedmaps" .. mmblip}, mmblip)
+    menu.action(mm_maproot, "Teleport to map", {"menyoomteleportto" .. mmblip}, "Teleport to this map.", function(on_click)
+        SET_ENTITY_COORDS_NO_OFFSET(PLAYER_PED_ID(), mmpos.x, mmpos.y, mmpos.z, false, false, false)
+    end)
+
+    menu.action(mm_maproot, "Delete map", {"menyoomdelete" .. mmblip}, "", function(on_click)
+        for k,v in pairs(all_entities) do
+            entities.delete(v)
+        end
+        menu.delete(mm_maproot)
+        -- apparently remove blip is fucked, so we set sprite to invis as a failsafe
+        util.remove_blip(mmblip)
+    end)
+    local network_status = 
+        counterobj <= GET_MAX_NUM_NETWORK_OBJECTS() - #get_net_objects() 
+        and counterped <= GET_MAX_NUM_NETWORK_PEDS() - #get_net_peds() 
+        and counterveh <= get_max_networked_vehicles() - #get_net_vehicles()
+        and "is_networked" or "is_not_networked"
+
+    send_spawn_counter_msg(counterobj, counterped, counterveh)
+    send_is_networked_msg(counterobj, counterped, counterveh, network_status)
+    util.toast("Map load complete. Look for a magenta-colored L on your map.")
+end
+
+function menyoo_load_vehicle(path)
+    our_ped = players.user_ped()
+    local counterobj, counterped, counterveh = 0, 0, 0
+    local all_entities = {}
+    local entity_initial_handles = {}
+    local data = {}
+    local vproperties = {}
+    local xml_tbl = parse_xml(path).root
+    local initial_handle_index = 0
+    -- n appears to be the enum of the kid, k is the actual kid table
+    for k,v in pairs(xml_tbl.kids) do
+        local name = v.name
+        if name == 'VehicleProperties' then
+            for n, p in pairs(v.kids) do
+                local prop_name = p.name
+                if prop_name == 'Colours' or prop_name == 'Neons' or prop_name == 'Mods' or prop_name == 'DoorsOpen' or prop_name == 'DoorsBroken' or prop_name == 'TyresBursted' then
+                    vproperties[prop_name] = p
+                else
+                    vproperties[prop_name]  = get_element_text(p)
+                end
+            end
+        else
+            if name == 'SpoonerAttachments' then
+                data[name] = v
+            else
+                local el_text = get_element_text(v)
+                data[name] = el_text
+            end
+        end
+    end
+    if data['ModelHash'] == nil then 
+        util.toast(fail_text)
+        return 
+    end
+    request_model_load(data['ModelHash'])
+    local coords = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(our_ped, 0.0, 5.0, 0.0)
+    local vehicle = entities.create_vehicle(data['ModelHash'], coords, GET_ENTITY_HEADING(our_ped))
+    table.insert(all_entities, vehicle)
+    SET_ENTITY_INVINCIBLE(vehicle, true)
+    SET_PED_INTO_VEHICLE(our_ped, vehicle, -1)
+    if data['InitialHandle'] == nil then
+        initial_handle_index = initial_handle_index + 1
+        data['InitialHandle'] = initial_handle_index
+    end
+    entity_initial_handles[data['InitialHandle']] = vehicle
+    -- apply natives that can apply to any entity
+    menyoo_preprocess_entity(vehicle, data)
+    menyoo_preprocess_car(vehicle, vproperties)
+    -- vehicle-specific natives
+    -- now for the attachments...
+    local attachments = data['SpoonerAttachments']
+    all_attachments = {}
+    if attachments ~= nil then
+        for a,b in pairs(attachments.kids) do
+            local vproperties = {}
+            -- each item here should be "attachment" element
+            local att_data = {}
+            for c,d in pairs(b.kids) do
+                local name = d.name
+                local val = get_element_text(d)
+                if name == 'PedProperties' or name == 'Attachment' or name == 'TaskSequence' then
+                    att_data[name] = d
+                elseif name == 'VehicleProperties' then
+                    for n, p in pairs(d.kids) do
+                        local prop_name = p.name
+                        if prop_name == 'Colours' or prop_name == 'Neons' or prop_name == 'Mods' or prop_name == 'DoorsOpen' or prop_name == 'DoorsBroken' or prop_name == 'TyresBursted' then
+                            vproperties[prop_name] = p
+                        else
+                            vproperties[prop_name]  = get_element_text(p)
+                        end
+                    end
+                else
+                    att_data[name] = val
+                end
+            end
+            request_model_load(att_data['ModelHash'])
+            -- 1 = ped, 2 = vehicle, 3 = object
+            local attachment_info = menyoo_build_properties_table(att_data['Attachment'].kids)
+            local entity = nil
+            local isped = false
+            if att_data['Type'] == '1' then
+                local ped = entities.create_ped(0, att_data['ModelHash'], coords, GET_ENTITY_HEADING(players.user_ped()))
+                menyoo_preprocess_ped(ped, att_data, entity_initial_handles)
+                entities.set_can_migrate(ped, false)
+                entity = ped
+                counterped += 1
+            elseif att_data['Type'] == '2' then
+                local veh = entities.create_vehicle(att_data['ModelHash'], coords, GET_ENTITY_HEADING(players.user_ped()))
+                entities.set_can_migrate(veh, false)
+                entity = veh
+                menyoo_preprocess_entity(veh, att_data)
+                menyoo_preprocess_car(veh, vproperties)
+                counterveh += 1
+            elseif att_data['Type'] == '3' then
+				v3.setZ(coords, v3.getZ(coords) -10)
+                local obj = entities.create_object(att_data['ModelHash'], coords)
+                entities.set_can_migrate(obj, false)
+                entity = obj
+                menyoo_preprocess_entity(obj, att_data)
+                counterobj += 1
+                -- obj code
+            end
+            table.insert(all_entities, entity)
+            SET_ENTITY_INVINCIBLE(entity, true)
+            local bone = tonumber(attachment_info['BoneIndex'])
+            local x = tonumber(attachment_info['X'])
+            local y = tonumber(attachment_info['Y'])
+            local z = tonumber(attachment_info['Z'])
+            local pitch = tonumber(attachment_info['Pitch'])
+            local yaw = tonumber(attachment_info['Yaw'])
+            local roll = tonumber(attachment_info['Roll'])
+            all_attachments[entity] = {}
+            all_attachments[entity]['attachedto'] = attachment_info['AttachedTo']
+            all_attachments[entity]['bone'] = bone
+            all_attachments[entity]['x'] = x
+            all_attachments[entity]['y'] = y
+            all_attachments[entity]['z'] = z
+            all_attachments[entity]['pitch'] = pitch
+            all_attachments[entity]['yaw'] = yaw
+            all_attachments[entity]['roll'] = roll
+            all_attachments[entity]['isped'] = isped
+        end
+        for k, v in pairs(all_attachments) do
+			if entity_initial_handles[v['attachedto']] != nil then
+           		ATTACH_ENTITY_TO_ENTITY(k, entity_initial_handles[v['attachedto']], v['bone'], v['x'], v['y'], v['z'], v['pitch'], v['roll'], v['yaw'], true, false, true, v['isped'], 2, true, 0)
+			end
+		end
+    end
+    local this_blip = ADD_BLIP_FOR_ENTITY(vehicle)
+    SET_BLIP_SPRITE(this_blip, 77)
+    SET_BLIP_COLOUR(this_blip, 47)
+    local this_veh_root = menu.list(loaded_vehicles_root, path:gsub(vehicles_dir .. '\\', ''), {"lancespoonerv" .. vehicle}, tostring(this_blip))
+    menu.action(this_veh_root, "Delete", {"deletelancespoonerv" .. vehicle}, "Delete this vehicle. Make it cease to exist.", function(on_click)
+        for k,v in pairs(all_entities) do
+            entities.delete(v)
+        end
+        menu.delete(this_veh_root)
+        util.remove_blip(this_blip)
+    end)
+    menu.action(this_veh_root, "Teleport inside", {"teleportemenyoov" .. vehicle}, "", function(on_click)
+        SET_PED_INTO_VEHICLE(PLAYER_PED_ID(), vehicle, -1)
+    end)
+    local network_status = 
+        counterobj <= GET_MAX_NUM_NETWORK_OBJECTS() - #get_net_objects() 
+        and counterped <= GET_MAX_NUM_NETWORK_PEDS() - #get_net_peds() 
+        and counterveh <= get_max_networked_vehicles() - #get_net_vehicles()
+        and "is_networked" or "is_not_networked"
+    
+    send_spawn_counter_msg(counterobj, counterped, counterveh)
+    send_is_networked_msg(counterobj, counterped, counterveh, network_status)
+    return vehicle
+end
+
+function ini_preprocess_vehicle(vehicle, data, ini_type, veh_index) 
+    -- vehicle is a handle to an already-spawned vehicle
+    if ini_type == 1 then
+        SET_VEHICLE_COLOURS(vehicle, data.Primary or 0, data.Secondary or 0)
+        SET_VEHICLE_TYRE_SMOKE_COLOR(vehicle, data.SmokeR or 0, data.SmokeG or 0, data.SmokeB or 0)
+        SET_VEHICLE_NEON_COLOUR(vehicle, data.NeonR or 0, data.NeonG or 0, data.NeonB or 0)
+        SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, "LANCE")
+        SET_VEHICLE_DIRT_LEVEL(vehicle, data.Dirt or 0)
+        SET_VEHICLE_ENVEFF_SCALE(vehicle, data.PaintFade or 0)
+        SET_VEHICLE_WHEEL_TYPE(vehicle, data.Wheels or 0)
+        SET_VEHICLE_EXTRA_COLOURS(vehicle, data.Pearl or 0, data.WheelColor or 0)
+        SET_VEHICLE_WINDOW_TINT(vehicle, data.Tint or 0)
+
+        if data['BulletProofTires'] == 1 then 
+            SET_VEHICLE_TYRES_CAN_BURST(vehicle, false)
+        end
+        for i=1, 4 do 
+            if data['Neon' .. i] == 1 then 
+                SET_VEHICLE_NEON_ENABLED(vehicle, i, true)
+            end
+        end
+
+        for i=0, 48 do
+            if data[i] ~= nil then 
+                -- idk how we even determine if a car has custom tires in this format
+                SET_VEHICLE_MOD(vehicle, i, data[i], false)
+            end
+        end
+
+        for i=1, 9 do 
+            SET_VEHICLE_EXTRA(vehicle, i, if data['extra' .. i] == 0 then true else false)
+        end
+
+    elseif ini_type == 2 then
+        local v_mods = data['Vehicle Mods']
+        local v_extras = data['Vehicle Extras']
+        local v_toggles = data['Vehicle Toggles']
+        local data = data.Vehicle 
+        SET_VEHICLE_COLOURS(vehicle, data['primary paint'] or 0, data['secondary paint'] or 0)
+        SET_VEHICLE_TYRE_SMOKE_COLOR(vehicle, data['tyre smoke red'] or 0, data['tyre smoke green'] or 0, data['tyre smoke blue'] or 0)
+        SET_VEHICLE_NEON_COLOUR(vehicle, data['neon red'] or 0, data['neon green'] or 0, data['neon blue'] or 0)
+        SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, "LANCE")
+        SET_VEHICLE_DIRT_LEVEL(vehicle, data['dirt level'] or 0)
+        --SET_VEHICLE_ENVEFF_SCALE(vehicle, data.PaintFade or 0)
+        SET_VEHICLE_WHEEL_TYPE(vehicle, data['wheel type'] or 0)
+        SET_VEHICLE_EXTRA_COLOURS(vehicle, data['pearlescent colour'] or 0, data['wheel colour'] or 0)
+        SET_VEHICLE_WINDOW_TINT(vehicle, data['window tint'] or 0)
+        SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(vehicle, data['plate index'] or 0)
+
+        if data['bulletproof tyres'] == 1 then 
+            SET_VEHICLE_TYRES_CAN_BURST(vehicle, false)
+        end
+
+        for i=1, 4 do 
+            if data['neon ' .. i] == 1 then 
+                SET_VEHICLE_NEON_ENABLED(vehicle, i, true)
+            end
+        end
+
+        for i= 1, 7 do 
+            if data['door ' .. i .. ' state'] == 1 then
+                SET_VEHICLE_DOOR_OPEN(vehicle, i, false, true)
+            end
+        end
+
+        for i=0, 48 do
+            if v_mods[i] ~= nil then 
+                -- idk how we even determine if a car has custom tires in this format
+                SET_VEHICLE_MOD(vehicle, i, v_mods[i], false)
+            end
+        end
+
+        for i=1, 9 do 
+            SET_VEHICLE_EXTRA(vehicle, i, if v_extras[i] == 0 then true else false)
+        end
+
+        for i=17, 22 do 
+            TOGGLE_VEHICLE_MOD(vehicle, i, if v_toggles[i] == 1 then true else false)
+        end
+
+    elseif ini_type == 3 then
+        SET_VEHICLE_COLOURS(vehicle, data.PrimaryPaint or 0, data.SecondaryPaint or 0)
+        if data.PrimaryPaint == -1 then 
+            SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(vehicle, data.PrimaryR or 0, data.PrimaryG or 0, data.PrimaryB or 0)
+        end 
+        if data.SecondaryPaint == -1 then 
+            SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(vehicle, data.SecondaryR, data.SecondaryG, data.SecondaryB)
+        end
+        SET_VEHICLE_MOD_COLOR_1(vehicle, data.PrimaryPaintT or 0, data.PrimaryPaint or 0, data.Pearlescent or 0)
+        SET_VEHICLE_MOD_COLOR_2(vehicle, data.SecondaryPaintT or 0, data.SecondaryPaint or 0)
+        SET_VEHICLE_TYRE_SMOKE_COLOR(vehicle, data.SmokeR or 0, data.SmokeG or 0, data.SmokeB or 0)
+        SET_VEHICLE_NEON_COLOUR(vehicle, data.NeonR or 0, data.NeonG or 0, data.NeonB or 0)
+        SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, "LANCE")
+        --SET_VEHICLE_DIRT_LEVEL(vehicle, data.Dirt or 0)
+        SET_VEHICLE_ENVEFF_SCALE(vehicle, data.PaintFade or 0)
+        SET_VEHICLE_WHEEL_TYPE(vehicle, data.Wheels or 0)
+        SET_VEHICLE_EXTRA_COLOURS(vehicle, data.Pearlescent or 0, data.WheelsColor or 0)
+        SET_VEHICLE_WINDOW_TINT(vehicle, data.WindowTint or 0)
+        SET_VEHICLE_EXTRA_COLOUR_6(vehicle, data.DashColor)
+        SET_VEHICLE_EXTRA_COLOUR_5(vehicle, data.DashLightColor)
+
+        if data.BulletProof == 1 then 
+            SET_VEHICLE_TYRES_CAN_BURST(vehicle, false)
+        end
+        if data.NeonEnabled == 1 then
+            for i=1, 4 do 
+                SET_VEHICLE_NEON_ENABLED(vehicle, i, true)
+            end
+        end
+
+        for i=0, 48 do
+            if data[i] ~= nil then 
+                SET_VEHICLE_MOD(vehicle, i, data[i], data.CustomTyres)
+            end
+        end
+
+        for i=17, 22 do 
+            TOGGLE_VEHICLE_MOD(vehicle, i, if data['TOGGLE_' .. i] == 1 then true else false)
+        end
+
+        for i=1, 9 do 
+            SET_VEHICLE_EXTRA(vehicle, i, if data['Extra_' .. i] == 0 then true else false)
+        end
+
+    elseif ini_type == 4 then 
+        util.toast("This INI is only partially supported. Sorry if things look weird or some things are missing.")
+        local v_root = data['Vehicle' .. veh_index]
+        local v_mods = data['Vehicle' .. veh_index .. "Mods"]
+        local v_extras = data['Vehicle' .. veh_index .. "Extras"]
+        local v_toggles = data['Vehicle' .. veh_index .. "Toggles"]
+        local v_smoke = data['Vehicle' .. veh_index .. "TireSmoke"]
+        local v_neon = data['Vehicle' .. veh_index .. "Neon"]
+        local v_neon_color = data['Vehicle' .. veh_index .. "NeonColor"]
+        local v_paintfade = data['Vehicle' .. veh_index .. "PaintFade"]
+        local v_color_main = data['Vehicle' .. veh_index .. "VehicleColors"]
+        local v_color_extra = data['Vehicle' .. veh_index .. "ExtraColors"]
+        local v_color_custom_p = data['Vehicle' .. veh_index .. "CustomPrimaryColor"]
+        local v_color_custom_s = data['Vehicle' .. veh_index .. "CustomSecondaryColor"]
+        local v_wheel_type = data['Vehicle' .. veh_index .. "WheelType"]
+        local v_plate = data['Vehicle' .. veh_index .. "Numberplate"]
+        local v_window_tint = data['Vehicle' .. veh_index .. "WindowTint"]
+        local v_is_custom_primary = data['Vehicle' .. veh_index .. "IsCustomPrimary"]
+        local v_is_custom_secondary = data['Vehicle' .. veh_index .. "IsCustomSecondary"]
+        local data = data['Vehicle' .. veh_index]
+
+        for i=0, 49 do
+            if data['M' .. tostring(i)] ~= nil then 
+                SET_VEHICLE_MOD(vehicle, i, v_mods['M' .. i], false)
+            end
+        end
+
+        for i=0, 49 do 
+            TOGGLE_VEHICLE_MOD(vehicle, i, v_toggles['T' .. i])
+        end
+
+        for i=1, 13 do 
+            SET_VEHICLE_EXTRA(vehicle, i, v_extras['E' .. i])
+        end
+
+        for i=1, 4 do 
+            SET_VEHICLE_NEON_ENABLED(vehicle, i, v_neon["Enabled" .. i])
+        end
+
+        SET_ENTITY_DYNAMIC(vehicle, v_root.Dynamic)
+        SET_ENTITY_VISIBLE(vehicle, v_root.Visible, 0)
+        SET_VEHICLE_COLOURS(vehicle, v_color_main.Primary or 0, v_color_main.Secondary or 0)
+        if v_is_custom_primary['bool'] then 
+            SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(v_color_custom_p.r or 0, v_color_custom_p.g or 0, v_color_custom_p.b or 0)
+        end
+
+        if v_is_custom_secondary['bool'] then 
+            SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(v_color_custom_s.r or 0, v_color_custom_s.g or 0, v_color_custom_s.b or 0)
+        end
+
+        SET_VEHICLE_EXTRA_COLOURS(vehicle, v_color_extra.Pearl or 0, v_color_extra.Wheel or 0)
+
+    
+        SET_VEHICLE_TYRE_SMOKE_COLOR(vehicle, v_smoke.R or 0, v_smoke.G or 0, v_smoke.B or 0)
+        SET_VEHICLE_NEON_COLOUR(vehicle, v_neon_color.R or 0, v_neon_color.G or 0, v_neon_color.B or 0)
+        SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, "LANCE")
+        --SET_VEHICLE_DIRT_LEVEL(vehicle, data.Dirt or 0)
+        SET_VEHICLE_ENVEFF_SCALE(vehicle, v_paintfade.PaintFade or 0)
+        SET_VEHICLE_WHEEL_TYPE(vehicle, v_wheel_type or 0)
+        SET_VEHICLE_WINDOW_TINT(vehicle, v_window_tint or 0)
+        SET_ENTITY_INVINCIBLE(vehicle, v_root.Invincible or false)
+        SET_ENTITY_HAS_GRAVITY(vehicle, v_root.Gravity or true)
+        FREEZE_ENTITY_POSITION(vehicle, v_root.Freeze or false)
+        SET_ENTITY_RENDER_SCORCHED(vehicle, v_root.ScorchedRender or false)
+        if v_root.Alpha ~= 255 and v_root.Alpha ~= nil then
+            SET_ENTITY_ALPHA(vehicle, v_root.Alpha, false)
+        end
+        SET_VEHICLE_DIRT_LEVEL(vehicle, v_root.Dirt or 0.0) 
+        SET_VEHICLE_ENGINE_ON(vehicle, v_root.IsEngineOn, true, false)
+        SET_VEHICLE_LIGHT_MULTIPLIER(vehicle, v_root.HeadlightMultiplier or 1.0)
+    end
+end
+
+function tprint (tbl, indent)
+    if not indent then indent = 0 end
+    for k, v in pairs(tbl) do
+      formatting = string.rep("  ", indent) .. k .. ": "
+      if type(v) == "table" then
+        print(formatting)
+        tprint(v, indent+1)
+      elseif type(v) == 'boolean' then
+        print(formatting .. tostring(v))      
+      else
+        print(formatting .. v)
+      end
+    end
+  end
+
+function ini_load_vehicle(file_name)
+    local data
+    success, data = pcall(iniparser.parse, file_name, vehicles_dir)
+    if not success then 
+        util.toast("Something bad happened when trying to load this INI! Please check the INI file and try again. ")
+    end
+    local all_entities = {}
+    local ini_type = -1
+    -- determine type of ini file 
+    -- type 1 has no spaces in it (i.e Airship.xml). 
+    -- type 2 does and has  lowercase shit (420 Hydra.ini). it's also extremely stupid
+    -- type 3 is extremely similar to type 1, but has values like PrimaryPaintT (BayWatch Blazer.xml)
+    -- type 4 has an "AllObjects", "AllPeds", "AllVehicles" section in the ini (4tire_bike.ini)
+    -- type 5 has AllObjects and AllVehicles (Boat-fsx.ini) (seems like theres an iniparser glitch in this one)
+    -- type 6 is like type 2, but some keys are different, namely the numbers for attachments are called "Attached Object x" (Tankamid.ini)
+
+    if data.Vehicle.model == nil and data.Vehicle.PrimaryPaintT == nil and data.AllVehicles.Count == nil then 
+        ini_type = 1
+    elseif data.Vehicle.model ~= nil and data['Attached Object 1'].model == nil then 
+        ini_type = 2
+    elseif data.Vehicle.model == nil and data.Vehicle.PrimaryPaintT ~= nil then 
+        ini_type = 3
+    elseif data.AllObjects.Count ~= nil and data.AllVehicles.Count ~= nil and data.AllPeds.Count ~= nil then 
+        ini_type = 4
+    elseif data.Vehicle.model ~= nil and data['Attached Object 1'].model ~= nil then 
+        ini_type = 6
+    end
+
+
+    if ini_type == -1 then
+        util.toast("This ini type is not supported (yet??)! Sorry :(")
+        return
+    end
+    -- there is also an ini type 6...
+    local initial_vehicle
+    local v_count = 1
+    local success = false
+    if ini_type == 1 then 
+        local v_hash = data['Vehicle']['Model']
+        if v_hash == nil then 
+            util.toast(fail_text)
+            return
+        end
+        local c = players.get_position(players.user())
+        request_model_load(v_hash)
+        initial_vehicle = entities.create_vehicle(v_hash, c, GET_ENTITY_HEADING(players.user_ped()))
+        all_entities[#all_entities+1] = initial_vehicle
+        ini_preprocess_vehicle(initial_vehicle, data['Vehicle'], ini_type)
+        local attachment_index = 0
+        while true do 
+            if data[tostring(attachment_index)].Model == nil then 
+                success = true
+                break
+            end
+            local here = data[tostring(attachment_index)]
+            request_model_load(here.Model)
+            local this_ent = entities.create_object(here.Model, players.get_position(players.user()))
+            all_entities[#all_entities+1] = this_ent
+            if this_ent ~= nil then
+                ATTACH_ENTITY_TO_ENTITY(this_ent, initial_vehicle, here['Bone'], here['X'], here['Y'], here['Z'], here['RotX'], here['RotY'], here['RotZ'], true, if here['Collision'] == 1 then true else false, true, false, 2, true)
+                if here['Froozen'] == 1 then 
+                    FREEZE_ENTITY_POSITION(this_ent, true)
+                end
+
+                if here['Lit'] == 1 then 
+                    START_ENTITY_FIRE(this_ent)
+                end
+                attachment_index = attachment_index + 1
+            end
+        end
+    elseif ini_type == 2 then
+        local v_hash = data.Vehicle.model
+        if v_hash == nil then 
+            util.toast(fail_text)
+            return
+        end
+        local c = players.get_position(players.user())
+        request_model_load(v_hash)
+        initial_vehicle = entities.create_vehicle(v_hash, c, GET_ENTITY_HEADING(players.user_ped()))
+        all_entities[#all_entities+1] = initial_vehicle
+        ini_preprocess_vehicle(initial_vehicle, data, ini_type)
+        local attachment_index = 0
+        while true do 
+            if data[tostring(attachment_index)].model == nil then 
+                success = true
+                break
+            end
+            local here = data[tostring(attachment_index)]
+            request_model_load(here.model)
+            local this_ent = entities.create_object(here.model, players.get_position(players.user()))
+            if this_ent ~= nil then
+                all_entities[#all_entities+1] = this_ent
+                ATTACH_ENTITY_TO_ENTITY(this_ent, initial_vehicle, 0, here['x'], here['y'], here['z'], here['RotX'], here['RotY'], here['RotZ'], true, false, true, false, 2, true)
+                attachment_index = attachment_index + 1
+            end
+        end
+
+    elseif ini_type == 3 then
+        local v_hash = data.Vehicle.Model
+        if v_hash == nil then 
+            util.toast(fail_text)
+            return
+        end
+        local c = players.get_position(players.user())
+        request_model_load(v_hash)
+        initial_vehicle = entities.create_vehicle(v_hash, c, GET_ENTITY_HEADING(players.user_ped()))
+        all_entities[#all_entities+1] = initial_vehicle
+        ini_preprocess_vehicle(initial_vehicle, data.Vehicle, ini_type)
+        local attachment_index = 0
+        while true do 
+            if data[tostring(attachment_index)].Model == nil then 
+                success = true
+                break
+            end
+            local here = data[tostring(attachment_index)]
+            request_model_load(here.Model)
+            local this_ent = entities.create_object(here.Model, players.get_position(players.user()))
+            if this_ent ~= nil then
+                all_entities[#all_entities+1] = this_ent
+                ATTACH_ENTITY_TO_ENTITY(this_ent, initial_vehicle, 0, here['X'], here['Y'], here['Z'], here['RotX'], here['RotY'], here['RotZ'], true, false, true, false, 2, true)
+                attachment_index = attachment_index + 1
+            end
+        end
+    
+    elseif ini_type == 4 then 
+        local numerations = {}
+        local attachments_data = {}
+        local veh_index = 0
+        local object_index = 0 
+        local ped_index = 0
+        while true do
+            if data['Vehicle' .. tostring(veh_index)].Hash == nil then 
+                success = true
+                break
+            end
+            local here = data['Vehicle' .. tostring(veh_index)]
+            if here.Hash == nil then 
+                util.toast(fail_text)
+                return
+            end
+            request_model_load(here.Hash)
+            local this_vehicle = entities.create_vehicle(here.Hash, players.get_position(players.user()), GET_ENTITY_HEADING(players.user_ped()))
+            if veh_index == 0 then 
+                initial_vehicle = this_vehicle
+            end
+            numerations[here.SelfNumeration] = this_vehicle
+            if here.IsAttached then
+                attachments_data[here.SelfNumeration] = {attachee = this_vehicle, attached_to = here.AttachNumeration, x = here.OffsetX, y = here.OffsetY, z = here.OffsetZ, pitch = here.Pitch, yaw = here.Yaw, roll = here.Roll, bone = here.Bone, collision = here.Collision}
+            end
+            all_entities[#all_entities+1] = this_vehicle
+            ini_preprocess_vehicle(this_vehicle, data, ini_type, veh_index)
+            veh_index = veh_index + 1
+        end
+
+        while true do
+            if data['Object' .. tostring(object_index)].Hash == nil then 
+                success = true
+                break
+            end
+            local here = data['Object' .. tostring(object_index)]
+            request_model_load(here.Hash)
+            local this_object = entities.create_object(here.Hash, players.get_position(players.user()))
+            numerations[here.SelfNumeration] = this_object
+            if here.IsAttached then
+                attachments_data[here.SelfNumeration] = {attachee = this_object, attached_to = here.AttachNumeration, x = here.OffsetX, y = here.OffsetY, z = here.OffsetZ, pitch = here.Pitch, yaw = here.Yaw, roll = here.Roll, bone = here.Bone, collision = here.Collision}
+            end
+            all_entities[#all_entities+1] = this_object
+            SET_ENTITY_DYNAMIC(veh, here.Dynamic)
+            SET_ENTITY_VISIBLE(veh, here.Visible) 
+            SET_ENTITY_HAS_GRAVITY(veh, here.Gravity)
+            FREEZE_ENTITY_POSITION(veh, here.Freeze)
+            object_index = object_index + 1
+        end
+
+        for k,v in pairs(attachments_data) do
+            if v.attachee ~= nil and numerations[v.attached_to] ~= nil then
+                ATTACH_ENTITY_TO_ENTITY(v.attachee, numerations[v.attached_to], v.Bone, v.x, v.y, v.z, v.pitch, v.roll, v.yaw, true, false, v.collision, false, 2, true)
+            end
+        end
+
+    elseif ini_type == 6 then 
+        local v_hash = data.Vehicle.model
+        local c = players.get_position(players.user())
+        if v_hash == nil then 
+            util.toast(fail_text)
+            return
+        end
+        request_model_load(v_hash)
+        initial_vehicle = entities.create_vehicle(v_hash, c, GET_ENTITY_HEADING(players.user_ped()))
+        all_entities[#all_entities+1] = initial_vehicle
+        ini_preprocess_vehicle(initial_vehicle, data, ini_type)
+        local attachment_index = 1
+        while true do 
+            if data['Attached Object ' .. tostring(attachment_index)].model == nil then 
+                success = true
+                break
+            end
+            local here = data['Attached Object ' .. tostring(attachment_index)]
+            request_model_load(here.model)
+            local this_ent = entities.create_object(here.model, players.get_position(players.user()))
+            all_entities[#all_entities+1] = this_ent
+            if this_ent ~= nil then
+                ATTACH_ENTITY_TO_ENTITY(this_ent, initial_vehicle, 0, here['x offset'], here['y offset'], here['z offset'], here['pitch'], here['roll'], here['yaw'], true, false, if here['collision'] == 1 then true else false, false, 2, true)
+                attachment_index = attachment_index + 1
+            end
+        end
+    end
+
+    if success then
+        SET_PED_INTO_VEHICLE(players.user_ped(), initial_vehicle, -1)
+        local this_veh_root = menu.list(loaded_vehicles_root, file_name, {"lancespoonerv" .. initial_vehicle}, "")
+
+        local this_blip = ADD_BLIP_FOR_ENTITY(initial_vehicle)
+        SET_BLIP_SPRITE(this_blip, 77)
+        SET_BLIP_COLOUR(this_blip, 47)
+
+        menu.action(this_veh_root, "Delete", {"deletelancespoonerv" .. initial_vehicle}, "Delete this vehicle. Make it cease to exist.", function(on_click)
+            for k,v in pairs(all_entities) do
+                entities.delete_by_handle(v)
+            end
+            menu.delete(this_veh_root)
+            util.remove_blip(this_blip)
+        end)
+
+        menu.action(this_veh_root, "Teleport inside", {"teleportemenyoov" .. initial_vehicle}, "", function(on_click)
+            SET_PED_INTO_VEHICLE(PLAYER_PED_ID(), initial_vehicle, -1)
+        end)
+
+    else
+        util.toast(fail_text)
+    end
+end
+
+function json_preprocess_vehicle(vehicle, data, initial_vehicle)
+    local sd = data.savedata
+    local mods = sd.Mods
+    if vehicle ~= initial_vehicle then
+        if data.data ~= nil then 
+            -- for the updated edition
+            SET_ENTITY_VISIBLE(vehicle, data.data.visible, 0)
+            SET_ENTITY_INVINCIBLE(vehicle, data.data.godmode)
+        else
+            if sd.godmode ~= nil then
+                SET_ENTITY_INVINCIBLE(vehicle, sd.godmode)
+            end
+            SET_ENTITY_VISIBLE(vehicle, data.visible, 0)
+        end
+    else
+        if data.godmode ~= nil then
+            SET_ENTITY_INVINCIBLE(vehicle, data.godmode)
+        end
+        if data.visible ~= nil then
+            SET_ENTITY_VISIBLE(vehicle, data.visible, 0)
+        end
+    end
+
+    if vehicle ~= initial_vehicle then 
+        ATTACH_ENTITY_TO_ENTITY(vehicle, initial_vehicle, 0, data.offset.x, data.offset.y, data.offset.z, data.rotation.x, data.rotation.y, data.rotation.z, true, false, true, false, 2, true)
+    end
+
+    -- for some reason jackz used the name of the mod instead of the mod index / mod type lol
+    -- otherwise, this code couldve taken up just 3 lines
+    -- not like i couldnt have used a table, but still, come on...
+    SET_VEHICLE_TYRE_SMOKE_COLOR(vehicle, sd['Tire Smoke'].r, sd['Tire Smoke'].g, sd['Tire Smoke'].b)
+    SET_VEHICLE_MOD(vehicle, 0, mods['Spoilers'], false)
+    SET_VEHICLE_MOD(vehicle, 1, mods['Ornaments'], false)
+    SET_VEHICLE_MOD(vehicle, 2, mods['Front Bumper'], false)
+    SET_VEHICLE_MOD(vehicle, 3, mods['Side Skirt'], false)
+    SET_VEHICLE_MOD(vehicle, 4, mods['Exhaust'], false)
+    SET_VEHICLE_MOD(vehicle, 5, mods['Frame'], false)
+    SET_VEHICLE_MOD(vehicle, 6, mods['Grille'], false)
+    SET_VEHICLE_MOD(vehicle, 7, mods['Hood'], false)
+    SET_VEHICLE_MOD(vehicle, 8, mods['Fender'], false)
+    SET_VEHICLE_MOD(vehicle, 9, mods['Right Fender'], false)
+    SET_VEHICLE_MOD(vehicle, 10, mods['Roof'], false)
+    SET_VEHICLE_MOD(vehicle, 11, mods['Engine'], false)
+    SET_VEHICLE_MOD(vehicle, 12, mods['Brakes'], false)
+    SET_VEHICLE_MOD(vehicle, 13, mods['Transmission'], false)
+    SET_VEHICLE_MOD(vehicle, 14, mods['Horns'], false)
+    SET_VEHICLE_MOD(vehicle, 15, mods['Suspension'], false)
+    SET_VEHICLE_MOD(vehicle, 16, mods['Armor'], false)
+    -- no front wheels in spec? lol?
+    --SET_VEHICLE_MOD(vehicle, 23, mods['Front Wheels'], false)
+    SET_VEHICLE_MOD(vehicle, 24, mods["Motorcycle Back Wheel Design"], false)
+    SET_VEHICLE_MOD(vehicle, 25, mods['Plate Holders'], false)
+    SET_VEHICLE_MOD(vehicle, 27, mods['Trim Design'], false)
+    SET_VEHICLE_MOD(vehicle, 28, mods['Ornaments'], false)
+    SET_VEHICLE_MOD(vehicle, 28, mods['Ornaments'], false)
+    SET_VEHICLE_MOD(vehicle, 30, mods['Dial Design'], false)
+    SET_VEHICLE_MOD(vehicle, 33, mods['Steering Wheel'], false)
+    SET_VEHICLE_MOD(vehicle, 34, mods['Shifter Leavers'], false)
+    SET_VEHICLE_MOD(vehicle, 35, mods['Plaques'], false)
+    SET_VEHICLE_MOD(vehicle, 36, mods['Hydraulics'], false)
+    SET_VEHICLE_MOD(vehicle, 48, mods['Livery'], false)
+
+    -- toggle 
+    TOGGLE_VEHICLE_MOD(vehicle, 17, mods.Toggles.UNK17)
+    -- typo here in the jackz json spec btw, not my fault :|
+    TOGGLE_VEHICLE_MOD(vehicle, 18, mods.Toggles['Turbo Turning'])
+    TOGGLE_VEHICLE_MOD(vehicle, 19, mods.Toggles['UNK19'])
+    TOGGLE_VEHICLE_MOD(vehicle, 20, mods.Toggles['Tire Smoke'])
+    TOGGLE_VEHICLE_MOD(vehicle, 21, mods.Toggles['UNK21'])
+    TOGGLE_VEHICLE_MOD(vehicle, 22, mods.Toggles['Xenon Headlights'])
+    -------
+    SET_VEHICLE_TYRES_CAN_BURST(vehicle, not sd['Bulletproof Tires'])
+    SET_VEHICLE_DIRT_LEVEL(vehicle, sd['Dirt Level'])
+    SET_VEHICLE_WINDOW_TINT(vehicle, sd['Window Tint'])
+    SET_VEHICLE_EXTRA_COLOUR_6(vehicle, sd['Dashboard Color'])
+    for i=10, 11 do 
+        SET_VEHICLE_EXTRA(vehicle, i, not sd.Extras[i])
+    end
+    -- lights
+    SET_VEHICLE_EXTRA_COLOUR_5(vehicle, sd['Interior Color'])
+    SET_VEHICLE_NEON_ENABLED(vehicle, 0, sd.Lights.Neon.Left)
+    SET_VEHICLE_NEON_ENABLED(vehicle, 1, sd.Lights.Neon.Right)
+    SET_VEHICLE_NEON_ENABLED(vehicle, 2, sd.Lights.Neon.Front)
+    SET_VEHICLE_NEON_ENABLED(vehicle, 3, sd.Lights.Neon.back)
+    SET_VEHICLE_NEON_COLOUR(vehicle, sd.Lights.Neon.Color.r, sd.Lights.Neon.Color.g, sd.Lights.Neon.Color.b) 
+    SET_VEHICLE_XENON_LIGHT_COLOR_INDEX(vehicle, sd.Lights['Xenon Color'])
+    SET_VEHICLE_ENGINE_ON(vehicle, sd['Engine Running'], true, false) 
+    -- colors 
+    local colors = sd.Colors
+    -- why is there a custom rgb color in the "vehicle" colors but also in both primary and secondary fields? what is the point?
+    SET_VEHICLE_COLOURS(vehicle, colors.Vehicle.Primary, colors.Vehicle.Secondary)
+    if colors.Primary.Custom then 
+        SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(vehicle, colors.Primary['Custom Color'].r, colors.Primary['Custom Color'].g, colors.Primary['Custom Color'].b)
+    end
+    if colors.Secondary.Custom then 
+        SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(vehicle, colors.Secondary['Custom Color'].r, colors.Secondary['Custom Color'].g, colors.Secondary['Custom Color'].b)
+    end
+    SET_VEHICLE_EXTRA_COLOURS(vehicle, colors.Extras.pearlescent, colors.Extras.wheel)
+    SET_VEHICLE_ENVEFF_SCALE(vehicle, colors['Paint Fade'])
+    SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, "LANCE")
+end
+
+local function preprocess_constructor_vehicle(veh, data, is_initial) 
+    if data.headlights.headlights_type then 
+        TOGGLE_VEHICLE_MOD(veh, 22, true)
+    end
+    SET_VEHICLE_XENON_LIGHT_COLOR_INDEX(veh, data.headlights.headlights_color)
+    -- headlights_type = false? what?
+    SET_VEHICLE_ENVEFF_SCALE(veh, data.paint.fade or 0)
+    --SET_VEHICLE_EXTRA_COLOUR_5(veh, colors['LrInterior'])
+    SET_VEHICLE_EXTRA_COLOUR_6(veh, data.paint.dashboard_color)
+    SET_VEHICLE_LIVERY(veh, data.paint.livery)
+    SET_VEHICLE_DIRT_LEVEL(veh, data.paint.dirt_level)
+    --SET_VEHICLE_EXTRA_COLOURS(veh, data.paint.extra_colors.pearlescent, data.paint.extra_colors.wheel)
+    local any_custom_paint_used = false
+
+    if data.paint.primary.is_custom then 
+        local p_colors = data.paint.primary.custom_color
+        SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(veh, p_colors.r, p_colors.g, p_colors.b)
+        any_custom_paint_used = true
+    end
+
+    if data.paint.secondary.is_custom then 
+        local s_colors = data.paint.secondary.custom_color
+        SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(veh, s_colors.r, s_colors.g, s_colors.b)
+        any_custom_paint_used = true
+    end
+
+    if not any_custom_paint_used then 
+        SET_VEHICLE_COLOURS(veh, data.paint.primary.vehicle_standard_color, data.paint.secondary.vehicle_standard_color)
+    end
+    SET_VEHICLE_TYRE_SMOKE_COLOR(veh, data.wheels.tire_smoke_color.r, data.wheels.tire_smoke_color.g, data.wheels.tire_smoke_color.b)
+    -- realistically, no tires will ever be set to be burst, and menus will 9/10 times auto-fix the car, so why do these vehicle formats insist on adding support for it lol
+    SET_VEHICLE_WHEEL_TYPE(veh, data.wheels.wheel_type)
+    for k,v in pairs(data.mods) do
+        k = k:gsub('_', '')
+        SET_VEHICLE_MOD(veh, tonumber(k), tonumber(v), true)
+    end
+
+    -- why just an empty list for neon colors and not default it to white or smth?
+
+    SET_VEHICLE_NEON_COLOUR(veh, data.neon or 0, data.NeonG or 0, data.NeonB or 0)
+
+    for i=0, 3 do 
+        if data.neon.lights[i] then 
+            SET_VEHICLE_NEON_ENABLED(veh, i, true)
+        end
+    end
+
+    if data.options.bulletproof_tires == 1 then 
+        SET_VEHICLE_TYRES_CAN_BURST(veh, false)
+    end
+
+    if not is_initial then
+        SET_VEHICLE_NUMBER_PLATE_TEXT(veh, data.options.license_plate_text or "LANCE")
+        SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(veh, data.options.license_plate_type or 0)
+        SET_ENTITY_PROOFS(veh, data.options.is_bullet_proof, data.options.is_fire_proof, data.options.is_explosion_proof, not data.options.has_collision, data.options.is_melee_proof, false, true, false)
+        if not data.options.is_visible and data.options.is_visible ~= nil then 
+            SET_ENTITY_VISIBLE(veh, false, false)
+        end
+    end
+    SET_ENTITY_INVINCIBLE(veh, true)
+end
+
+local supported_jackz_versions = {'1.1.0', '1.3.0', '1.3.1', '1.4.0'}
+
+util.on_pre_stop(function()
+    for _, refs in pairs(menu.get_children(loaded_maps_root)) do
+        local numberofthing = menu.get_help_text(refs)
+        util.remove_blip(tonumber(numberofthing))
+    end
+end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 menu.divider(fireworklist, "Settings")
 
@@ -8618,6 +10210,43 @@ menu.toggle(Zeug_für_mich, "Unsichitbarkeit an/aus", {}, "", function(on_toggle
 		menu.set_value(menu.ref_by_path("Self>Appearance>Invisibility"), 0)
 	end
 end)
+
+--[[menu.action(Zeug_für_mich, "get near blip", {}, "", function()
+	for i=1, 1500 do
+		local blipofthing = GET_CLOSEST_BLIP_INFO_ID(i)
+		local nameofint = ""
+		if not blipofthing then
+			goto end
+		end
+		local coordofoblip = GET_BLIP_COORDS(blipofthing)
+		if coordofoblip.x == 0 and coordofoblip.y == 0 and coordofoblip.z == 0 then
+			goto end
+		end
+		interior = GET_INTERIOR_AT_COORDS(coordofoblip.x,coordofoblip.y,coordofoblip.z)
+		if interior > 0 then
+			for name, val in INTERIOR_IDS do
+				if val == interior then
+					local hasNumber = string.find(name, "%d")
+					if hasNumber then
+						nameofint = name:gsub('%d', '')
+					else
+						nameofint = name
+					end
+				end
+			end
+		end
+		if IS_MISSION_CREATOR_BLIP(blipofthing) then
+			goto end
+		end
+		menu.action(bliplist, nameofint.." "..tostring(i), {}, "", function()
+			local blipofthing = blipofthing
+			local blipcoords = coordofoblip
+			SET_ENTITY_COORDS(players.user_ped(), blipcoords.x,blipcoords.y,blipcoords.z, false, false, false, false)
+		end)
+		::end::
+	end
+end)
+bliplist = menu.list(Zeug_für_mich, "blip list", {}, "")]]
 
 menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 	keyCode = getKeyCode('VK_W')
