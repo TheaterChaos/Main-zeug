@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.58
+local localVer = 0.59
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -428,6 +428,105 @@ EXPLOSIONVARIATION = {
     {84, "EMPLAUNCHER_EMP", {}, ""}
 }
 
+local minimum = memory.alloc()
+local maximum = memory.alloc()
+local upVector_pointer = memory.alloc()
+local rightVector_pointer = memory.alloc()
+local forwardVector_pointer = memory.alloc()
+local position_pointer = memory.alloc()
+
+-- From GridSpawn
+draw_bounding_box = function(entity, colour)
+    if colour == nil then
+        colour = {r=255,g=0,b=0,a=255}
+    end
+
+    GET_MODEL_DIMENSIONS(GET_ENTITY_MODEL(entity), minimum, maximum)
+    local minimum_vec = v3.new(minimum)
+    local maximum_vec = v3.new(maximum)
+    draw_bounding_box_with_dimensions(entity, colour, minimum_vec, maximum_vec)
+end
+
+draw_bounding_box_with_dimensions = function(entity, colour, minimum_vec, maximum_vec)
+
+    local dimensions = {x = maximum_vec.y - minimum_vec.y, y = maximum_vec.x - minimum_vec.x, z = maximum_vec.z - minimum_vec.z}
+
+    GET_ENTITY_MATRIX(entity, rightVector_pointer, forwardVector_pointer, upVector_pointer, position_pointer);
+    local forward_vector = v3.new(forwardVector_pointer)
+    local right_vector = v3.new(rightVector_pointer)
+    local up_vector = v3.new(upVector_pointer)
+
+    local top_right =           GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,       maximum_vec.x, maximum_vec.y, maximum_vec.z)
+    local top_right_back =      {x = forward_vector.x * -dimensions.y + top_right.x,        y = forward_vector.y * -dimensions.y + top_right.y,         z = forward_vector.z * -dimensions.y + top_right.z}
+    local bottom_right_back =   {x = up_vector.x * -dimensions.z + top_right_back.x,        y = up_vector.y * -dimensions.z + top_right_back.y,         z = up_vector.z * -dimensions.z + top_right_back.z}
+    local bottom_left_back =    {x = -right_vector.x * dimensions.x + bottom_right_back.x,  y = -right_vector.y * dimensions.x + bottom_right_back.y,   z = -right_vector.z * dimensions.x + bottom_right_back.z}
+    local top_left =            {x = -right_vector.x * dimensions.x + top_right.x,          y = -right_vector.y * dimensions.x + top_right.y,           z = -right_vector.z * dimensions.x + top_right.z}
+    local bottom_right =        {x = -up_vector.x * dimensions.z + top_right.x,             y = -up_vector.y * dimensions.z + top_right.y,              z = -up_vector.z * dimensions.z + top_right.z}
+    local bottom_left =         {x = forward_vector.x * dimensions.y + bottom_left_back.x,  y = forward_vector.y * dimensions.y + bottom_left_back.y,   z = forward_vector.z * dimensions.y + bottom_left_back.z}
+    local top_left_back =       {x = up_vector.x * dimensions.z + bottom_left_back.x,       y = up_vector.y * dimensions.z + bottom_left_back.y,        z = up_vector.z * dimensions.z + bottom_left_back.z}
+
+    DRAW_LINE(
+            top_right.x, top_right.y, top_right.z,
+            top_right_back.x, top_right_back.y, top_right_back.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            top_right.x, top_right.y, top_right.z,
+            top_left.x, top_left.y, top_left.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            top_right.x, top_right.y, top_right.z,
+            bottom_right.x, bottom_right.y, bottom_right.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            bottom_left_back.x, bottom_left_back.y, bottom_left_back.z,
+            bottom_right_back.x, bottom_right_back.y, bottom_right_back.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            bottom_left_back.x, bottom_left_back.y, bottom_left_back.z,
+            bottom_left.x, bottom_left.y, bottom_left.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            bottom_left_back.x, bottom_left_back.y, bottom_left_back.z,
+            top_left_back.x, top_left_back.y, top_left_back.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            top_left_back.x, top_left_back.y, top_left_back.z,
+            top_right_back.x, top_right_back.y, top_right_back.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            top_left_back.x, top_left_back.y, top_left_back.z,
+            top_left.x, top_left.y, top_left.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            bottom_right_back.x, bottom_right_back.y, bottom_right_back.z,
+            top_right_back.x, top_right_back.y, top_right_back.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            bottom_left.x, bottom_left.y, bottom_left.z,
+            top_left.x, top_left.y, top_left.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            bottom_left.x, bottom_left.y, bottom_left.z,
+            bottom_right.x, bottom_right.y, bottom_right.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+    DRAW_LINE(
+            bottom_right_back.x, bottom_right_back.y, bottom_right_back.z,
+            bottom_right.x, bottom_right.y, bottom_right.z,
+            colour.r, colour.g, colour.b, colour.a
+    )
+end
+
 function drawboxatentity(entity)
 	if IS_ENTITY_A_PED(entity) then
 		ePosori = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, 0, 0, 0)
@@ -511,7 +610,11 @@ end
 function getTargetVehicleData(entity)
 	local vehicle = GET_VEHICLE_INDEX_FROM_ENTITY_INDEX(entity)
 	local driver = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
+	local driverlast = GET_LAST_PED_IN_VEHICLE_SEAT(vehicle, -1)
 	local player = NETWORK_GET_PLAYER_INDEX_FROM_PED(driver)
+	if player == -1 then
+		player = NETWORK_GET_PLAYER_INDEX_FROM_PED(driverlast)
+	end
 	local result = {}
 	result.vehicle = vehicle
 	result.driver = driver
@@ -764,13 +867,12 @@ function loadsphereninrangered(range, pos)
 end
 
 function getcontrole(entity)
-	local time = 0
+	local time = os.time()
 		repeat
-		time += 1
+		--time += 1
 		--util.draw_debug_text("GETTING CONTROLE")
 		NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
-			if time > 300 then
-				--util.toast("konnte keine kontrolle bekommen")
+			if os.time() - time >= 2 then
 				time = 0
 				return false
 			end
@@ -1426,7 +1528,7 @@ function getLanguage(pid)
 	return LANGUAGES[players.get_language(pid)]
 end
 
-local colors = {
+--[[local colors = {
 green = 184,
 red = 6,
 yellow = 190,
@@ -1436,7 +1538,7 @@ gray = 3,
 pink = 201,
 purple = 49,
 blue = 11
-}
+}]]
 
 function getInterior(pid)
 	pid = pid or players.user()
@@ -2215,27 +2317,27 @@ players.on_join(player)
 players.dispatch_on_join()
 
 --local parents
-local Self = menu.list(menu.my_root(), "Self zeug", {}, "")
-local vehicle = menu.list(menu.my_root(), "Vehicle zeug", {}, "")
-local Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
-local Entitymanagercleararea = menu.list(Entitymanager, "Clear Area", {}, "")
-local Entitymanageresp = menu.list(Entitymanager, "Entity ESP", {}, "")
-local Entitymanagernearvehicle = menu.list(Entitymanager, "Near Entitys", {}, "", function(on_click)
+Self = menu.list(menu.my_root(), "Self zeug", {}, "")
+vehicle = menu.list(menu.my_root(), "Vehicle zeug", {}, "")
+Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
+Entitymanagercleararea = menu.list(Entitymanager, "Clear Area", {}, "")
+Entitymanageresp = menu.list(Entitymanager, "Entity ESP", {}, "")
+Entitymanagernearvehicle = menu.list(Entitymanager, "Near Entitys", {}, "", function(on_click)
 	nearentitysloadsphererange = true
 	util.create_tick_handler(nearentitiysloadsphere)
 end, function(on_back)
 	nearentitysloadsphererange = false
 end)
-local player_zeug = menu.list(menu.my_root(), "Lobby zeug", {}, "")
---local streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
-local Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
-local customselection = menu.list(menu.my_root(), "Custom Selection", {}, "")
-local misc = menu.list(menu.my_root(), "Misc", {}, "")
-local Menyoveh = menu.list(menu.my_root(), "Menyoo vehicle/maps spawn", {}, "only xml,ini files")
-local frendlist = menu.list(misc, "friend list", {"fl"}, "")
-local players_list = menu.list(misc, "Players", {}, "")
+player_zeug = menu.list(menu.my_root(), "Lobby zeug", {}, "")
+--streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
+Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
+customselection = menu.list(menu.my_root(), "Custom Selection", {}, "")
+misc = menu.list(menu.my_root(), "Misc", {}, "")
+Menyoveh = menu.list(menu.my_root(), "Menyoo vehicle/maps spawn", {}, "only xml,ini files")
+frendlist = menu.list(misc, "friend list", {"fl"}, "")
+players_list = menu.list(misc, "Players", {}, "")
 
-local function gen_fren_funcs(name)
+function gen_fren_funcs(name)
 	local balls = menu.list(frendlist, name, {"friend "..name}, "", function(); end)
 	menu.divider(balls, name)
 	menu.action(balls,"join", {"jf "..name}, "",function()
@@ -2260,7 +2362,7 @@ for i = 0 , get_friend_count() do
 	::yes::
 end
 
-local function handle_player_list(pid)
+function handle_player_list(pid)
     local ref = menus[pid]
     if not players.exists(pid) then
         if ref then
@@ -2270,7 +2372,7 @@ local function handle_player_list(pid)
     end
 end
 
-local function player_list(pid)
+function player_list(pid)
 	menus[pid] = menu.action(players_list, players.get_name(pid), {}, "", function() -- thanks to dangerman and aaron for showing me how to delete players properly
 		menu.trigger_commands("Plmein " .. players.get_name(pid))
 	end)
@@ -2287,10 +2389,10 @@ for pids = 0, 31 do
 	end
 end
 
-local Entitymanagerespvehicle = menu.list(Entitymanageresp, "Vehicles", {}, "")
-local Entitymanageresppeds = menu.list(Entitymanageresp, "Peds", {}, "")
-local Entitymanagerespobjects = menu.list(Entitymanageresp, "objects", {}, "")
-local Entitymanageresppickups = menu.list(Entitymanageresp, "Pickups", {}, "")
+Entitymanagerespvehicle = menu.list(Entitymanageresp, "Vehicles", {}, "")
+Entitymanageresppeds = menu.list(Entitymanageresp, "Peds", {}, "")
+Entitymanagerespobjects = menu.list(Entitymanageresp, "objects", {}, "")
+Entitymanageresppickups = menu.list(Entitymanageresp, "Pickups", {}, "")
 
 local deactivateother = false
 menu.toggle(Entitymanageresp, "Deaktivieren andere ESP", {}, "deactiviere andere esp wenn du eine an machst", function(on_toggle)
@@ -3422,6 +3524,18 @@ showownerpickup = menu.get_value(ownertogglepickup)
 
 
 
+maxDistancenearentitys = 200
+onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switchsearchnearentitys, 
+showdebugginfosnearentitys, showarsignalnearentitys, 
+infosearchnearentitys, removeattachobjnearentitys, showlinenearentitys, showboxnearentitys = false, true, false, false, true, true, false, false, true, true
+local seattable = {}
+local seatzaehlerofseats = 0
+local numberfunctioninlist = 0
+local boostvaluetoboostnearentitys = 100
+
+rot = {x = 0, y = 0, z = 0}
+dimensions = {x = 1, y = 1, z = 1.5}
+
 local vehicledata = {}
 local pedsdata = {}
 local objectsdata = {}
@@ -3455,32 +3569,84 @@ end, function(on_back)
 	enablednearpickups  = false
 end)
 
-menu.text_input(Entitymanagernearvehiclevehicles, "Search", {"Searchnearveh"}, "", function(input)
+searchnearentitysveh = menu.text_input(Entitymanagernearvehiclevehicles, "Search", {"Searchnearveh"}, "", function(input)
 	searchnearveh = input
 	if not searchnearveh ~= number then
 		searchnearveh = searchnearveh:lower()
 	end
+	menu.set_help_text(searchnearentitysveh ,"Last Input: "..input)
+	if string.len(input) > 0 then
+		menu.set_menu_name(searchnearentitysveh ,"Search Aktive")
+	else
+		menu.set_menu_name(searchnearentitysveh ,"Search")
+		for vehicledata as vehhandle do
+			if menu.is_ref_valid(veh[vehhandle]) then
+				menu.delete(veh[vehhandle])
+				tableremove(vehicledata, vehhandle)
+			end
+		end
+	end
+	menu.set_value(searchnearentitysveh, "")
 end)
-menu.text_input(Entitymanagernearvehiclepeds, "Search", {"Searchnearpeds"}, "", function(input)
+searchnearentityspeds = menu.text_input(Entitymanagernearvehiclepeds, "Search", {"Searchnearpeds"}, "", function(input)
 	searchnearpeds = input
 	if not searchnearpeds ~= number then
 		searchnearpeds = searchnearpeds:lower()
 	end
+	menu.set_help_text(searchnearentityspeds ,"Last Input: "..input)
+	if string.len(input) > 0 then
+		menu.set_menu_name(searchnearentityspeds ,"Search Aktive")
+	else
+		menu.set_menu_name(searchnearentityspeds ,"Search")
+		for pedsdata as vehhandle do
+			if menu.is_ref_valid(veh[vehhandle]) then
+				menu.delete(veh[vehhandle])
+				tableremove(pedsdata, vehhandle)
+			end
+		end
+	end
+	menu.set_value(searchnearentityspeds, "")
 end)
-menu.text_input(Entitymanagernearvehicleobjects, "Search", {"Searchnearobjects"}, "", function(input)
+searchnearentitysobj = menu.text_input(Entitymanagernearvehicleobjects, "Search", {"Searchnearobjects"}, "", function(input)
 	searchnearobjects = input
 	if not searchnearobjects ~= number then
 		searchnearobjects = searchnearobjects:lower()
 	end
+	menu.set_help_text(searchnearentitysobj ,"Last Input: "..input)
+	if string.len(input) > 0 then
+		menu.set_menu_name(searchnearentitysobj ,"Search Aktive")
+	else
+		menu.set_menu_name(searchnearentitysobj ,"Search")
+		for objectsdata as vehhandle do
+			if menu.is_ref_valid(veh[vehhandle]) then
+				menu.delete(veh[vehhandle])
+				tableremove(objectsdata, vehhandle)
+			end
+		end
+	end
+	menu.set_value(searchnearentitysobj, "")
 end)
-menu.text_input(Entitymanagernearvehiclepickup, "Search", {"Searchnearpickups"}, "", function(input)
+searchnearentityspickup = menu.text_input(Entitymanagernearvehiclepickup, "Search", {"Searchnearpickups"}, "", function(input)
 	searchnearpickups = input
 	if not searchnearpickups ~= number then
 		searchnearpickups = searchnearpickups:lower()
 	end
+	menu.set_help_text(searchnearentityspickup ,"Last Input: "..input)
+	if string.len(input) > 0 then
+		menu.set_menu_name(searchnearentityspickup ,"Search Aktive")
+	else
+		menu.set_menu_name(searchnearentityspickup ,"Search")
+		for pickupdata as vehhandle do
+			if menu.is_ref_valid(veh[vehhandle]) then
+				menu.delete(veh[vehhandle])
+				tableremove(pickupdata, vehhandle)
+			end
+		end
+	end
+	menu.set_value(searchnearentityspickup, "")
 end)
 
-local Entitymanagernearvehicleallveh = menu.list(Entitymanagernearvehiclevehicles, "Action for all Vehicle", {}, "")
+Entitymanagernearvehicleallveh = menu.list(Entitymanagernearvehiclevehicles, "Action for all Vehicle", {}, "")
 menu.action(Entitymanagernearvehicleallveh, "Teleport to me", {}, "", function()
 	for vehicledata as vehhandle do
 		local ent_ptr = memory.alloc_int()
@@ -3528,6 +3694,35 @@ end)
 menu.action(Entitymanagernearvehicleallveh, "Delete", {}, "", function()
 	for vehicledata as vehhandle do
 			entities.delete(vehhandle)
+	end
+end)
+menu.textslider_stateful(Entitymanagernearvehicleallveh, "Boost", {}, "", {"Forward", "Right", "Left","Up","Down", "Back"}, function(index)
+	for vehicledata as vehhandle do
+		if index == 1 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, 0.0, boostvaluetoboostnearentitys, 0.0, true, true, true, true)
+			end
+		elseif index == 2 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, boostvaluetoboostnearentitys, 0.0, 0.0, true, true, true, true)
+			end
+		elseif index == 3 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, -boostvaluetoboostnearentitys, 0.0, 0.0, true, true, true, true)
+			end
+		elseif index == 4 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, 0.0, 0.0, boostvaluetoboostnearentitys, true, true, true, true)
+			end
+		elseif index == 5 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, 0.0, 0.0, -boostvaluetoboostnearentitys, true, true, true, true)
+			end
+		elseif index == 6 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, 0.0, -boostvaluetoboostnearentitys, 0.0, true, true, true, true)
+			end
+		end
 	end
 end)
 menu.action(Entitymanagernearvehicleallveh, "Freeze ON", {}, "", function()
@@ -3695,7 +3890,7 @@ menu.action(Entitymanagernearvehicleallveh, "Set Vehicle as no longer needed", {
 	end
 end)
 
-local Entitymanagernearvehicleallpeds = menu.list(Entitymanagernearvehiclepeds, "Action for all Peds", {}, "")
+Entitymanagernearvehicleallpeds = menu.list(Entitymanagernearvehiclepeds, "Action for all Peds", {}, "")
 menu.action(Entitymanagernearvehicleallpeds, "Teleport to me", {}, "", function()
 	for pedsdata as vehhandle do
 		local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +2, 0)
@@ -3711,6 +3906,35 @@ menu.divider(Entitymanagernearvehicleallpeds, "Trolling")
 menu.action(Entitymanagernearvehicleallpeds, "Delete", {}, "", function()
 	for pedsdata as vehhandle do
 			entities.delete(vehhandle)
+	end
+end)
+menu.textslider_stateful(Entitymanagernearvehicleallpeds, "Boost", {}, "", {"Forward", "Right", "Left","Up","Down", "Back"}, function(index)
+	for pedsdata as vehhandle do
+		if index == 1 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, 0.0, boostvaluetoboostnearentitys, 0.0, true, true, true, true)
+			end
+		elseif index == 2 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, boostvaluetoboostnearentitys, 0.0, 0.0, true, true, true, true)
+			end
+		elseif index == 3 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, -boostvaluetoboostnearentitys, 0.0, 0.0, true, true, true, true)
+			end
+		elseif index == 4 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, 0.0, 0.0, boostvaluetoboostnearentitys, true, true, true, true)
+			end
+		elseif index == 5 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, 0.0, 0.0, -boostvaluetoboostnearentitys, true, true, true, true)
+			end
+		elseif index == 6 then
+			if getcontrole(vehhandle) then
+				APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehhandle, 1, 0.0, -boostvaluetoboostnearentitys, 0.0, true, true, true, true)
+			end
+		end
 	end
 end)
 menu.action(Entitymanagernearvehicleallpeds, "Explode", {}, "", function()
@@ -3854,7 +4078,7 @@ menu.action(Entitymanagernearvehicleallpeds, "Set PED as no longer needed", {}, 
 	end
 end)
 
-local Entitymanagernearvehicleallobjects = menu.list(Entitymanagernearvehicleobjects, "Action for all Objects", {}, "")
+Entitymanagernearvehicleallobjects = menu.list(Entitymanagernearvehicleobjects, "Action for all Objects", {}, "")
 menu.action(Entitymanagernearvehicleallobjects, "Teleport to me", {}, "", function()
 	for objectsdata as vehhandle do
 		local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +2, 0)
@@ -3899,7 +4123,7 @@ menu.action(Entitymanagernearvehicleallobjects, "Set Object as no longer needed"
 	end
 end)
 
-local Entitymanagernearvehicleallpickups = menu.list(Entitymanagernearvehiclepickup, "Action for all Pickups", {}, "")
+Entitymanagernearvehicleallpickups = menu.list(Entitymanagernearvehiclepickup, "Action for all Pickups", {}, "")
 menu.action(Entitymanagernearvehicleallpickups, "Teleport to me", {}, "", function()
 	for pickupdata as vehhandle do
 		local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +2, 0)
@@ -3937,14 +4161,40 @@ menu.action(Entitymanagernearvehicleallpickups, "Set Pickup as no longer needed"
 	end
 end)
 
-maxDistancenearentitys = 200
-local onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switchsearchnearentitys, showdebugginfosnearentitys, showarsignalnearentitys, infosearchnearentitys = false, true, false, false, true, true, false
-local seattable = {}
-local seatzaehlerofseats = 0
-local numberfunctioninlist = 0
-
-rot = {x = 0, y = 0, z = 0}
-dimensions = {x = 1, y = 1, z = 1.5}
+--[[function nearvehsorter(list)
+	local sorterttable = {}
+	local sorterttable1 = {}
+	local childrenoflist = menu.get_children(list)
+	for _, commandref in pairs(childrenoflist) do
+		if _ < 2 then
+			goto end
+		end
+		local dist = string.strip(menu.get_menu_name(commandref), "[]")
+		table.insert(sorterttable, {commandref=commandref, distance=dist})
+	::end::
+	end
+	table.sort(sorterttable, function(a, b) return a.distance > b.distance end)
+	for _, commandref1 in pairs(sorterttable) do
+		local newcommandref = menu.detach(commandref1.commandref)
+		table.insert(sorterttable1, newcommandref)
+	end
+	for _, commandref1 in pairs(sorterttable1) do
+		local commandref = commandref1
+		--local commandref1 = menu.detach(commandref1.commandref)
+		--if _ == 1 then
+			menu.attach(Entitymanagernearvehiclevehicles, commandref)
+			--menu.attach_after(commandref, Entitymanagernearvehicleallveh)
+		--[[else
+			for i, commandref2 in pairs(sorterttable) do
+				if i < getindex and i > getindex1 then
+					commandrefend = commandref2.commandref
+					menu.attach(Entitymanagernearvehicleallveh, menu.detach(menu.replace(commandref, menu.detach(commandrefend))))
+					--menu.attach_after(commandref, menu.detach(commandrefend))
+				end
+			end
+		end
+	end
+end]]
 
 function getnearvehicle()
 	if not enablednearvehicle then
@@ -4345,6 +4595,38 @@ function getnearvehicle()
 					end
 				end
 			end)
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.textslider_stateful(veh[vehhandle], "Boost", {}, infotextline, {"Forward", "Right", "Left","Up","Down", "Back"}, function(index)
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				if index == 1 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, 0.0, boostvaluetoboostnearentitys, 0.0, true, true, true, true)
+					end
+				elseif index == 2 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, boostvaluetoboostnearentitys, 0.0, 0.0, true, true, true, true)
+					end
+				elseif index == 3 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, -boostvaluetoboostnearentitys, 0.0, 0.0, true, true, true, true)
+					end
+				elseif index == 4 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, 0.0, 0.0, boostvaluetoboostnearentitys, true, true, true, true)
+					end
+				elseif index == 5 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, 0.0, 0.0, -boostvaluetoboostnearentitys, true, true, true, true)
+					end
+				elseif index == 6 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, 0.0, -boostvaluetoboostnearentitys, 0.0, true, true, true, true)
+					end
+				end
+			end)
 
 			menu.divider(veh[vehhandle], "Friendly")
 
@@ -4395,7 +4677,7 @@ function getnearvehicle()
 				end
 			end)
 			numbertimercall += 1
-			vehinfotab[vehhandle.. numbertimercall] = menu.click_slider_float(veh[vehhandle], "Modifiy Top speed", {"Topspeednearveh"..modelname}, infotextline, 0, 2000, 0, 100, function(s)
+			vehinfotab[vehhandle.. numbertimercall] = menu.click_slider_float(veh[vehhandle], "Modifiy Top speed", {"Topspeednearveh"..modelname}, infotextline, 100, 2000, 100, 100, function(s)
 				local entityhandle = vehhandle
 				local entitypointer = vehpointer
 				local entityhash = modelhash
@@ -4403,6 +4685,7 @@ function getnearvehicle()
 				local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +4, 0)
 				local entitypPos = entities.get_position(entitypointer)
 				if getcontrole(entityhandle) then
+					s = s / 10
 					MODIFY_VEHICLE_TOP_SPEED(entityhandle, s)
 				else
 					util.toast("konnte keine kontrolle bekommen")
@@ -4534,9 +4817,16 @@ function getnearvehicle()
 			numberfunctioninlist = numbertimercall
 			end
 		else
-			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
-				util.draw_ar_beacon(ePos)
-				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+			if menu.is_focused(veh[vehhandle]) then
+				if showarsignalnearentitys then
+					util.draw_ar_beacon(ePos)
+				end
+				if showlinenearentitys then
+					DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+				end
+				if showboxnearentitys then
+					draw_bounding_box(vehhandle)
+				end
 			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
@@ -4547,9 +4837,16 @@ function getnearvehicle()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
-							util.draw_ar_beacon(ePos)
-							DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
+						if menu.is_focused(vehinfotab[vehhandle.. i]) then
+							if showarsignalnearentitys then
+								util.draw_ar_beacon(ePos)
+							end
+							if showlinenearentitys then
+								DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+							end
+							if showboxnearentitys then
+								draw_bounding_box(vehhandle)
+							end
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -4819,6 +5116,38 @@ function getnearpeds()
 					util.toast("konnte keine kontrolle bekommen")
 				end
 			end)
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.textslider_stateful(veh[vehhandle], "Boost", {}, infotextline, {"Forward", "Right", "Left","Up","Down", "Back"}, function(index)
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				if index == 1 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, 0.0, boostvaluetoboostnearentitys, 0.0, true, true, true, true)
+					end
+				elseif index == 2 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, boostvaluetoboostnearentitys, 0.0, 0.0, true, true, true, true)
+					end
+				elseif index == 3 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, -boostvaluetoboostnearentitys, 0.0, 0.0, true, true, true, true)
+					end
+				elseif index == 4 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, 0.0, 0.0, boostvaluetoboostnearentitys, true, true, true, true)
+					end
+				elseif index == 5 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, 0.0, 0.0, -boostvaluetoboostnearentitys, true, true, true, true)
+					end
+				elseif index == 6 then
+					if getcontrole(entityhandle) then
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(entityhandle, 1, 0.0, -boostvaluetoboostnearentitys, 0.0, true, true, true, true)
+					end
+				end
+			end)
 			menu.divider(veh[vehhandle], "Friendly")
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Give Godmode", {}, infotextline, function()
@@ -4949,9 +5278,16 @@ function getnearpeds()
 			numberfunctioninlist = numbertimercall
 			end
 		else
-			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
-				util.draw_ar_beacon(ePos)
-				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
+			if menu.is_focused(veh[vehhandle]) then
+				if showarsignalnearentitys then
+					util.draw_ar_beacon(ePos)
+				end
+				if showlinenearentitys then
+					DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+				end
+				if showboxnearentitys then
+					draw_bounding_box(vehhandle)
+				end
 			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
@@ -4962,9 +5298,16 @@ function getnearpeds()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
-							util.draw_ar_beacon(ePos)
-				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
+						if menu.is_focused(vehinfotab[vehhandle.. i]) then
+							if showarsignalnearentitys then
+								util.draw_ar_beacon(ePos)
+							end
+							if showlinenearentitys then
+								DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+							end
+							if showboxnearentitys then
+								draw_bounding_box(vehhandle)
+							end
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -5060,6 +5403,9 @@ function getnearobjects()
 		if showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0) then
 			goto continue
 		end
+		if removeattachobjnearentitys and IS_ENTITY_ATTACHED(vehhandle) then
+			goto continue
+		end
 		if not IS_ENTITY_VISIBLE(vehhandle) then
 			infotextline = infotextline..  "\nInVisible: TRUE"
 		else
@@ -5071,6 +5417,14 @@ function getnearobjects()
 			infotextline = infotextline.. "\nGOD: FALSE"
 		end
 		infotextline = infotextline.. "\nMission Entity: ".. IS_ENTITY_A_MISSION_ENTITY(vehhandle)
+		if GET_ENTITY_ATTACHED_TO(vehhandle) != 0 then
+			attachedto = GET_ENTITY_ATTACHED_TO(vehhandle)
+			if IS_PED_A_PLAYER(attachedto) then
+				infotextline = infotextline.. "\nAttached to: ".. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(attachedto))
+			else
+				infotextline = infotextline.. "\nAttached to: ".. getmodelnamebyhash(entities.get_model_hash(attachedto))
+			end
+		end
 		if showdebugginfosnearentitys then
 			infotextline = infotextline.. "\nModelhash: ".. modelhash.. "\nWorldPosition: " .. "X:" ..math.floor(ePos.x) .. " Y:" ..math.floor(ePos.y) .. " Z:" ..math.floor(ePos.z)
 		end
@@ -5203,9 +5557,16 @@ function getnearobjects()
 			numberfunctioninlist = numbertimercall
 			end
 		else
-			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
-				util.draw_ar_beacon(ePos)
-				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
+			if menu.is_focused(veh[vehhandle]) then
+				if showarsignalnearentitys then
+					util.draw_ar_beacon(ePos)
+				end
+				if showlinenearentitys then
+					DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+				end
+				if showboxnearentitys then
+					draw_bounding_box(vehhandle)
+				end
 			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
@@ -5216,9 +5577,16 @@ function getnearobjects()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
-							util.draw_ar_beacon(ePos)
-							DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
+						if menu.is_focused(vehinfotab[vehhandle.. i]) then
+							if showarsignalnearentitys then
+								util.draw_ar_beacon(ePos)
+							end
+							if showlinenearentitys then
+								DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+							end
+							if showboxnearentitys then
+								draw_bounding_box(vehhandle)
+							end
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -5303,6 +5671,9 @@ function getnearpickup()
 		if showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0) then
 			goto continue
 		end
+		if removeattachobjnearentitys and IS_ENTITY_ATTACHED(vehhandle) then
+			goto continue
+		end
 		if not IS_ENTITY_VISIBLE(vehhandle) then
 			infotextline = infotextline..  "\nInVisible: TRUE"
 		else
@@ -5314,6 +5685,14 @@ function getnearpickup()
 			infotextline = infotextline.. "\nGOD: FALSE"
 		end
 		infotextline = infotextline.. "\nMission Entity: ".. IS_ENTITY_A_MISSION_ENTITY(vehhandle)
+		if GET_ENTITY_ATTACHED_TO(vehhandle) != 0 then
+			attachedto = GET_ENTITY_ATTACHED_TO(vehhandle)
+			if IS_PED_A_PLAYER(attachedto) then
+				infotextline = infotextline.. "\nAttached to: ".. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(attachedto))
+			else
+				infotextline = infotextline.. "\nAttached to: ".. getmodelnamebyhash(entities.get_model_hash(attachedto))
+			end
+		end
 		if showdebugginfosnearentitys then
 			infotextline = infotextline.. "\nModelhash: ".. modelhash.. "\nWorldPosition: " .. "X:" ..math.floor(ePos.x) .. " Y:" ..math.floor(ePos.y) .. " Z:" ..math.floor(ePos.z)
 		end
@@ -5436,9 +5815,16 @@ function getnearpickup()
 			numberfunctioninlist = numbertimercall
 			end
 		else
-			if showarsignalnearentitys and menu.is_focused(veh[vehhandle]) then
-				util.draw_ar_beacon(ePos)
-				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
+			if menu.is_focused(veh[vehhandle]) then
+				if showarsignalnearentitys then
+					util.draw_ar_beacon(ePos)
+				end
+				if showlinenearentitys then
+					DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+				end
+				if showboxnearentitys then
+					draw_bounding_box(vehhandle)
+				end
 			end
 			if menu.is_ref_valid(veh[vehhandle]) then
 				menu.set_menu_name(veh[vehhandle], textlinemain)
@@ -5449,9 +5835,16 @@ function getnearpickup()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						if showarsignalnearentitys and menu.is_focused(vehinfotab[vehhandle.. i]) then
-							util.draw_ar_beacon(ePos)
-				DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255) 
+						if menu.is_focused(vehinfotab[vehhandle.. i]) then
+							if showarsignalnearentitys then
+								util.draw_ar_beacon(ePos)
+							end
+							if showlinenearentitys then
+								DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+							end
+							if showboxnearentitys then
+								draw_bounding_box(vehhandle)
+							end
 						end
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
@@ -5500,6 +5893,10 @@ maxDistnearentitys = menu.slider(Entitymanagernearvehicle, "Range to load", {"se
 	maxDistancenearentitys = val
 end)
 maxDistancenearentitys = menu.get_value(maxDistnearentitys)
+boostvaluenearentitys = menu.slider(Entitymanagernearvehicle, "Boost Value", {"setboostvaluenearenittys"}, "", 10, 300, boostvaluetoboostnearentitys, 10, function(val)
+	boostvaluetoboostnearentitys = val
+end)
+boostvaluetoboostnearentitys = menu.get_value(boostvaluenearentitys)
 switchsearchtoggleentitys = menu.toggle(Entitymanagernearvehicle, "umgekehrte suche", {}, "Entfernt das was du suchst", function(on)
 	switchsearchnearentitys = on
 end, switchsearchnearentitys)
@@ -5520,14 +5917,26 @@ onlyblibstoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show only entity
 	showonlyblibsnearentitys = on
 end, showonlyblibsnearentitys)
 showonlyblibsnearentitys = menu.get_value(onlyblibstoggleentitys)
+removeattachobjtoggleentitys = menu.toggle(Entitymanagernearvehicle, "Remove attached OBJ in list", {}, "", function(on)
+	removeattachobjnearentitys = on
+end, removeattachobjnearentitys)
+removeattachobjnearentitys = menu.get_value(removeattachobjtoggleentitys)
 debugginfostoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show Debug infos in help text", {}, "", function(on)
 	showdebugginfosnearentitys = on
 end, showdebugginfosnearentitys)
 showdebugginfosnearentitys = menu.get_value(debugginfostoggleentitys)
-drawarsignalstoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show AR signal / Show line", {}, "", function(on)
+drawarsignalstoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show AR signal", {}, "", function(on)
 	showarsignalnearentitys = on
 end, showarsignalnearentitys)
 showarsignalnearentitys = menu.get_value(drawarsignalstoggleentitys)
+drawlinetoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show line", {}, "", function(on)
+	showlinenearentitys = on
+end, showlinenearentitys)
+showlinenearentitys = menu.get_value(drawlinetoggleentitys)
+drawboxtoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show Box", {}, "", function(on)
+	showboxnearentitys = on
+end, showboxnearentitys)
+showboxnearentitys = menu.get_value(drawboxtoggleentitys)
 
 
 menu.action(Self, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein waypoint gesetzt ist geht er da hin wenn keiner da ist geht er zu missions punkt", function()
@@ -5664,7 +6073,7 @@ local ghostplayer = false
 menu.toggle_loop(Self, "anti afk kill", {}, "", function()
 	if not util.is_session_transition_active() then
 		local ismovingon = false
-		if IS_PED_IN_ANY_VEHICLE(players.user_ped()) and not GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_USING(players.user_ped()), -1) == players.user_ped() then
+		if IS_PED_IN_ANY_VEHICLE(players.user_ped()) and GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_USING(players.user_ped()), -1) != players.user_ped() then
 			if isMoving(players.user_ped()) then
 				ismovingon = true
 			end
@@ -6738,7 +7147,7 @@ end
 menu.toggle_loop(Entitymanagercleararea, "Clear Area of Peds", {"clearpeds"}, "", function ()
 	clearAreaOfEntities("ped", CLEAR_AREA_RANGE)
 end)
-menu.toggle_loop(Entitymanagercleararea, "Clear Area of Vehicles", {"clearvehs"}, "", function ()
+menu.toggle_loop(Entitymanagercleararea, "Clear Area of Vehicles", {"clearvehs"}, "spieler werden ignoriert", function ()
     clearAreaOfEntities("veh", CLEAR_AREA_RANGE)
 end)
 menu.toggle_loop(Entitymanagercleararea, "Clear Area of Objects", {"clearobjs"}, "", function ()
@@ -6993,7 +7402,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 				DRAW_LINE(myPos.x, myPos.y, myPos.z, pPos.x, pPos.y, pPos.z, 255, 0, 0, 255)
 			end
 			if drawboxespp then
-				drawboxatentity(ped)
+				draw_bounding_box(ped)
 			end
 	        ::continue::
 	    end
@@ -8688,6 +9097,13 @@ function get_file_type(file_path)
     return ext
 end
 
+menu.action(Menyoveh, "Load new maps/vehicles", {}, "spam es lieber nicht sonst nix gut einmal drücken reicht", function()
+	util.yield()
+	get_all_vehicles_in_dir()
+	get_all_maps_in_dir()
+	util.toast("Listen wurden geupdatet")
+end)
+
 menu.divider(Menyoveh, "Vehicles")
 
 menu.action(Menyoveh, "Search vehicle", {"lssearchv"}, "", function(click_type)
@@ -8844,13 +9260,13 @@ end
 get_all_vehicles_in_dir()
 get_all_maps_in_dir()
 
-util.create_thread(function()
+--[[util.create_thread(function()
     while true do
         get_all_vehicles_in_dir()
         get_all_maps_in_dir()
         util.yield(5000)
     end
-end)
+end)]]
 
 menu.divider(Menyoveh, "Misc")
 v_search_results = {}
@@ -10010,52 +10426,6 @@ end
 
 local supported_jackz_versions = {'1.1.0', '1.3.0', '1.3.1', '1.4.0'}
 
-util.on_pre_stop(function()
-    for _, refs in pairs(menu.get_children(loaded_maps_root)) do
-        local numberofthing = menu.get_help_text(refs)
-        util.remove_blip(tonumber(numberofthing))
-    end
-end)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -10598,7 +10968,8 @@ menu.toggle_loop(vehicle, "Tempo anzeige nur im auto", {}, "macht die anzeige an
 	on_stop = menu.trigger_command(menu.ref_by_path("Vehicle>AR Speedometer>AR Speedometer"), false)
 end)
 
-menu.click_slider_float(vehicle, "Top speed modifyer", {"modifytopspeed"}, "", 0 ,2000, 0, 100, function(s)
+menu.click_slider_float(vehicle, "Top speed modifyer", {"modifytopspeed"}, "", 0 ,20000, 0, 500, function(s)
+	s = s / 10
 	MODIFY_VEHICLE_TOP_SPEED(GET_VEHICLE_PED_IS_IN(players.user_ped(), true), s)
 end)
 
@@ -10639,6 +11010,16 @@ menu.toggle_loop(Zeug_für_mich, "legit wanted level remove", {}, "", function()
 			timer5 = 1
 			players.set_wanted_level(players.user(), 0)
 			util.toast("Die Fahndungslevel wurden entfernt")
+	end
+end)
+
+menu.toggle_loop(Zeug_für_mich, "Auto auflegen", {}, "", function()
+	if IS_MOBILE_PHONE_CALL_ONGOING() then
+		util.yield(100)
+		SET_CONTROL_VALUE_NEXT_FRAME(0, 176, 1)
+		util.yield(30)
+		SET_CONTROL_VALUE_NEXT_FRAME(0, 177, 1)
+		util.toast("es wurde aufgelegt")
 	end
 end)
 
