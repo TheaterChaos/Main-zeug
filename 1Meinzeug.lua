@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.60
+local localVer = 0.61
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -17,11 +17,12 @@ async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinz
                 local f = io.open(filesystem.scripts_dir()..SCRIPT_RELPATH, "wb")
                 f:write(a)
                 f:close()
+				util.restart_script()
 			end)
 			async_http.dispatch()
 			util.yield(1000)
 
-			async_http.init('raw.githubusercontent.com','/TheaterChaos/Mein-zeug/main/Alltabels.lua',function(b)
+			--[[async_http.init('raw.githubusercontent.com','/TheaterChaos/Mein-zeug/main/Alltabels.lua',function(b)
 				local err = select(2,load(b))
 				if err then
 					util.toast("ALLtabels.lua failed to download. Please try again later. If this continues to happen then manually update via github.")
@@ -33,7 +34,7 @@ async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinz
 				util.restart_script()
 			end)
 			async_http.dispatch()  
-			util.yield(1000)
+			util.yield(1000)]]
         end)
     end
 end, function() response = true end) 
@@ -655,6 +656,51 @@ function isentitiyaenemie(entity)
 		end
 	end
 	return false
+end
+
+function savevehicleingarage(vehhandle, input)
+	vehname = getmodelnamebyhash(entities.get_model_hash(vehhandle))
+	freeseat = getfreevehseat(vehhandle)
+	if GET_VEHICLE_PED_IS_IN(players.user_ped()) == vehhandle then
+		menu.trigger_commands("savevehicle "..input)
+		util.toast("VEH: ".. vehname.. " Saved as ".. input)
+		goto end
+	end
+	if freeseat then
+		if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
+			local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
+			local seatofplayer = getseatofplayer(vehicleofped)
+			SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
+			util.yield(20)
+			menu.trigger_commands("savevehicle "..input)
+			util.toast("VEH: ".. vehname.. " Saved as ".. input)
+			util.yield(20)
+			if DOES_ENTITY_EXIST(vehicleofped) then
+				if IS_VEHICLE_SEAT_FREE(vehicleofped, seatofplayer, false) then
+					SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, seatofplayer)
+				else
+					getfreesetincar = getfreevehseat(vehicleofped)
+					if getfreesetincar ~= number then
+						SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, getfreesetincar)
+					else
+						SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
+					end
+				end
+			end
+		else
+			SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
+			util.yield(20)
+			menu.trigger_commands("savevehicle "..input)
+			util.toast("VEH: ".. vehname.. " Saved as ".. input)
+			util.yield(10)
+			SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
+		end
+	else
+		util.toast("Es gibt kein sitzplatz für dich")
+		return false
+	end
+	::end::
+	return true
 end
 
 local minimum = memory.alloc()
@@ -4816,7 +4862,8 @@ function getnearvehicle()
 				local mypos = players.get_position(players.user())
 				local entitypPos = entities.get_position(entitypointer)
 				local dist = math.floor(mypos:distance(entitypPos))
-				freeseat = getfreevehseat(entityhandle)
+				savevehicleingarage(entityhandle, input)
+				--[[freeseat = getfreevehseat(entityhandle)
 				if GET_VEHICLE_PED_IS_IN(players.user_ped()) == entityhandle then
 					menu.trigger_commands("savevehicle "..input)
 					util.toast("VEH: ".. entitiyname.. " Saved as ".. input)
@@ -4854,7 +4901,7 @@ function getnearvehicle()
 				else
 					util.toast("Es gibt kein sitzplatz für dich")
 				end
-				::end::
+				::end::]]
 				menu.set_value(menu.ref_by_command_name("save"..modelname), "")
 			end)
 			numbertimercall += 1
@@ -7249,7 +7296,7 @@ local inspect = require("inspect")
 
 local config = {
     debug_mode = false,
-    context_menu_enabled=true,
+    context_menu_enabled=false,
     color = {
         options_circle={r=1, g=1, b=1, a=0.1},
         option_text={r=1, g=1, b=1, a=1},
