@@ -881,7 +881,7 @@ function getcontrole(entity)
 	return true
 end
 
-function getfreevehsteat(vehicle)
+function getfreevehseat(vehicle)
 	if IS_VEHICLE_SEAT_FREE(vehicle, -1, false) then
 		if not DOES_ENTITY_EXIST(GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)) then
 			return -1
@@ -1293,6 +1293,40 @@ function isanykeypressed()
 	return false
 end
 
+function upgrade_vehicle(vehicle)
+	if getcontrole then
+		SET_VEHICLE_MOD_KIT(vehicle, 0)
+    	for i = 0, 49 do
+       		local num = entities.get_upgrade_max_value(vehicle, i)
+       		entities.set_upgrade_value(vehicle, i, num)
+   		end
+	end
+end
+
+function randomupgrade_vehicle(vehicle)
+	if getcontrole then
+		SET_VEHICLE_MOD_KIT(vehicle, 0)
+    	for i = 0, 49 do
+       		local num = entities.get_upgrade_max_value(vehicle, i)
+			if num < 0 then
+				num = -1
+			end
+				numupgrade = math.random( -1, num )
+       			entities.set_upgrade_value(vehicle, i, numupgrade)
+   		end
+	end
+end
+
+function downggrade_vehicle(vehicle)
+	if getcontrole then
+    	for i = 0, 49 do
+       		--local num = entities.get_upgrade_max_value(vehicle, i)
+			   REMOVE_VEHICLE_MOD(vehicle, i)
+       		--entities.set_upgrade_value(vehicle, i, num)
+   		end
+	end
+end
+
 function isMoving(ped)
 	if not IS_PED_IN_ANY_VEHICLE(ped, true) and GET_ENTITY_SPEED(ped) > 5 then return true end
 	if GET_ENTITY_SPEED(GET_VEHICLE_PED_IS_IN(ped, false)) > 5 then return true end
@@ -1616,7 +1650,7 @@ local function player(pid)
     local targets = GET_PLAYER_PED_SCRIPT_INDEX(pid)
     local tar1 = GET_ENTITY_COORDS(targets, true)
     Streamptfx(ptfx.lib)
-    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD( ptfx.sel, tar1.x, tar1.y, tar1.z + 1, 0, 0, 0, 10.0, true, true, true)
+    START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD( ptfx.sel, tar1.x, tar1.y, tar1.z + 1, 0, 0, 0, 10.0, true, true, true)
 	end)
 
 	menu.list_action(spam, 'Ptfx List', {}, 'such dir hier aus was du für ein ptfx willst', Fxcorelist, function(fxsel)
@@ -2323,11 +2357,12 @@ Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
 Entitymanagercleararea = menu.list(Entitymanager, "Clear Area", {}, "")
 Entitymanageresp = menu.list(Entitymanager, "Entity ESP", {}, "")
 Entitymanagernearvehicle = menu.list(Entitymanager, "Near Entitys", {}, "", function(on_click)
-	nearentitysloadsphererange = true
-	util.create_tick_handler(nearentitiysloadsphere)
-end, function(on_back)
-	nearentitysloadsphererange = false
+		nearentitysloadsphererange = true
+		util.create_tick_handler(nearentitiysloadsphere)
+	end, function(on_back)
+		nearentitysloadsphererange = false
 end)
+Entitymanagercontextmenu = menu.list(Entitymanager, "Context menu", {}, "")
 player_zeug = menu.list(menu.my_root(), "Lobby zeug", {}, "")
 --streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
 Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
@@ -3646,7 +3681,11 @@ searchnearentityspickup = menu.text_input(Entitymanagernearvehiclepickup, "Searc
 	menu.set_value(searchnearentityspickup, "")
 end)
 
-Entitymanagernearvehicleallveh = menu.list(Entitymanagernearvehiclevehicles, "Action for all Vehicle", {}, "")
+Entitymanagernearvehicleallveh = menu.list(Entitymanagernearvehiclevehicles, "Action for all Vehicle", {}, "", function(on_click)
+	loadboxonallent = true
+end, function(on_back)
+	loadboxonallent = false
+end)
 menu.action(Entitymanagernearvehicleallveh, "Teleport to me", {}, "", function()
 	for vehicledata as vehhandle do
 		local ent_ptr = memory.alloc_int()
@@ -3816,6 +3855,17 @@ menu.action(Entitymanagernearvehicleallveh, "Repair", {}, "", function()
 		end
 	end
 end)
+menu.list_action(Entitymanagernearvehicleallveh, "Upgrade", {}, "", {"full", "random", "down"}, function(index)
+	for vehicledata as vehhandle do
+		if index == 1 then
+			upgrade_vehicle(vehhandle)
+		elseif index == 2 then
+			randomupgrade_vehicle(vehhandle)
+		elseif index == 3 then
+			downggrade_vehicle(vehhandle)
+		end
+	end
+end)
 menu.divider(Entitymanagernearvehicleallveh, "Misc")
 local savingvehrunning = false
 menu.text_input(Entitymanagernearvehicleallveh, "Save vehicle / adds number to it", {"saveallveh"}, "", function(input)
@@ -3827,7 +3877,7 @@ menu.text_input(Entitymanagernearvehicleallveh, "Save vehicle / adds number to i
 	for _, vehhandle in pairs(vehicledata) do
 		local modelname = getmodelnamebyhash(entities.get_model_hash(vehhandle))
 		savingvehrunning = true
-		freeseat = getfreevehsteat(vehhandle)
+		freeseat = getfreevehseat(vehhandle)
 		if GET_VEHICLE_PED_IS_IN(players.user_ped()) == vehhandle then
 			numbertoadd += 1
 			menu.trigger_commands("savevehicle "..input.." ".. numbertoadd)
@@ -3855,7 +3905,7 @@ menu.text_input(Entitymanagernearvehicleallveh, "Save vehicle / adds number to i
 			if IS_VEHICLE_SEAT_FREE(vehicleofped, seatofplayer, false) then
 				SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, seatofplayer)
 			else
-				getfreesetincar = getfreevehsteat(vehicleofped)
+				getfreesetincar = getfreevehseat(vehicleofped)
 				if getfreesetincar then
 					SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, getfreesetincar)
 				else
@@ -3890,7 +3940,11 @@ menu.action(Entitymanagernearvehicleallveh, "Set Vehicle as no longer needed", {
 	end
 end)
 
-Entitymanagernearvehicleallpeds = menu.list(Entitymanagernearvehiclepeds, "Action for all Peds", {}, "")
+Entitymanagernearvehicleallpeds = menu.list(Entitymanagernearvehiclepeds, "Action for all Peds", {}, "", function(on_click)
+	loadboxonallent = true
+end, function(on_back)
+	loadboxonallent = false
+end)
 menu.action(Entitymanagernearvehicleallpeds, "Teleport to me", {}, "", function()
 	for pedsdata as vehhandle do
 		local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +2, 0)
@@ -4078,7 +4132,11 @@ menu.action(Entitymanagernearvehicleallpeds, "Set PED as no longer needed", {}, 
 	end
 end)
 
-Entitymanagernearvehicleallobjects = menu.list(Entitymanagernearvehicleobjects, "Action for all Objects", {}, "")
+Entitymanagernearvehicleallobjects = menu.list(Entitymanagernearvehicleobjects, "Action for all Objects", {}, "", function(on_click)
+	loadboxonallent = true
+end, function(on_back)
+	loadboxonallent = false
+end)
 menu.action(Entitymanagernearvehicleallobjects, "Teleport to me", {}, "", function()
 	for objectsdata as vehhandle do
 		local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +2, 0)
@@ -4123,7 +4181,11 @@ menu.action(Entitymanagernearvehicleallobjects, "Set Object as no longer needed"
 	end
 end)
 
-Entitymanagernearvehicleallpickups = menu.list(Entitymanagernearvehiclepickup, "Action for all Pickups", {}, "")
+Entitymanagernearvehicleallpickups = menu.list(Entitymanagernearvehiclepickup, "Action for all Pickups", {}, "", function(on_click)
+	loadboxonallent = true
+end, function(on_back)
+	loadboxonallent = false
+end)
 menu.action(Entitymanagernearvehicleallpickups, "Teleport to me", {}, "", function()
 	for pickupdata as vehhandle do
 		local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +2, 0)
@@ -4195,6 +4257,8 @@ end)
 		end
 	end
 end]]
+
+local isinfocusthemenu
 
 function getnearvehicle()
 	if not enablednearvehicle then
@@ -4314,7 +4378,27 @@ function getnearvehicle()
 		if not table.contains(vehicledata, vehhandle) then
 			if createmenus then
 			table.insert(vehicledata, vehhandle)
-			veh[vehhandle] = menu.list(Entitymanagernearvehiclevehicles, textlinemain, {"nearveh".. modelname}, infotextline )
+			veh[vehhandle] = menu.list(Entitymanagernearvehiclevehicles, textlinemain, {"nearveh".. modelname}, infotextline, function(on_click)
+				isinfocusthemenu = true
+				repeat
+					local vehhandle = vehhandle
+					local entitypointer = vehpointer
+					local pPos = players.get_position(players.user())
+					ePos = entities.get_position(vehpointer)
+					if showarsignalnearentitys then
+						util.draw_ar_beacon(ePos)
+					end
+					if showlinenearentitys then
+						DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+					end
+					if showboxnearentitys then
+						draw_bounding_box(vehhandle)
+					end
+					util.yield()
+				until not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu
+			end, function(on_back)
+				isinfocusthemenu = false
+			end)
 			menu.set_temporary(veh[vehhandle])
 			local numbertimercall = 0
 			numbertimercall += 1
@@ -4387,7 +4471,7 @@ function getnearvehicle()
 				local entityhash = modelhash
 				local entitiyname = modelname
 				local entitypPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entityhandle, -2, 0, 0)
-				freeseat = getfreevehsteat(entityhandle)
+				freeseat = getfreevehseat(entityhandle)
 				if freeseat ~= number then
 					SET_PED_INTO_VEHICLE(players.user_ped(), entityhandle, freeseat)
 				end
@@ -4691,6 +4775,23 @@ function getnearvehicle()
 					util.toast("konnte keine kontrolle bekommen")
 				end
 			end)
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.list_action(veh[vehhandle], "Upgrade", {}, "", {"full", "random", "down"}, function(index)
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				--local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +4, 0)
+				--local entitypPos = entities.get_position(entitypointer)
+				if index == 1 then
+					upgrade_vehicle(entityhandle)
+				elseif index == 2 then
+					randomupgrade_vehicle(entityhandle)
+				elseif index == 3 then
+					downggrade_vehicle(entityhandle)
+				end
+			end)
+
 			menu.divider(veh[vehhandle], "Misc")
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Copy vehicle", {}, infotextline, function()
@@ -4715,7 +4816,7 @@ function getnearvehicle()
 				local mypos = players.get_position(players.user())
 				local entitypPos = entities.get_position(entitypointer)
 				local dist = math.floor(mypos:distance(entitypPos))
-				freeseat = getfreevehsteat(entityhandle)
+				freeseat = getfreevehseat(entityhandle)
 				if GET_VEHICLE_PED_IS_IN(players.user_ped()) == entityhandle then
 					menu.trigger_commands("savevehicle "..input)
 					util.toast("VEH: ".. entitiyname.. " Saved as ".. input)
@@ -4734,7 +4835,7 @@ function getnearvehicle()
 							if IS_VEHICLE_SEAT_FREE(vehicleofped, seatofplayer, false) then
 								SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, seatofplayer)
 							else
-								getfreesetincar = getfreevehsteat(vehicleofped)
+								getfreesetincar = getfreevehseat(vehicleofped)
 								if getfreesetincar ~= number then
 									SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, getfreesetincar)
 								else
@@ -4817,6 +4918,9 @@ function getnearvehicle()
 			numberfunctioninlist = numbertimercall
 			end
 		else
+			if loadboxonallent and showboxnearentitys then
+				draw_bounding_box(vehhandle)
+			end
 			if menu.is_focused(veh[vehhandle]) then
 				if showarsignalnearentitys then
 					util.draw_ar_beacon(ePos)
@@ -4837,7 +4941,7 @@ function getnearvehicle()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						if menu.is_focused(vehinfotab[vehhandle.. i]) then
+						--[[if menu.is_focused(vehinfotab[vehhandle.. i]) then
 							if showarsignalnearentitys then
 								util.draw_ar_beacon(ePos)
 							end
@@ -4847,7 +4951,7 @@ function getnearvehicle()
 							if showboxnearentitys then
 								draw_bounding_box(vehhandle)
 							end
-						end
+						end]]
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
 						end
@@ -5002,7 +5106,27 @@ function getnearpeds()
 		if not table.contains(pedsdata, vehhandle) then
 			if createmenus then
 			table.insert(pedsdata, vehhandle)
-			veh[vehhandle] = menu.list(Entitymanagernearvehiclepeds, textlinemain, {}, infotextline)
+			veh[vehhandle] = menu.list(Entitymanagernearvehiclepeds, textlinemain, {}, infotextline, function(on_click)
+				isinfocusthemenu = true
+				repeat
+					local vehhandle = vehhandle
+					local entitypointer = vehpointer
+					local pPos = players.get_position(players.user())
+					ePos = entities.get_position(vehpointer)
+					if showarsignalnearentitys then
+						util.draw_ar_beacon(ePos)
+					end
+					if showlinenearentitys then
+						DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+					end
+					if showboxnearentitys then
+						draw_bounding_box(vehhandle)
+					end
+					util.yield()
+				until not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu
+			end, function(on_back)
+				isinfocusthemenu = false
+			end)
 			local numbertimercall = 0
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Teleport to Ped", {}, infotextline, function()
@@ -5278,6 +5402,9 @@ function getnearpeds()
 			numberfunctioninlist = numbertimercall
 			end
 		else
+			if loadboxonallent and showboxnearentitys then
+				draw_bounding_box(vehhandle)
+			end
 			if menu.is_focused(veh[vehhandle]) then
 				if showarsignalnearentitys then
 					util.draw_ar_beacon(ePos)
@@ -5298,7 +5425,7 @@ function getnearpeds()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						if menu.is_focused(vehinfotab[vehhandle.. i]) then
+						--[[if menu.is_focused(vehinfotab[vehhandle.. i]) then
 							if showarsignalnearentitys then
 								util.draw_ar_beacon(ePos)
 							end
@@ -5308,7 +5435,7 @@ function getnearpeds()
 							if showboxnearentitys then
 								draw_bounding_box(vehhandle)
 							end
-						end
+						end]]
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
 						end
@@ -5447,7 +5574,27 @@ function getnearobjects()
 		if not table.contains(objectsdata, vehhandle) then
 			if createmenus then
 			table.insert(objectsdata, vehhandle)
-			veh[vehhandle] = menu.list(Entitymanagernearvehicleobjects, textlinemain, {}, "")
+			veh[vehhandle] = menu.list(Entitymanagernearvehicleobjects, textlinemain, {}, infotextline, function(on_click)
+				isinfocusthemenu = true
+				repeat
+					local vehhandle = vehhandle
+					local entitypointer = vehpointer
+					local pPos = players.get_position(players.user())
+					ePos = entities.get_position(vehpointer)
+					if showarsignalnearentitys then
+						util.draw_ar_beacon(ePos)
+					end
+					if showlinenearentitys then
+						DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+					end
+					if showboxnearentitys then
+						draw_bounding_box(vehhandle)
+					end
+					util.yield()
+				until not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu
+			end, function(on_back)
+				isinfocusthemenu = false
+			end)
 			local numbertimercall = 0
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Teleport to Object", {}, infotextline, function()
@@ -5557,6 +5704,9 @@ function getnearobjects()
 			numberfunctioninlist = numbertimercall
 			end
 		else
+			if loadboxonallent and showboxnearentitys then
+				draw_bounding_box(vehhandle)
+			end
 			if menu.is_focused(veh[vehhandle]) then
 				if showarsignalnearentitys then
 					util.draw_ar_beacon(ePos)
@@ -5577,7 +5727,7 @@ function getnearobjects()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						if menu.is_focused(vehinfotab[vehhandle.. i]) then
+						--[[if menu.is_focused(vehinfotab[vehhandle.. i]) then
 							if showarsignalnearentitys then
 								util.draw_ar_beacon(ePos)
 							end
@@ -5587,7 +5737,7 @@ function getnearobjects()
 							if showboxnearentitys then
 								draw_bounding_box(vehhandle)
 							end
-						end
+						end]]
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
 						end
@@ -5715,7 +5865,27 @@ function getnearpickup()
 		if not table.contains(pickupdata, vehhandle) then
 			if createmenus then
 			table.insert(pickupdata, vehhandle)
-			veh[vehhandle] = menu.list(Entitymanagernearvehiclepickup, textlinemain, {}, "")
+			veh[vehhandle] = menu.list(Entitymanagernearvehiclepickup, textlinemain, {}, infotextline, function(on_click)
+				isinfocusthemenu = true
+				repeat
+					local vehhandle = vehhandle
+					local entitypointer = vehpointer
+					local pPos = players.get_position(players.user())
+					ePos = entities.get_position(vehpointer)
+					if showarsignalnearentitys then
+						util.draw_ar_beacon(ePos)
+					end
+					if showlinenearentitys then
+						DRAW_LINE(pPos.x, pPos.y, pPos.z, ePos.x, ePos.y, ePos.z, 255, 0, 0, 255)
+					end
+					if showboxnearentitys then
+						draw_bounding_box(vehhandle)
+					end
+					util.yield()
+				until not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu
+			end, function(on_back)
+				isinfocusthemenu = false
+			end)
 			local numbertimercall = 0
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Teleport to Pickup", {}, infotextline, function()
@@ -5815,6 +5985,9 @@ function getnearpickup()
 			numberfunctioninlist = numbertimercall
 			end
 		else
+			if loadboxonallent and showboxnearentitys then
+				draw_bounding_box(vehhandle)
+			end
 			if menu.is_focused(veh[vehhandle]) then
 				if showarsignalnearentitys then
 					util.draw_ar_beacon(ePos)
@@ -5835,7 +6008,7 @@ function getnearpickup()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						if menu.is_focused(vehinfotab[vehhandle.. i]) then
+						--[[if menu.is_focused(vehinfotab[vehhandle.. i]) then
 							if showarsignalnearentitys then
 								util.draw_ar_beacon(ePos)
 							end
@@ -5845,7 +6018,7 @@ function getnearpickup()
 							if showboxnearentitys then
 								draw_bounding_box(vehhandle)
 							end
-						end
+						end]]
 						if menu.get_help_text(vehinfotab[vehhandle.. i]) != infotextline then
 							menu.set_help_text(vehinfotab[vehhandle.. i], infotextline)
 						end
@@ -5979,7 +6152,7 @@ for players.list_except(true) as pid do
 					table.insert(ghostplayertable, pid)
 				end
 			end
-		elseif (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 10) and not players.is_in_interior(pid) then
+		elseif (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 10)and IS_PED_ARMED(ped, 7) and not players.is_in_interior(pid) then
 			if players.is_godmode(pid) and not godmodeon then
 				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
 				if not table.contains(ghostplayertable, pid) then
@@ -6651,6 +6824,9 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 			menu.trigger_command(menu.ref_by_path("Self>Weapons>Gravity Gun>Gravity Gun"), false)
 		end
 	end
+	if not IS_PED_ARMED(players.user_ped(), 4) then
+		directx.draw_circle(0.5, 0.5, 0.001, {r=1,g=0,b=1,a=0.8})
+	end
 	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>MELEE_ATTACK_LIGHT"), true)
 	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>THROW_GRENADE"), true)
 	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
@@ -7055,6 +7231,787 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 		util.draw_debug_text("Gravity Gun ist AN")
 	end
 end)
+
+
+
+
+
+
+--- Context Menu Manager
+local cmm = {
+    menu_options = {},
+}
+local menus = {}
+local state = {}
+
+util.ensure_package_is_installed('lua/inspect')
+local inspect = require("inspect")
+
+local config = {
+    debug_mode = false,
+    context_menu_enabled=true,
+    color = {
+        options_circle={r=1, g=1, b=1, a=0.1},
+        option_text={r=1, g=1, b=1, a=1},
+        help_text={r=0.8, g=0.8, b=0.8, a=1},
+        option_wedge={r=1, g=1, b=1, a=0.3},
+        selected_option_wedge={r=1, g=0, b=1, a=0.3},
+        target_ball={r=1,g=0,b=1,a=0.8},
+        target_bounding_box={r=1,g=0,b=1,a=1},
+        line_to_target={ r=1, g=1, b=1, a=0.5},
+    },
+    target_ball_size=0.4,
+    selection_distance=1000.0,
+    menu_radius=0.1,
+    option_label_distance=0.6,
+    option_wedge_deadzone=0.2,
+    option_wedge_padding=0.0,
+    menu_release_delay=3,
+    show_target_name=true,
+    show_option_help=true,
+    menu_options_scripts_dir="lib/ContextMenus",
+}
+
+local CONTEXT_MENUS_DIR = filesystem.scripts_dir()..config.menu_options_scripts_dir
+filesystem.mkdirs(CONTEXT_MENUS_DIR)
+
+local function debug_log(text)
+    util.log("[ContextMenuManager] "..text)
+end
+
+cmm.draw_bounding_box = function(target, colour)
+    if colour == nil then
+        colour = config.color.target_bounding_box_output
+    end
+    if target.model_hash == nil then
+        debug_log("Could not draw bounding box: No model hash set")
+        return
+    end
+
+    GET_MODEL_DIMENSIONS(target.model_hash, minimum, maximum)
+    local minimum_vec = v3.new(minimum)
+    local maximum_vec = v3.new(maximum)
+    draw_bounding_box_with_dimensions(target.handle, colour, minimum_vec, maximum_vec)
+end
+
+---
+--- Main Menu Draw Tick
+---
+
+local timetodestroypgone = 0
+local createphoneoutofding = false
+
+cmm.context_menu_draw_tick = function()
+    if not config.context_menu_enabled then return true end
+    local target = state.current_target
+
+    --DISABLE_CONTROL_ACTION(2, 25, true) --aim
+    --DISABLE_CONTROL_ACTION(2, 24, true) --attack
+    --DISABLE_CONTROL_ACTION(2, 257, true) --attack2
+    directx.draw_circle(0.5, 0.5, 0.001, config.color.target_ball)
+
+    if not state.is_menu_open then
+        target = cmm.get_raycast_target()
+        state.current_target = target
+    else
+        cmm.refresh_screen_pos(target)
+    end
+
+    if target ~= nil and target.pos ~= nil then
+        cmm.draw_selection(target)
+        --if IS_DISABLED_CONTROL_PRESSED(2, 25) then
+        if IS_DISABLED_CONTROL_PRESSED(2, 27) and not createphoneoutofding then
+            DISABLE_CONTROL_ACTION(2, 27, true)
+            timetodestroypgone += 1
+            if not menu.is_open() then
+                cmm.open_options_menu(target)
+            end
+        else
+            cmm.close_options_menu(target)
+            if timetodestroypgone < 15 and timetodestroypgone > 1 then createphoneoutofding = true SET_CONTROL_VALUE_NEXT_FRAME(2, 27, 1.0) else createphoneoutofding = false end
+            timetodestroypgone = 0
+        end
+    end
+
+    return true
+end
+
+---
+--- Menu Options
+---
+
+cmm.add_context_menu_option = function(menu_option)
+    cmm.default_menu_option(menu_option)
+    debug_log("Adding menu option "..menu_option.name or "Unknown")
+    table.insert(cmm.menu_options, menu_option)
+end
+
+cmm.default_menu_option = function(menu_option)
+    if menu_option.name == nil then menu_option.name = "Unknown Name" end
+    if menu_option.enabled == nil then menu_option.enabled = true end
+    if menu_option.priority == nil then menu_option.priority = 0 end
+end
+
+cmm.empty_menu_option = function()
+    return {
+        name="",
+        priority=-1,
+        is_empty=true
+    }
+end
+
+cmm.refresh_menu_options_from_files = function(directory, path)
+    if path == nil then path = "" end
+    for _, filepath in ipairs(filesystem.list_files(directory)) do
+        if filesystem.is_dir(filepath) then
+            local _2, dirname = string.match(filepath, "(.-)([^\\/]-%.?)$")
+            cmm.refresh_menu_options_from_files(filepath, path.."/"..dirname)
+        else
+            local _3, filename, ext = string.match(filepath, "(.-)([^\\/]-%.?)[.]([^%.\\/]*)$")
+            if ext == "lua" or ext == "pluto" then
+                local menu_option = require(config.menu_options_scripts_dir..path.."/"..filename)
+                menu_option.filename = filename.."."..ext
+                --debug_log("Loading menu option "..config.menu_options_scripts_dir..path.."/"..filename..": "..inspect(menu_option))
+                --cc.expand_chat_command_defaults(command, filename, path)
+                cmm.add_context_menu_option(menu_option)
+            end
+        end
+    end
+end
+
+cmm.refresh_menu_options_from_files(CONTEXT_MENUS_DIR)
+
+local ENTITY_TYPES = {"PED", "VEHICLE", "OBJECT"}
+
+---
+--- Draw Utils
+---
+
+local minimum = memory.alloc()
+local maximum = memory.alloc()
+local upVector_pointer = memory.alloc()
+local rightVector_pointer = memory.alloc()
+local forwardVector_pointer = memory.alloc()
+local position_pointer = memory.alloc()
+
+cmm.draw_text_with_shadow = function(posx, posy, text, alignment, scale, color, force_in_bounds)
+    if alignment == nil then alignment = 5 end
+    if scale == nil then scale = 0.5 end
+    if color == nil then color = config.color.option_text end
+    if force_in_bounds == nil then force_in_bounds = true end
+    local shadow_color = {r=0,g=0,b=0,a=0.3}
+    local shadow_distance = 0.001
+    directx.draw_text(posx + shadow_distance, posy + shadow_distance, text, alignment, scale, shadow_color, force_in_bounds)
+    directx.draw_text(posx - shadow_distance, posy - shadow_distance, text, alignment, scale, shadow_color, force_in_bounds)
+    directx.draw_text(posx + shadow_distance, posy - shadow_distance, text, alignment, scale, shadow_color, force_in_bounds)
+    directx.draw_text(posx - shadow_distance, posy + shadow_distance, text, alignment, scale, shadow_color, force_in_bounds)
+
+    directx.draw_text(posx + shadow_distance, posy, text, alignment, scale, shadow_color, force_in_bounds)
+    directx.draw_text(posx, posy + shadow_distance, text, alignment, scale, shadow_color, force_in_bounds)
+    directx.draw_text(posx - shadow_distance, posy, text, alignment, scale, shadow_color, force_in_bounds)
+    directx.draw_text(posx, posy - shadow_distance, text, alignment, scale, shadow_color, force_in_bounds)
+
+    directx.draw_text(posx, posy, text, alignment, scale, color, force_in_bounds)
+end
+
+---
+--- Color Menu Outputs
+---
+
+cmm.color_menu_output = function(output_color)
+    return {
+        r=math.floor(output_color.r * 255),
+        g=math.floor(output_color.g * 255),
+        b=math.floor(output_color.b * 255),
+        a=math.floor(output_color.a * 255)
+    }
+end
+config.color.target_ball_output = cmm.color_menu_output(config.color.target_ball)
+config.color.target_bounding_box_output = cmm.color_menu_output(config.color.target_bounding_box)
+
+--------------------------
+-- RAYCAST
+--------------------------
+
+---@param dist number
+---@return v3
+local function get_offset_from_cam(dist)
+    local rot = GET_FINAL_RENDERED_CAM_ROT(2)
+    local pos = GET_FINAL_RENDERED_CAM_COORD()
+    local dir = rot:toDir()
+    dir:mul(dist)
+    local offset = v3.new(pos)
+    offset:add(dir)
+    return offset
+end
+
+local TRACE_FLAG = {
+    MOVER = 1,
+    VEHICLE = 2,
+    PED = 4,
+    RAGDOLL = 8,
+    OBJECT = 16,
+    PICKUP = 32,
+    GLASS = 64,
+    RIVER = 128,
+    FOLIAGE = 256,
+    ALL = 511,
+}
+
+---@class RaycastResult
+---@field didHit boolean
+---@field endCoords v3
+---@field surfaceNormal v3
+---@field hitEntity Entity
+
+---@param dist number
+---@param flag? integer
+---@return RaycastResult
+function get_raycast_result(dist, flag)
+    local result = {}
+    flag = flag or TRACE_FLAG.ALL
+    local didHit = memory.alloc(1)
+    local endCoords = v3.new()
+    local normal = v3.new()
+    local hitEntity = memory.alloc_int()
+    local camPos = GET_FINAL_RENDERED_CAM_COORD()
+    local offset = get_offset_from_cam(dist)
+
+    local handle = START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
+            camPos.x, camPos.y, camPos.z,
+            offset.x, offset.y, offset.z,
+            flag,
+            players.user_ped(), 7
+    )
+    GET_SHAPE_TEST_RESULT(handle, didHit, endCoords, normal, hitEntity)
+
+    result.didHit = memory.read_byte(didHit) ~= 0
+    result.endCoords = endCoords
+    result.surfaceNormal = normal
+    result.hitEntity = memory.read_int(hitEntity)
+    return result
+end
+
+---
+--- Polygon Utils
+---
+
+function is_point_in_polygon( x, y, vertices)
+    local points= {}
+
+    for i=1, #vertices-1, 2 do
+        points[#points+1] = { x=vertices[i], y=vertices[i+1] }
+    end
+    local j = #points, #points
+    local inside = false
+
+    for i=1, #points do
+        if ((points[i].y < y and points[j].y>=y or points[j].y< y and points[i].y>=y) and (points[i].x<=x or points[j].x<=x)) then
+            if (points[i].x+(y-points[i].y)/(points[j].y-points[i].y)*(points[j].x-points[i].x)<x) then
+                inside = not inside
+            end
+        end
+        j = i
+    end
+
+    return inside
+end
+
+function build_vertices_list(wedge_points)
+    local vertices = {}
+    for _, point in wedge_points do
+        table.insert(vertices, point.x)
+        table.insert(vertices, point.y)
+    end
+    return vertices
+end
+
+function draw_polygon(wedge_points, draw_color)
+    for point_index=1, (#wedge_points/2)-1 do
+        local top_point = wedge_points[point_index]
+        local bottom_point = wedge_points[#wedge_points - point_index + 1]
+        local next_top_point = wedge_points[point_index + 1]
+        local next_bottom_point = wedge_points[#wedge_points - point_index]
+        directx.draw_triangle(
+            top_point.x, top_point.y,
+            bottom_point.x, bottom_point.y,
+            next_top_point.x, next_top_point.y,
+            draw_color
+        )
+        directx.draw_triangle(
+            next_top_point.x, next_top_point.y,
+            bottom_point.x, bottom_point.y,
+            next_bottom_point.x, next_bottom_point.y,
+            draw_color
+        )
+    end
+end
+
+---
+--- Trig Utils
+---
+
+local pointx = memory.alloc()
+local pointy = memory.alloc()
+
+function get_circle_coords(origin, radius, angle_degree)
+    local angle_radian = math.rad(angle_degree)
+    return {
+        x=(radius * math.cos(angle_radian) * 0.9) + origin.x,
+        y=(radius * math.sin(angle_radian) * 1.6) + origin.y
+    }
+end
+
+function reverse_table(tab)
+    for i = 1, #tab//2, 1 do
+        tab[i], tab[#tab-i+1] = tab[#tab-i+1], tab[i]
+    end
+    return tab
+end
+
+function calculate_point_angles(target, option, option_angle, option_width)
+    local width_scale = 1 - config.option_wedge_padding
+    local point_angles = {
+        option_angle - (option_width / 2 * width_scale),
+        option_angle - (option_width / 4 * width_scale),
+        option_angle,
+        option_angle + (option_width / 4 * width_scale),
+        option_angle + (option_width / 2 * width_scale),
+    }
+    return point_angles
+end
+
+
+function build_wedge_points(point_angles, target)
+    local top_points = {}
+    local bottom_points = {}
+    for _, point_angle in point_angles do
+        local top_point = get_circle_coords(target.menu_pos, config.menu_radius, point_angle)
+        table.insert(top_points, top_point)
+        local bottom_point = get_circle_coords(target.menu_pos, config.menu_radius * config.option_wedge_deadzone, point_angle)
+        table.insert(bottom_points, bottom_point)
+    end
+
+    local final_points = {}
+    for _, top_point in top_points do
+        table.insert(final_points, top_point)
+    end
+    for _, bottom_point in reverse_table(bottom_points) do
+        table.insert(final_points, bottom_point)
+    end
+
+    return final_points
+end
+
+function normalize_angle(angle)
+    return (angle + 360) % 360
+end
+
+function is_angle_between(angle, left, right)
+    local normal_angle = normalize_angle(angle)
+    local normal_left = normalize_angle(left)
+    local normal_right = normalize_angle(right)
+    --util.log("checking if "..normal_angle.." between "..normal_left.." and "..normal_right)
+    if (normal_left < normal_right) then
+        return (normal_left <= normal_angle and normal_angle <= normal_right)
+    else
+        return (normal_left <= normal_angle or normal_angle <= normal_right)
+    end
+end
+
+function get_controls_angle_magnitude()
+    local mouse_movement = {
+        x=GET_CONTROL_NORMAL(0, 13),
+        y=GET_CONTROL_NORMAL(0, 12),
+    }
+    local magnitude = math.sqrt(mouse_movement.x ^ 2 + mouse_movement.y ^ 2)
+    local angle = math.deg(math.atan(mouse_movement.y, mouse_movement.x))
+    return angle, magnitude
+end
+
+function pushback_to_center(current_pos, target_pos)
+    local pushback_amount = 0.003
+    local pushback_deadzone = 0.005
+    local next_pos = {
+        x = current_pos.x - target_pos.x,
+        y = current_pos.y - target_pos.y,
+    }
+    --if current_pos > target_pos + pushback_deadzone then
+    --    return current_pos - pushback_amount
+    --elseif current_pos < target_pos - pushback_deadzone then
+    --    return current_pos + pushback_amount
+    --end
+
+
+    --local magnitude = math.sqrt(next_pos.x ^ 2 + next_pos.y ^ 2)
+    --local angle = math.deg(math.atan(next_pos.y, next_pos.x))
+    --
+    --return get_circle_coords(target_pos, 1 - magnitude, angle)
+
+    return current_pos
+end
+
+cmm.handle_inputs = function(target)
+    DISABLE_CONTROL_ACTION(0, 1, false) --x
+    DISABLE_CONTROL_ACTION(0, 2, false) --y
+    if IS_USING_KEYBOARD_AND_MOUSE(1) then
+        SET_MOUSE_CURSOR_THIS_FRAME()
+        SET_MOUSE_CURSOR_STYLE(1)
+        target.cursor_pos = {
+            x=GET_CONTROL_NORMAL(0, 239),
+            y=GET_CONTROL_NORMAL(0, 240),
+        }
+    else
+        local angle, magnitude = get_controls_angle_magnitude()
+        -- TODO: controller work
+    end
+end
+
+cmm.find_selected_option = function(target)
+    for option_index, option in target.relevant_options do
+        if is_point_in_polygon(target.cursor_pos.x, target.cursor_pos.y, option.vertices) then
+            target.selected_option = option
+        elseif target.selected_option == option then
+            -- Leaving selection
+            target.selected_option.ticks_shown = nil
+            target.selected_option = nil
+        end
+    end
+end
+
+cmm.trigger_selected_action = function(target)
+    if target.selected_option ~= nil then
+        -- Delay execution to make sure this trigger is intentional
+        if target.selected_option.ticks_shown == nil then
+            target.selected_option.ticks_shown = 0
+        elseif target.selected_option.ticks_shown > config.menu_release_delay then
+            cmm.execute_selected_action(target)
+        else
+            util.draw_debug_text("ticks shown = "..target.selected_option.ticks_shown)
+            target.selected_option.ticks_shown = target.selected_option.ticks_shown + 1
+        end
+    end
+end
+
+cmm.execute_selected_action = function(target)
+    state.is_menu_open = false
+    if target.selected_option.execute ~= nil and type(target.selected_option.execute) == "function" then
+        util.log("Triggering option "..target.selected_option.name)
+        target.selected_option.execute(target)
+    end
+end
+
+function get_option_wedge_draw_color(target, option)
+    local draw_color = config.color.option_wedge
+    if target.selected_option == option then
+        if target.selected_option.ticks_shown ~= nil then
+            if (target.selected_option.ticks_shown/2) % 2 == 0 then
+                draw_color = config.color.option_wedge
+            else
+                draw_color = config.color.selected_option_wedge
+            end
+        else
+            draw_color = config.color.selected_option_wedge
+        end
+    end
+    return draw_color
+end
+
+cmm.draw_options_menu = function(target)
+    directx.draw_circle(target.menu_pos.x, target.menu_pos.y, config.menu_radius, config.color.options_circle)
+
+    if target.screen_pos.x > 0 and target.screen_pos.y > 0 then
+        directx.draw_line(0.5, 0.5, target.screen_pos.x, target.screen_pos.y, config.color.line_to_target)
+    end
+    --directx.draw_circle(target.cursor_pos.x, target.cursor_pos.y, 0.001, config.color.crosshair)
+
+    if config.show_target_name and target.name ~= nil then
+        cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y - (config.menu_radius * 1.9), target.name, 5, 0.5, config.color.option_text, true)
+    end
+
+    for option_index, option in target.relevant_options do
+        if option.name ~= nil then
+            local option_text_coords = get_circle_coords(target.menu_pos, config.menu_radius*config.option_label_distance, option.option_angle)
+            cmm.draw_text_with_shadow(option_text_coords.x, option_text_coords.y, option.name, 5, 0.5, config.color.option_text, true)
+
+            draw_polygon(option.wedge_points, get_option_wedge_draw_color(target, option))
+
+            if config.show_option_help and target.selected_option == option then
+                cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y + (config.menu_radius * 1.9), option.help, 5, 0.5, config.color.help_text, true)
+            end
+        end
+    end
+
+end
+
+function is_menu_option_relevant(menu_option, target)
+    if menu_option.enabled == false then
+        return false
+    end
+    if menu_option.applicable_to ~= nil and not table.contains(menu_option.applicable_to, target.type) then
+        return false
+    end
+    return true
+end
+
+cmm.deep_table_copy = function(obj)
+    if type(obj) ~= 'table' then
+        return obj
+    end
+    local res = setmetatable({}, getmetatable(obj))
+    for k, v in pairs(obj) do
+        res[cmm.deep_table_copy(k)] = cmm.deep_table_copy(v)
+    end
+    return res
+end
+
+cmm.build_relevant_options = function(target)
+    target.relevant_options = {}
+    for _, option in cmm.menu_options do
+        if is_menu_option_relevant(option, target) then
+            table.insert(target.relevant_options, cmm.deep_table_copy(option))
+        end
+    end
+    --if #relevant_options == 1 then table.insert(relevant_options, cmm.empty_menu_option()) end
+    table.sort(target.relevant_options, function(a,b) return a.name > b.name end)
+    table.sort(target.relevant_options, function(a,b) return a.priority > b.priority end)
+    cmm.build_option_wedge_points(target)
+end
+
+function get_target_type(new_target)
+    local entity_type = ENTITY_TYPES[GET_ENTITY_TYPE(new_target.handle)] or "WORLD_OBJECT"
+    if entity_type == "PED" and entities.is_player_ped(new_target.handle) then
+        return "PLAYER"
+    end
+    return entity_type
+end
+
+function get_target_name(target)
+    if target.type == "PLAYER" then
+        for _, pid in players.list() do
+            local player_ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+            if player_ped == target.handle then
+                return GET_PLAYER_NAME(pid)
+            end
+        end
+    elseif target.type == "VEHICLE" then
+        return util.get_label_text(GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(target.model_hash))
+    end
+    return target.model
+end
+
+-- credit to the amazing aarroonn
+function get_model_hash(handle_or_ptr)
+    if handle_or_ptr < 0xFFFFFF then
+        handle_or_ptr = entities.handle_to_pointer(handle_or_ptr)
+    end
+    local model_info = memory.read_long(handle_or_ptr + 0x20)
+    if model_info ~= 0 then
+        return memory.read_int(model_info + 0x18)
+    end
+end
+
+cmm.build_target = function(raycastResult)
+    local target = {}
+    local model_hash
+    if raycastResult.didHit then
+        model_hash = get_model_hash(raycastResult.hitEntity)
+    end
+
+    if config.debug_mode then
+        util.draw_debug_text("didhit = "..raycastResult.didHit)
+        util.draw_debug_text("handle = "..raycastResult.hitEntity)
+        util.draw_debug_text("endcoords = "..raycastResult.endCoords.x..","..raycastResult.endCoords.y)
+        util.draw_debug_text("hash = "..tostring(model_hash))
+    end
+
+    if raycastResult.didHit and model_hash ~= nil then
+        -- Handle Entity Target
+        if raycastResult.hitEntity ~= nil and DOES_ENTITY_EXIST(raycastResult.hitEntity) then
+            target.handle = raycastResult.hitEntity
+            target.model_hash = get_model_hash(target.handle)
+            if target.model_hash then
+                target.model = util.reverse_joaat(target.model_hash)
+            end
+            target.type = get_target_type(target)
+            target.name = get_target_name(target)
+            target.pos = GET_ENTITY_COORDS(target.handle, true)
+        end
+    elseif raycastResult.endCoords.x ~= 0 and raycastResult.endCoords.y ~= 0 then
+        -- Handle World-Coords Target
+        target.type = "COORDS"
+        target.pos = { x=raycastResult.endCoords.x, y=raycastResult.endCoords.y, z=raycastResult.endCoords.z}
+        target.name = "Coords: "..string.format("%.2f", target.pos.x)..","..string.format("%.2f", target.pos.y)
+    end
+
+    target.menu_pos = { x=0.5, y=0.5, }
+    cmm.build_relevant_options(target)
+    target.screen_pos = { x=0.5, y=0.5, }
+    cmm.refresh_screen_pos(target)
+    return target
+end
+
+--local flag = TRACE_FLAG.VEHICLE | TRACE_FLAG.OBJECT | TRACE_FLAG.MOVER | TRACE_FLAG.PED | TRACE_FLAG.GLASS
+
+cmm.get_raycast_target = function()
+    local flag = TRACE_FLAG.VEHICLE | TRACE_FLAG.OBJECT | TRACE_FLAG.PED | TRACE_FLAG.GLASS | TRACE_FLAG.MOVER
+    --local flag = TraceFlag.peds | TraceFlag.vehicles | TraceFlag.pedsSimpleCollision | TraceFlag.objects | TraceFlag.world
+    --local flag = TraceFlag.everything
+    local raycastResult = get_raycast_result(config.selection_distance, flag)
+    return cmm.build_target(raycastResult)
+end
+
+cmm.refresh_screen_pos = function(target)
+    if target.pos and GET_SCREEN_COORD_FROM_WORLD_COORD(target.pos.x, target.pos.y, target.pos.z, pointx, pointy) then
+        target.screen_pos = { x=memory.read_float(pointx), y=memory.read_float(pointy)}
+    else
+        target.screen_pos = {x=0, y=0}
+    end
+end
+
+cmm.update_menu = function(target)
+    cmm.handle_inputs(target)
+    cmm.find_selected_option(target)
+    cmm.draw_options_menu(target)
+end
+
+cmm.open_options_menu = function(target)
+    if not state.is_menu_open then
+        target.selected_option = nil
+        target.cursor_pos = { x=0.5, y=0.5, }
+        SET_CURSOR_POSITION(target.cursor_pos.x, target.cursor_pos.y)
+        state.is_menu_open = true
+        -- Re-opening the menu while a trigger is executing cancels the trigger
+        if target.selected_option then target.selected_option.ticks_shown = nil end
+    end
+    cmm.update_menu(target)
+end
+
+cmm.close_options_menu = function(target)
+    if state.is_menu_open then
+        cmm.update_menu(target)
+        cmm.trigger_selected_action(target)
+    end
+    if not target.selected_option then
+        state.is_menu_open = false
+    end
+end
+
+cmm.draw_selection = function(target)
+    if target.type == "COORDS" then
+        util.draw_sphere(
+            target.pos,
+            config.target_ball_size,
+            config.color.target_ball_output.r,
+            config.color.target_ball_output.g,
+            config.color.target_ball_output.b,
+            config.color.target_ball_output.a,
+            40
+        )
+    else
+        cmm.draw_bounding_box(target)
+    end
+end
+
+cmm.build_option_wedge_points = function(target)
+    -- If only one option then assume two so the menu isnt just a single circle
+    local num_options = math.max(#target.relevant_options, 2)
+    -- Split circle up into n slices of width `option_width` degrees
+    target.option_width = 360 / num_options
+    for option_index, option in target.relevant_options do
+        if option.name ~= nil then
+            option.option_angle = ((option_index-1) * target.option_width) - 90
+            option.point_angles = calculate_point_angles(target, option, option.option_angle, target.option_width)
+            option.wedge_points = build_wedge_points(option.point_angles, target)
+            option.vertices = build_vertices_list(option.wedge_points)
+        end
+    end
+end
+
+menu.toggle(Entitymanagercontextmenu, "Context Menu enabled", {}, "Right-click on in-game objects to open context menu.", function(value)
+    config.context_menu_enabled = value
+end, config.context_menu_enabled)
+
+---
+--- Menu Options
+---
+
+menus.menu_options = menu.list(Entitymanagercontextmenu, "Menu Options", {}, "Enable or disable specific context menu options.")
+menus.menu_options:action("Open ContextMenus Folder", {}, "Add ContextMenu scripts to this folder", function()
+    util.open_folder(CONTEXT_MENUS_DIR)
+end)
+
+function build_menu_option_description(menu_option)
+    local text = menu_option.help or ""
+    if menu_option.author then text = text.."\nAuthor: "..menu_option.author end
+    if menu_option.filename then text = text.."\nFilename: "..menu_option.filename end
+    return text
+end
+
+menus.menu_options:divider("Menu Options")
+for _, menu_option in cmm.menu_options do
+    menus.menu_options:toggle(menu_option.name, {}, build_menu_option_description(menu_option), function(value)
+        menu_option.enabled = value
+    end, menu_option.enabled)
+end
+
+---
+--- Settings Menu
+---
+
+menus.settings = menu.list(Entitymanagercontextmenu, "Settings", {}, "Configuration options for this script.")
+menus.settings:toggle("Show Target Name", {}, "Should the target model name be displayed above the menu", function(value)
+    config.show_target_name = value
+end, config.show_target_name)
+menus.settings:toggle("Show Option Help", {}, "Should the selected option help text be displayed below the menu", function(value)
+    config.show_option_help = value
+end, config.show_option_help)
+menus.settings:slider("Selection Distance", {"cmmselectiondistance"}, "The range that the context menu can find clickable targets", 1, 2000, config.selection_distance, 10, function(value)
+    config.selection_distance = value
+end)
+menus.settings:slider("Target Ball Size", {"cmmtargetballsize"}, "The size of the world target cursor ball", 5, 140, config.target_ball_size * 100, 5, function(value)
+    config.target_ball_size = value / 100
+end)
+menus.settings:slider("Menu Radius", {"cmmmenuradius"}, "The size of the context menu disc", 5, 25, config.menu_radius * 100, 1, function(value)
+    config.menu_radius = value / 100
+end)
+menus.settings:slider("Deadzone", {"cmmdeadzone"}, "The center of the menu where no option is selected", 5, 30, config.option_wedge_deadzone * 100, 1, function(value)
+    config.option_wedge_deadzone = value / 100
+end)
+menus.settings:slider("Option Padding", {"cmmoptionpadding"}, "The spacing between options", 0, 25, config.option_wedge_padding * 100, 1, function(value)
+    config.option_wedge_padding = value / 100
+end)
+
+menus.settings_colors = menus.settings:list("Colors")
+menus.settings_colors:colour("Target Ball Color", {"cmmcolortargetball"}, "The ball cursor when no specific entity is selected", config.color.target_ball, true, function(color)
+    config.color.target_ball = color
+    config.color.target_ball_output = cmm.color_menu_output(config.color.target_ball)
+end)
+menus.settings_colors:colour("Target Bounding Box Color", {"cmmcolortargetboundingbox"}, "The bounding box cursor when a specific entity is selected", config.color.target_bounding_box, true, function(color)
+    config.color.target_bounding_box = color
+    config.color.target_bounding_box_output = cmm.color_menu_output(config.color.target_bounding_box)
+end)
+menus.settings_colors:colour("Menu Circle Color", {"cmmcolorcirclecolor"}, "The menu circle color", config.color.options_circle, true, function(color)
+    config.color.options_circle = color
+end)
+menus.settings_colors:colour("Option Wedge Color", {"cmmcolorwedgecolor"}, "An individual option wedge color", config.color.option_wedge, true, function(color)
+    config.color.option_wedge = color
+end)
+menus.settings_colors:colour("Selected Option Wedge Color", {"cmmcolorselectedwedgecolor"}, "The currently selected option wedge color", config.color.selected_option_wedge, true, function(color)
+    config.color.selected_option_wedge = color
+end)
+menus.settings_colors:colour("Line to Target Color", {"cmmcolortargetcolor"}, "Line from menu to target color", config.color.line_to_target, true, function(color)
+    config.color.line_to_target = color
+end)
+
+
+
+
+
+
+
+
+
 
 CLEAR_AREA_RANGE = 100
 function clearAreaOfEntities(entitie, range)
@@ -7704,38 +8661,88 @@ menu.action(anti_laender_zeug, "Länder aus lobby kicken", {}, "kickt aus deiner
 	::end::
 end)
 
+function loadleanguasplayers(pid, language)
+	local wascreated = false
+	for _, commandref in pairs(menu.get_children(anti_laender_zeug)) do
+		if _ > 5 then
+			if string.contains(menu.get_menu_name(commandref), language) then
+				menu.attach_after(commandref,menu.action(menu.shadow_root(), players.get_name(pid).."   ("..language..")", {}, "Drauf drücken zum kicken", function()
+					local pid = pid
+					menu.trigger_commands("kick"..players.get_name(pid))
+					for _, commandref in pairs(menu.get_children(anti_laender_zeug)) do
+						if _ > 5 then
+							if string.contains(menu.get_menu_name(commandref), players.get_name(pid)) then
+								menu.delete(commandref)
+							end
+						end
+					end
+				end))
+				wascreated = true
+				break
+			end
+		end
+	end
+	if not wascreated then
+	menu.action(anti_laender_zeug, players.get_name(pid).."   ("..language..")", {}, "Drauf drücken zum kicken", function()
+		local pid = pid
+		menu.trigger_commands("kick"..players.get_name(pid))
+		for _, commandref in pairs(menu.get_children(anti_laender_zeug)) do
+			if _ > 5 then
+				if string.contains(menu.get_menu_name(commandref), players.get_name(pid)) then
+					menu.delete(commandref)
+				end
+			end
+		end
+	end)
+	end
+end
+
 menu.action(anti_laender_zeug, "ausgewählte länder in der lobby", {}, "sagt wie viele spieler von den ausgewählten ländern in der lobby sind", function()
 	local russencounter, ukrainecounter, polandcounter, francecounter, italycounter, romaniacounter, czechcounter, germanycoutner, Austriacoutner = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	local textline = ""
 	local notselectet = false
 	local hostpid = players.get_host()
+	for _, commandref in pairs(menu.get_children(anti_laender_zeug)) do
+		if _ > 5 then
+			menu.delete(commandref)
+		end
+	end
 	for players.list(false, false, true) as pid do
-			if pidlanguage(pid) == "Russian Federation" then
+			if Russian_Federation and pidlanguage(pid) == "Russian Federation" then
 				russencounter += 1
+				loadleanguasplayers(pid, "Russian")
 			end
-			if pidlanguage(pid) == "Ukraine" then
+			if Ukraine and pidlanguage(pid) == "Ukraine" then
 				ukrainecounter += 1
+				loadleanguasplayers(pid, "Ukraine")
 			end
-			if pidlanguage(pid) == "Poland" then
+			if Poland and pidlanguage(pid) == "Poland" then
 				polandcounter += 1
+				loadleanguasplayers(pid, "Poland")
 			end
-			if pidlanguage(pid) == "France" then
+			if France and pidlanguage(pid) == "France" then
 				francecounter += 1
+				loadleanguasplayers(pid, "France")
 			end
-			if pidlanguage(pid) == "Italy" then
+			if Italy and pidlanguage(pid) == "Italy" then
 				italycounter += 1
+				loadleanguasplayers(pid, "Italy")
 			end
-			if pidlanguage(pid) == "Romania" then
+			if Romania and pidlanguage(pid) == "Romania" then
 				romaniacounter += 1
+				loadleanguasplayers(pid, "Romania")
 			end
-			if pidlanguage(pid) == "Czech_Republic" then
+			if Czech_Republic and pidlanguage(pid) == "Czech_Republic" then
 				czechcounter += 1
+				loadleanguasplayers(pid, "Czech_Republic")
 			end
-			if pidlanguage(pid) == "Germany" then
+			if Germany and pidlanguage(pid) == "Germany" then
 				germanycoutner += 1
+				loadleanguasplayers(pid, "Germany")
 			end
-			if pidlanguage(pid) == "Austria" then
+			if Austria and pidlanguage(pid) == "Austria" then
 				Austriacoutner += 1
+				loadleanguasplayers(pid, "Austria")
 			end
 	end
 	if (not Czech_Republic) and (not Romania) and (not Italy) and (not France) and (not Poland) and (not Ukraine) and (not Russian_Federation) and (not Germany)and (not Austria) then
@@ -7774,6 +8781,8 @@ menu.action(anti_laender_zeug, "ausgewählte länder in der lobby", {}, "sagt wi
 		util.toast(textline)
 	end
 end)
+
+menu.divider(anti_laender_zeug, "Players")
 
 timer6 = 1
 function kickhosttoken(pid)
@@ -7817,7 +8826,7 @@ players.on_join(kickhosttoken)
 players.on_join(playerjoinmassge)
 
 local vehicletablefotactions = {}
-local function sortKeys(a, b)
+function sortKeys(a, b)
 	local ta, tb = type(a), type(b)
  
  
@@ -8697,7 +9706,7 @@ function handlefireworklist()
 	for fireworktablelistexists as object do
 		if fireworkdrawline then
 			if DOES_ENTITY_EXIST(object) then
-				for i=1, 5 do
+				for i=1, 6 do
 					if menu.is_focused(fireworktablelist[object]) or menu.is_focused(fireworktablelist[object..i]) then
 						local myPos = players.get_position(players.user())
 						local pPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(object, 0, 0, 0)
@@ -9510,7 +10519,7 @@ function get_net_vehicles()
 	return net_vehicles
 end
 
-local function send_spawn_counter_msg(counterobj, counterped, counterveh)
+function send_spawn_counter_msg(counterobj, counterped, counterveh)
 	util.toast(string.format("%s\n%s: %i\n%s: %i\n%s: %i", 
 		"Spawned", 
 		"Peds",
@@ -9523,11 +10532,11 @@ local function send_spawn_counter_msg(counterobj, counterped, counterveh)
 	)
 end
 
-local function get_max_networked_vehicles()
+function get_max_networked_vehicles()
 	return GET_MAX_NUM_NETWORK_VEHICLES() > 128 and 128 or GET_MAX_NUM_NETWORK_VEHICLES()
 end
 
-local function send_is_networked_msg(counterobj, counterped, counterveh, network_status)
+function send_is_networked_msg(counterobj, counterped, counterveh, network_status)
 	if network_status == "is_networked" then
 		util.toast("The map/vehicle will be visible to other people.", TOAST_ALL)
 	elseif counterobj <= GET_MAX_NUM_NETWORK_OBJECTS() and counterped <= GET_MAX_NUM_NETWORK_PEDS() and counterveh <= get_max_networked_vehicles() then
@@ -10362,7 +11371,7 @@ function json_preprocess_vehicle(vehicle, data, initial_vehicle)
     SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, "LANCE")
 end
 
-local function preprocess_constructor_vehicle(veh, data, is_initial) 
+function preprocess_constructor_vehicle(veh, data, is_initial) 
     if data.headlights.headlights_type then 
         TOGGLE_VEHICLE_MOD(veh, 22, true)
     end
@@ -11241,5 +12250,6 @@ if players.get_name(players.user()) != "TheaterChaos20" then
 end
 loadtoggleoptionjobs()
 vehicle_spawn_list(antiactionvehicles)
+util.create_tick_handler(cmm.context_menu_draw_tick)
 
 util.keep_running()
