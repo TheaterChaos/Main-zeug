@@ -5,6 +5,10 @@ util.require_natives("2944b", "g")
 
 local SCRIPT_VERSION = "0.62"
 
+if players.user() == players.user_ped() then
+	util.toast("test")
+end
+
 
 --local currentVer
 --[[async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
