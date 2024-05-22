@@ -1,9 +1,13 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
-local response = false
-local localVer = 0.62
-local currentVer
-async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
+--local response = false
+
+
+local SCRIPT_VERSION = 0.62
+
+
+--local currentVer
+--[[async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
     currentVer = tonumber(output)
     response = true
     if localVer ~= currentVer then
@@ -34,14 +38,47 @@ async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinz
 				util.restart_script()
 			end)
 			async_http.dispatch()  
-			util.yield(1000)]]
+			util.yield(1000)
         end)
     end
-end, function() response = true end) 
+end, function() response = true end)
 async_http.dispatch()
 repeat 
     util.yield()
-until response
+until response]]
+
+local auto_update_config = {
+    source_url="https://raw.githubusercontent.com/TheaterChaos/Mein-zeug/main/1Meinzeug.lua",
+    script_relpath=SCRIPT_RELPATH,
+    project_url="https://github.com/TheaterChaos/Mein-zeug/tree/main",
+    branch="main",
+    dependencies={
+        "lib/ContextMenus/Tele To me.lua",
+        "lib/ContextMenus/boost.lua",
+        "lib/ContextMenus/cleartasks ped.lua",
+        "lib/ContextMenus/copyveh.lua",
+        "lib/ContextMenus/crash.lua",
+        "lib/ContextMenus/delete.lua",
+        "lib/ContextMenus/destroy.lua",
+        "lib/ContextMenus/disarm.lua",
+        "lib/ContextMenus/drive.lua",
+        "lib/ContextMenus/enter.lua",
+        "lib/ContextMenus/freeze unfreeze.lua",
+        "lib/ContextMenus/heal revive ped.lua",
+		"lib/ContextMenus/kick.lua",
+		"lib/ContextMenus/killped.lua",
+		"lib/ContextMenus/player_menu.lua",
+		"lib/ContextMenus/repait.lua",
+		"lib/ContextMenus/spawn.lua",
+		"lib/ContextMenus/teleport.lua",
+    },
+}
+
+util.ensure_package_is_installed('lua/auto-updater')
+local auto_updater = require('auto-updater')
+if auto_updater == true then
+    auto_updater.run_auto_update(auto_update_config)
+end
 
 
 --require ('resources/Alltabels')
@@ -3613,7 +3650,6 @@ showownerpickup = menu.get_value(ownertogglepickup)
 
 
 
-
 maxDistancenearentitys = 200
 onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switchsearchnearentitys, 
 showdebugginfosnearentitys, showarsignalnearentitys, 
@@ -3658,6 +3694,7 @@ local Entitymanagernearvehiclepickup = menu.list(Entitymanagernearvehicle, "Pick
 end, function(on_back)
 	enablednearpickups  = false
 end)
+
 
 searchnearentitysveh = menu.text_input(Entitymanagernearvehiclevehicles, "Search", {"Searchnearveh"}, "", function(input)
 	searchnearveh = input
@@ -7332,7 +7369,7 @@ end
 Entitymanagergravitygun = menu.list(Entitymanager, "Gravity gun", {}, "")
 
 
-menu.toggle_loop(Entitymanagergravitygun, "Gravity gun", {}, "Ziele auf sachen drauf um sie rum zu bewegen\nFahrezuge kann man auch mit schießen werfen\nmanche objekte können nicht weit weg von seinem spawn punkt die despawnen dann einfach", function()
+menu.toggle_loop(Entitymanagergravitygun, "Fake Gravity gun", {}, "Ziele auf sachen drauf um sie rum zu bewegen\nFahrezuge kann man auch mit schießen werfen\nmanche objekte können nicht weit weg von seinem spawn punkt die despawnen dann einfach", function()
 	local entpointer = memory.alloc()
 	local enitity = GET_ENTITY_PLAYER_IS_FREE_AIMING_AT(players.user(), entpointer)
 	local handle = memory.read_int(entpointer)
@@ -7378,7 +7415,7 @@ menu.toggle_loop(Entitymanagergravitygun, "Gravity gun", {}, "Ziele auf sachen d
 				SET_ENTITY_COLLISION(handle, false, true)
 			end]]
 			SET_ENTITY_AS_MISSION_ENTITY(handle, true)
-			SET_ENTITY_COORDS_NO_OFFSET(handle, coords.x, coords.y, coords.z, 0,0,0)
+			SET_ENTITY_COORDS_NO_OFFSET(handle, coords.x, coords.y, coords.z-0.5, 0,0,0)
 			if IS_PED_SHOOTING(players.user_ped()) and IS_ENTITY_A_VEHICLE(handle) then
 				shootthetarget = true
 				break
@@ -7402,7 +7439,7 @@ menu.toggle_loop(Entitymanagergravitygun, "Gravity gun", {}, "Ziele auf sachen d
 	end
 	if shootthetarget then
 		FREEZE_ENTITY_POSITION(handle, false)
-		local c1 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0.0, 5.0, 0.0)
+		local c1 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0.0, 0, 0.0)
 		local res = raycast_gameplay_cam(-1, 1000.0)
 		local dir = {}
 		local c2 = {}
@@ -7475,12 +7512,26 @@ local cmm = {
 local menus = {}
 local state = {}
 
+local pointx = memory.alloc()
+local pointy = memory.alloc()
+
 util.ensure_package_is_installed('lua/inspect')
 local inspect = require("inspect")
 
 local config = {
     debug_mode = false,
     context_menu_enabled=false,
+	target_snap_distance=0.09,
+    target_player_distance=1000,
+    target_vehicle_distance=1000,
+    target_ped_distance=500,
+    target_object_distance=100,
+	target_snap_distance={
+        player=0.09,
+        vehicle=0.07,
+        ped=0.07,
+        object=0.05,
+    },
     color = {
         options_circle={r=1, g=1, b=1, a=0.1},
         option_text={r=1, g=1, b=1, a=1},
@@ -7499,8 +7550,22 @@ local config = {
     option_wedge_padding=0.0,
     menu_release_delay=3,
     show_target_name=true,
+	show_target_owner=true,
     show_option_help=true,
-    menu_options_scripts_dir="lib/ContextMenus",
+    menu_options_scripts_dir="lib/SelfmadeContextstuff",
+	trace_flag_options = {
+        --{name="All", value=511, enabled=false},
+        {name="World", value=1, enabled=true},
+        {name="Vehicle", value=2, enabled=true},
+        {name="Ped", value=4, enabled=true},
+        {name="Ragdoll", value=8, enabled=true},
+        {name="Object", value=16, enabled=true},
+        {name="Pickup", value=32, enabled=true},
+        {name="Glass", value=64, enabled=false},
+        {name="River", value=128, enabled=false},
+        {name="Foliage", value=256, enabled=true},
+    },
+    trace_flag_value=0,
 }
 
 local CONTEXT_MENUS_DIR = filesystem.scripts_dir()..config.menu_options_scripts_dir
@@ -7539,13 +7604,12 @@ cmm.context_menu_draw_tick = function()
     --DISABLE_CONTROL_ACTION(2, 25, true) --aim
     --DISABLE_CONTROL_ACTION(2, 24, true) --attack
     --DISABLE_CONTROL_ACTION(2, 257, true) --attack2
-    directx.draw_circle(0.5, 0.5, 0.001, config.color.target_ball)
 
-    if not state.is_menu_open then
-        target = cmm.get_raycast_target()
-        state.current_target = target
+    if state.is_menu_open then
+		cmm.refresh_screen_pos(target)
     else
-        cmm.refresh_screen_pos(target)
+        state.current_target = cmm.find_nearest_target()
+		directx.draw_circle(0.5, 0.5, 0.001, config.color.target_ball)
     end
 
     if target ~= nil and target.pos ~= nil then
@@ -7562,9 +7626,75 @@ cmm.context_menu_draw_tick = function()
             if timetodestroypgone < 15 and timetodestroypgone > 1 then createphoneoutofding = true SET_CONTROL_VALUE_NEXT_FRAME(2, 27, 1.0) else createphoneoutofding = false end
             timetodestroypgone = 0
         end
+		if state.is_menu_open then
+            cmm.update_menu(target)
+        end
     end
 
     return true
+end
+
+cmm.get_distance_from_player = function(target)
+    local player_pos = GET_ENTITY_COORDS(players.user_ped(), 1)
+    if target.handle then
+        target.pos = GET_ENTITY_COORDS(target.handle, 1)
+        target.distance_from_player = VDIST(player_pos.x, player_pos.y, player_pos.z, target.pos.x, target.pos.y, target.pos.z)
+    elseif target.pos then
+        target.distance_from_player = VDIST(player_pos.x, player_pos.y, player_pos.z, target.pos.x, target.pos.y, target.pos.z)
+    end
+end
+
+local function check_handles_for_nearest_target(handles, result, max_distance, snap_distance)
+    if max_distance == nil then max_distance = 9999999 end
+    local player_pos = GET_ENTITY_COORDS(players.user_ped(), 1)
+    for _, handle in handles do
+		if players.user_ped() == handle or GET_VEHICLE_PED_IS_IN(players.user_ped(), true) == handle then
+			goto end
+		end
+        local entity_pos = GET_ENTITY_COORDS(handle, 1)
+        local distance_from_player = VDIST(player_pos.x, player_pos.y, player_pos.z, entity_pos.x, entity_pos.y, entity_pos.z)
+        if distance_from_player < max_distance
+            and GET_SCREEN_COORD_FROM_WORLD_COORD(entity_pos.x, entity_pos.y, entity_pos.z, pointx, pointy)
+        then
+            local screen_pos = { x=memory.read_float(pointx), y=memory.read_float(pointy)}
+            local dist = VDIST(0.5, 0.5, 0.0, screen_pos.x, screen_pos.y, 0.0)
+            if dist < snap_distance and dist < result.min_distance then
+                result.min_distance = dist
+                result.closest_target = handle
+            end
+        end
+		::end::
+    end
+end
+
+cmm.find_nearest_target = function()
+    local result = {
+        min_distance = 9999,
+        closest_target = nil
+    }
+
+    local player_handles = {}
+    for _, pid in players.list(false) do
+        table.insert(player_handles, GET_PLAYER_PED_SCRIPT_INDEX(pid))
+    end
+
+    check_handles_for_nearest_target(player_handles, result, config.target_player_distance, config.target_snap_distance.player)
+    check_handles_for_nearest_target(entities.get_all_vehicles_as_handles(), result, config.target_vehicle_distance, config.target_snap_distance.vehicle)
+    check_handles_for_nearest_target(entities.get_all_peds_as_handles(), result, config.target_ped_distance, config.target_snap_distance.ped)
+    check_handles_for_nearest_target(entities.get_all_objects_as_handles(), result, config.target_object_distance, config.target_snap_distance.object)
+
+    if result.closest_target then
+		if IS_ENTITY_A_PED(result.closest_target) then
+			if IS_PED_A_PLAYER(result.closest_target) then
+				if IS_PED_IN_ANY_VEHICLE(result.closest_target) then
+					result.closest_target = GET_VEHICLE_PED_IS_IN(result.closest_target, true)
+				end
+			end
+		end
+        return cmm.build_target_from_handle(result.closest_target)
+    end
+
+    return cmm.get_raycast_target()
 end
 
 ---
@@ -7573,7 +7703,7 @@ end
 
 cmm.add_context_menu_option = function(menu_option)
     cmm.default_menu_option(menu_option)
-    debug_log("Adding menu option "..menu_option.name or "Unknown")
+    --debug_log("Adding menu option "..menu_option.name or "Unknown")
     table.insert(cmm.menu_options, menu_option)
 end
 
@@ -7602,6 +7732,7 @@ cmm.refresh_menu_options_from_files = function(directory, path)
             if ext == "lua" or ext == "pluto" then
                 local menu_option = require(config.menu_options_scripts_dir..path.."/"..filename)
                 menu_option.filename = filename.."."..ext
+				menu_option.filepath = filepath
                 --debug_log("Loading menu option "..config.menu_options_scripts_dir..path.."/"..filename..": "..inspect(menu_option))
                 --cc.expand_chat_command_defaults(command, filename, path)
                 cmm.add_context_menu_option(menu_option)
@@ -7676,19 +7807,6 @@ local function get_offset_from_cam(dist)
     return offset
 end
 
-local TRACE_FLAG = {
-    MOVER = 1,
-    VEHICLE = 2,
-    PED = 4,
-    RAGDOLL = 8,
-    OBJECT = 16,
-    PICKUP = 32,
-    GLASS = 64,
-    RIVER = 128,
-    FOLIAGE = 256,
-    ALL = 511,
-}
-
 ---@class RaycastResult
 ---@field didHit boolean
 ---@field endCoords v3
@@ -7700,7 +7818,7 @@ local TRACE_FLAG = {
 ---@return RaycastResult
 function get_raycast_result(dist, flag)
     local result = {}
-    flag = flag or TRACE_FLAG.ALL
+    flag = flag or 511
     local didHit = memory.alloc(1)
     local endCoords = v3.new()
     local normal = v3.new()
@@ -7722,6 +7840,18 @@ function get_raycast_result(dist, flag)
     result.hitEntity = memory.read_int(hitEntity)
     return result
 end
+
+cmm.rebuild_trace_flag_value = function()
+    local flag = 0
+    for _, trace_flag_option in config.trace_flag_options do
+        if trace_flag_option.enabled then
+            local flag_value = trace_flag_option.value
+            flag = flag | flag_value
+        end
+    end
+    config.trace_flag_value = flag
+end
+cmm.rebuild_trace_flag_value()
 
 ---
 --- Polygon Utils
@@ -7860,31 +7990,12 @@ function get_controls_angle_magnitude()
     return angle, magnitude
 end
 
-function pushback_to_center(current_pos, target_pos)
-    local pushback_amount = 0.003
-    local pushback_deadzone = 0.005
-    local next_pos = {
-        x = current_pos.x - target_pos.x,
-        y = current_pos.y - target_pos.y,
-    }
-    --if current_pos > target_pos + pushback_deadzone then
-    --    return current_pos - pushback_amount
-    --elseif current_pos < target_pos - pushback_deadzone then
-    --    return current_pos + pushback_amount
-    --end
-
-
-    --local magnitude = math.sqrt(next_pos.x ^ 2 + next_pos.y ^ 2)
-    --local angle = math.deg(math.atan(next_pos.y, next_pos.x))
-    --
-    --return get_circle_coords(target_pos, 1 - magnitude, angle)
-
-    return current_pos
-end
-
 cmm.handle_inputs = function(target)
     DISABLE_CONTROL_ACTION(0, 1, false) --x
     DISABLE_CONTROL_ACTION(0, 2, false) --y
+    target.cursor_pos = nil
+    target.cursor_angle = nil
+    target.cursor_angle_magnitude = nil
     if IS_USING_KEYBOARD_AND_MOUSE(1) then
         SET_MOUSE_CURSOR_THIS_FRAME()
         SET_MOUSE_CURSOR_STYLE(1)
@@ -7894,18 +8005,32 @@ cmm.handle_inputs = function(target)
         }
     else
         local angle, magnitude = get_controls_angle_magnitude()
-        -- TODO: controller work
+        target.cursor_angle = angle
+        target.cursor_angle_magnitude = magnitude
     end
 end
 
 cmm.find_selected_option = function(target)
     for option_index, option in target.relevant_options do
-        if is_point_in_polygon(target.cursor_pos.x, target.cursor_pos.y, option.vertices) then
-            target.selected_option = option
-        elseif target.selected_option == option then
-            -- Leaving selection
-            target.selected_option.ticks_shown = nil
-            target.selected_option = nil
+        if target.cursor_pos then
+            if is_point_in_polygon(target.cursor_pos.x, target.cursor_pos.y, option.vertices) then
+                target.selected_option = option
+            elseif target.selected_option == option then
+                -- Leaving selection
+                target.selected_option.ticks_shown = nil
+                target.selected_option = nil
+            end
+        elseif target.cursor_angle then
+            local first_point_angle = option.point_angles[1]
+            local last_point_angle = option.point_angles[#option.point_angles]
+            local is_option_pointed_at = is_angle_between(target.cursor_angle, first_point_angle, last_point_angle)
+            if target.cursor_angle_magnitude > 0.2 then
+                if is_option_pointed_at and target.cursor_angle_magnitude > 0.8 then
+                    target.selected_option = option
+                elseif target.selected_option == option and (not is_option_pointed_at) then
+                    target.selected_option = nil
+                end
+            end
         end
     end
 end
@@ -7951,13 +8076,21 @@ end
 cmm.draw_options_menu = function(target)
     directx.draw_circle(target.menu_pos.x, target.menu_pos.y, config.menu_radius, config.color.options_circle)
 
-    if target.screen_pos.x > 0 and target.screen_pos.y > 0 then
-        directx.draw_line(0.5, 0.5, target.screen_pos.x, target.screen_pos.y, config.color.line_to_target)
-    end
+    --if target.screen_pos.x > 0 and target.screen_pos.y > 0 then
+    --    directx.draw_line(0.5, 0.5, target.screen_pos.x, target.screen_pos.y, config.color.line_to_target)
+    --end
     --directx.draw_circle(target.cursor_pos.x, target.cursor_pos.y, 0.001, config.color.crosshair)
 
     if config.show_target_name and target.name ~= nil then
-        cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y - (config.menu_radius * 1.9), target.name, 5, 0.5, config.color.option_text, true)
+        local label = target.type .. ": " .. target.name
+        if config.show_target_owner and target.owner and target.owner ~= target.name then
+            label = label .. " (" .. target.owner .. ")"
+        end
+        cmm.get_distance_from_player(target)
+        if target.distance_from_player then
+            label = label .. " [" .. roundDecimals(target.distance_from_player, 1) .. "m]"
+        end
+        cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y - (config.menu_radius * 1.9), label, 5, 0.5, config.color.option_text, true)
     end
 
     for option_index, option in target.relevant_options do
@@ -8017,13 +8150,20 @@ function get_target_type(new_target)
     return entity_type
 end
 
+function get_player_id_from_handle(handle)
+    for _, pid in players.list() do
+        local player_ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+        if player_ped == handle then
+            return pid
+        end
+    end
+end
+
 function get_target_name(target)
     if target.type == "PLAYER" then
-        for _, pid in players.list() do
-            local player_ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
-            if player_ped == target.handle then
-                return GET_PLAYER_NAME(pid)
-            end
+        local pid = get_player_id_from_handle(target.handle)
+        if pid then
+            return GET_PLAYER_NAME(pid)
         end
     elseif target.type == "VEHICLE" then
         return util.get_label_text(GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(target.model_hash))
@@ -8031,18 +8171,74 @@ function get_target_name(target)
     return target.model
 end
 
+function get_target_owner(target)
+    local owner_pid
+    if target.type == "PLAYER" then
+        owner_pid = get_player_id_from_handle(target.handle)
+    elseif target.handle and target.type ~= "WORLD_OBJECT" then
+        owner_pid = entities.get_owner(target.handle)
+    end
+    if owner_pid ~= nil and owner_pid > 0 then
+        return GET_PLAYER_NAME(owner_pid)
+    end
+end
+
 -- credit to the amazing aarroonn
 function get_model_hash(handle_or_ptr)
+    --debug_log("Loading model hash for "..tostring(handle_or_ptr))
+    if handle_or_ptr == nil or not (handle_or_ptr > 0) then return end
+    local pointer = handle_or_ptr
     if handle_or_ptr < 0xFFFFFF then
-        handle_or_ptr = entities.handle_to_pointer(handle_or_ptr)
+        pointer = entities.handle_to_pointer(handle_or_ptr)
     end
-    local model_info = memory.read_long(handle_or_ptr + 0x20)
+    if pointer == nil or not (pointer > 0) then return end
+    --util.log("Attempting to load model hash Handle: "..handle_or_ptr.." Pointer:"..pointer)
+    local status, model_info = pcall(memory.read_long, pointer + 0x20)
+    if not status then
+        util.toast("Warning: Access Violation for Handle: "..handle_or_ptr.." Pointer:"..pointer, TOAST_ALL)
+        return
+    end
+    --local model_info = memory.read_long(handle_or_ptr + 0x20)
     if model_info ~= 0 then
         return memory.read_int(model_info + 0x18)
     end
 end
 
-cmm.build_target = function(raycastResult)
+cmm.build_target_from_handle = function(handle)
+    local target = {}
+    target.handle = handle
+    target.model_hash = get_model_hash(target.handle)
+    if target.model_hash then
+        target.model = util.reverse_joaat(target.model_hash)
+    end
+    target.type = get_target_type(target)
+    target.name = get_target_name(target)
+	target.owner = get_target_owner(target)
+    target.pos = GET_ENTITY_COORDS(target.handle, true)
+
+    target.menu_pos = { x=0.5, y=0.5, }
+    cmm.build_relevant_options(target)
+    target.screen_pos = { x=0.5, y=0.5, }
+    cmm.refresh_screen_pos(target)
+
+    return target
+end
+
+cmm.build_target_from_position = function(position)
+    local target = {}
+    target.type = "COORDS"
+    target.pos = { x=roundDecimals(position.x, 1), y=roundDecimals(position.y, 1), z=roundDecimals(position.z, 1)}
+    target.name = target.pos.x..","..target.pos.y
+
+    target.menu_pos = { x=0.5, y=0.5, }
+    cmm.build_relevant_options(target)
+    target.screen_pos = { x=0.5, y=0.5, }
+    cmm.refresh_screen_pos(target)
+
+    return target
+end
+
+cmm.build_target_from_raycast_result = function(raycastResult)
     local target = {}
     local model_hash
     if raycastResult.didHit then
@@ -8059,40 +8255,25 @@ cmm.build_target = function(raycastResult)
     if raycastResult.didHit and model_hash ~= nil then
         -- Handle Entity Target
         if raycastResult.hitEntity ~= nil and DOES_ENTITY_EXIST(raycastResult.hitEntity) then
-            target.handle = raycastResult.hitEntity
-            target.model_hash = get_model_hash(target.handle)
-            if target.model_hash then
-                target.model = util.reverse_joaat(target.model_hash)
-            end
-            target.type = get_target_type(target)
-            target.name = get_target_name(target)
-            target.pos = GET_ENTITY_COORDS(target.handle, true)
+            target = cmm.build_target_from_handle(raycastResult.hitEntity)
         end
     elseif raycastResult.endCoords.x ~= 0 and raycastResult.endCoords.y ~= 0 then
-        -- Handle World-Coords Target
-        target.type = "COORDS"
-        target.pos = { x=raycastResult.endCoords.x, y=raycastResult.endCoords.y, z=raycastResult.endCoords.z}
-        target.name = "Coords: "..string.format("%.2f", target.pos.x)..","..string.format("%.2f", target.pos.y)
+        target = cmm.build_target_from_position(raycastResult.endCoords)
     end
-
-    target.menu_pos = { x=0.5, y=0.5, }
-    cmm.build_relevant_options(target)
-    target.screen_pos = { x=0.5, y=0.5, }
-    cmm.refresh_screen_pos(target)
     return target
 end
 
 --local flag = TRACE_FLAG.VEHICLE | TRACE_FLAG.OBJECT | TRACE_FLAG.MOVER | TRACE_FLAG.PED | TRACE_FLAG.GLASS
 
 cmm.get_raycast_target = function()
-    local flag = TRACE_FLAG.VEHICLE | TRACE_FLAG.OBJECT | TRACE_FLAG.PED | TRACE_FLAG.GLASS | TRACE_FLAG.MOVER
-    --local flag = TraceFlag.peds | TraceFlag.vehicles | TraceFlag.pedsSimpleCollision | TraceFlag.objects | TraceFlag.world
-    --local flag = TraceFlag.everything
-    local raycastResult = get_raycast_result(config.selection_distance, flag)
-    return cmm.build_target(raycastResult)
+    local raycastResult = get_raycast_result(config.selection_distance, config.trace_flag_value)
+    return cmm.build_target_from_raycast_result(raycastResult)
 end
 
 cmm.refresh_screen_pos = function(target)
+    if target.handle then
+        target.pos = GET_ENTITY_COORDS(target.handle, true)
+    end
     if target.pos and GET_SCREEN_COORD_FROM_WORLD_COORD(target.pos.x, target.pos.y, target.pos.z, pointx, pointy) then
         target.screen_pos = { x=memory.read_float(pointx), y=memory.read_float(pointy)}
     else
@@ -8115,16 +8296,24 @@ cmm.open_options_menu = function(target)
         -- Re-opening the menu while a trigger is executing cancels the trigger
         if target.selected_option then target.selected_option.ticks_shown = nil end
     end
-    cmm.update_menu(target)
 end
 
 cmm.close_options_menu = function(target)
     if state.is_menu_open then
-        cmm.update_menu(target)
         cmm.trigger_selected_action(target)
     end
     if not target.selected_option then
         state.is_menu_open = false
+    end
+end
+
+cmm.draw_pointer_line = function(target)
+    cmm.refresh_screen_pos(target)
+    local pos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0.0, 0.0, 0.0)
+    if target.screen_pos.x ~= 0 and target.screen_pos.y ~= 0
+            and GET_SCREEN_COORD_FROM_WORLD_COORD(pos.x, pos.y, pos.z, pointx, pointy) then
+        local player_pos = { x=memory.read_float(pointx), y=memory.read_float(pointy)}
+        directx.draw_line(player_pos.x, player_pos.y, target.screen_pos.x, target.screen_pos.y, config.color.target_bounding_box)
     end
 end
 
@@ -8141,6 +8330,7 @@ cmm.draw_selection = function(target)
         )
     else
         cmm.draw_bounding_box(target)
+		cmm.draw_pointer_line(target)
     end
 end
 
@@ -8191,15 +8381,62 @@ end
 ---
 
 menus.settings = menu.list(Entitymanagercontextmenu, "Settings", {}, "Configuration options for this script.")
-menus.settings:toggle("Show Target Name", {}, "Should the target model name be displayed above the menu", function(value)
-    config.show_target_name = value
-end, config.show_target_name)
-menus.settings:toggle("Show Option Help", {}, "Should the selected option help text be displayed below the menu", function(value)
-    config.show_option_help = value
-end, config.show_option_help)
-menus.settings:slider("Selection Distance", {"cmmselectiondistance"}, "The range that the context menu can find clickable targets", 1, 2000, config.selection_distance, 10, function(value)
+
+menus.settings:divider("Targeting")
+
+menus.settings_snap_distance = menus.settings:list("Snap Distance", {}, "How close your crosshair needs to be to an entity to snap to it")
+menus.settings_snap_distance:slider_float("Player Snap Distance", {"cmmsnapdistanceplayer"}, "How close your crosshair needs to be to a player to snap to it", 0, 100, math.floor(config.target_snap_distance.player * 100), 1, function(value)
+    config.target_snap_distance.player = value / 100
+end)
+menus.settings_snap_distance:slider_float("Vehicle Snap Distance", {"cmmsnapdistancevehicle"}, "How close your crosshair needs to be to a vehicle to snap to it", 0, 100, math.floor(config.target_snap_distance.vehicle * 100), 1, function(value)
+    config.target_snap_distance.vehicle = value / 100
+end)
+menus.settings_snap_distance:slider_float("Ped Snap Distance", {"cmmsnapdistanceped"}, "How close your crosshair needs to be to a ped to snap to it", 0, 100, math.floor(config.target_snap_distance.ped * 100), 1, function(value)
+    config.target_snap_distance.ped = value / 100
+end)
+menus.settings_snap_distance:slider_float("Object Snap Distance", {"cmmsnapdistanceobject"}, "How close your crosshair needs to be to a object to snap to it", 0, 100, math.floor(config.target_snap_distance.object * 100), 1, function(value)
+    config.target_snap_distance.object = value / 100
+end)
+
+menus.settings_target_distances = menus.settings:list("Target Distances", {}, "How far away an entity can be and still be targeted.")
+menus.settings_target_distances:slider("Target Player Distance", {"cmmtargetplayerdistance"}, "The range that other players are targetable", 1, 5000, config.target_player_distance, 10, function(value)
+    config.target_player_distance = value
+end)
+menus.settings_target_distances:slider("Target Vehicle Distance", {"cmmtargetvehicledistance"}, "The range that vehicles are targetable", 1, 5000, config.target_vehicle_distance, 10, function(value)
+    config.target_vehicle_distance = value
+end)
+menus.settings_target_distances:slider("Target Ped Distance", {"cmmtargetpeddistance"}, "The range that peds are targetable", 1, 5000, config.target_ped_distance, 10, function(value)
+    config.target_ped_distance = value
+end)
+menus.settings_target_distances:slider("Target Object Distance", {"cmmtargetobjectdistance"}, "The range that objects are targetable", 1, 5000, config.target_object_distance, 10, function(value)
+    config.target_object_distance = value
+end)
+menus.settings_target_distances:slider("Target World Distance", {"cmmtargetworlddistance"}, "The range that world coords are targetable", 1, 600, config.selection_distance, 10, function(value)
     config.selection_distance = value
 end)
+
+menus.settings_trace_flags = menus.settings:list("Trace Flags", {}, "Set what kind of entities you can target")
+for _, trace_flag_option in config.trace_flag_options do
+    menus.settings_trace_flags:toggle(trace_flag_option.name, {}, "", function(value)
+        trace_flag_option.enabled = value
+        cmm.rebuild_trace_flag_value()
+    end, trace_flag_option.enabled)
+end
+
+menus.settings:divider("Display")
+
+menus.settings_show_target_texts = menus.settings:list("Show Target Texts", {}, "Show various text options on target")
+menus.settings_show_target_texts:toggle("Show Target Name", {}, "Should the target model name be displayed above the menu", function(value)
+    config.show_target_name = value
+end, config.show_target_name)
+menus.settings_show_target_texts:toggle("Show Target Owner", {}, "Should the player that owns the object be displayed above the menu in paranthesis", function(value)
+    config.show_target_owner = value
+end, config.show_target_owner)
+menus.settings_show_target_texts:toggle("Show Option Help", {}, "Should the selected option help text be displayed below the menu", function(value)
+    config.show_option_help = value
+end, config.show_option_help)
+
+
 menus.settings:slider("Target Ball Size", {"cmmtargetballsize"}, "The size of the world target cursor ball", 5, 140, config.target_ball_size * 100, 5, function(value)
     config.target_ball_size = value / 100
 end)
@@ -12091,21 +12328,14 @@ menu.action(vehicle, "sofort anhalten", {}, "", function()
 end)
 
 menu.action(vehicle,"Auto Reparieren", {}, "", function()
-		vehicle = entities.get_user_vehicle_as_handle(players.user(), true)
-		currentSpeed = GET_ENTITY_SPEED(vehicle)
-		seatplayer = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
-		pid = GET_NEAREST_PLAYER_TO_ENTITY(seatplayer)
-		playername = players.get_name(pid)
-		if seatplayer == players.user_ped() or seatplayer == 0 then
-			SET_VEHICLE_FIXED(vehicle)
-			SET_VEHICLE_DIRT_LEVEL(vehicle, 0)
-			--SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-			if currentSpeed >= 80 then
-				SET_VEHICLE_FORWARD_SPEED(vehicle, currentSpeed)
-			end
-		else
-			menu.trigger_commands("repairveh".. playername)
-		end
+	vehicle = entities.get_user_vehicle_as_handle(true)
+	currentSpeed = GET_ENTITY_SPEED(vehicle)
+	seatplayer = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
+	menu.trigger_commands("fixvehicle")
+	if currentSpeed >= 80 and seatplayer == players.user_ped() then
+		SET_VEHICLE_FORWARD_SPEED(vehicle, currentSpeed)
+	end
+
 end)
 
 timer2 = 0
