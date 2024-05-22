@@ -68,7 +68,7 @@ local auto_update_config = {
 		"lib/SelfmadeContextstuff/kick.lua",
 		"lib/SelfmadeContextstuff/killped.lua",
 		"lib/SelfmadeContextstuff/player_menu.lua",
-		"lib/SelfmadeContextstuff/repait.lua",
+		"lib/SelfmadeContextstuff/repair.lua",
 		"lib/SelfmadeContextstuff/spawn.lua",
 		"lib/SelfmadeContextstuff/teleport.lua",
     },
@@ -12690,9 +12690,14 @@ end)
 
 local settings = menu.list(menu.my_root(), "Settings", {}, "", function(); end)
 	
-menu.action(settings, "update suchen", {}, "", function()
-	util.restart_script()
-end)
+if auto_update_config and auto_updater then
+	menu.action(settings, "update suchen", {}, "", function()
+		auto_update_config.check_interval = 0
+		if auto_updater.run_auto_update(auto_update_config) then
+			util.toast("No updates found")
+		end
+	end)
+end
 
 local entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
 local enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
