@@ -6,7 +6,7 @@ util.require_natives("2944b", "g")
 local SCRIPT_VERSION = "0.63"
 
 local auto_update_config = {
-    source_url="https://raw.githubusercontent.com/TheaterChaos/Mein-zeug/main/1Meinzeug.lua",
+    source_url="https://raw.githubusercontent.com/TheaterChaos/Mein-zeug/main/Selfmade.lua",
     script_relpath=SCRIPT_RELPATH,
     project_url="https://github.com/TheaterChaos/Mein-zeug",
     branch="main",
