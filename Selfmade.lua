@@ -3,7 +3,7 @@ util.require_natives("2944b", "g")
 --local response = false
 
 
-local SCRIPT_VERSION = "0.64"
+local SCRIPT_VERSION = "0.63"
 
 
 local auto_update_config = {
@@ -12768,6 +12768,15 @@ if auto_update_config and auto_updater then
 		end
 	end)
 end
+local settingsversiontab = menu.list(settings, "Versions", {}, "")
+menu.readonly(settingsversiontab, "Version: "..SCRIPT_VERSION)
+newversionaction = menu.action(settingsversiontab, "New Version: ", {}, "Click to load newest version", function()
+	async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Selfmade.lua", function(output)
+		output = output:match('SCRIPT_VERSION = "([^ ]+)"')
+		menu.set_menu_name(newversionaction, "New Version: ".. output)
+	end)
+	async_http.dispatch()
+end)
 
 local entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
 local enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
