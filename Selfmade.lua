@@ -2,8 +2,11 @@ util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 --local response = false
 
-
 local SCRIPT_VERSION = "0.63"
+
+if SCRIPT_VERSION > "0.5" then
+util.toast("test")
+end	
 
 local auto_update_config = {
     source_url="https://raw.githubusercontent.com/TheaterChaos/Mein-zeug/main/Selfmade.lua",
