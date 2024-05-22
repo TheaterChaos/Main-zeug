@@ -3,53 +3,7 @@ util.require_natives("2944b", "g")
 --local response = false
 
 
-local SCRIPT_VERSION = "0.62"
-
-if players.user() == players.user_ped() then
-	util.toast("test")
-end
-
-
---local currentVer
---[[async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Meinzeugversion", function(output)
-    currentVer = tonumber(output)
-    response = true
-    if localVer ~= currentVer then
-        util.toast("Neue version ist verfügbar lad sie dir mit Update lua runter. Deine Version: "..localVer.." Neue Version: ".. currentVer )
-        menu.action(menu.my_root(), "Update Lua", {}, "", function()
-            async_http.init('raw.githubusercontent.com','/TheaterChaos/Mein-zeug/main/1Meinzeug.lua',function(a)
-                local err = select(2,load(a))
-                if err then
-                    util.toast("Script failed to download. Please try again later. If this continues to happen then manually update via github.")
-                return end
-                local f = io.open(filesystem.scripts_dir()..SCRIPT_RELPATH, "wb")
-                f:write(a)
-                f:close()
-				util.restart_script()
-			end)
-			async_http.dispatch()
-			util.yield(1000)
-
-			--[[async_http.init('raw.githubusercontent.com','/TheaterChaos/Mein-zeug/main/Alltabels.lua',function(b)
-				local err = select(2,load(b))
-				if err then
-					util.toast("ALLtabels.lua failed to download. Please try again later. If this continues to happen then manually update via github.")
-				return end
-				local f = io.open(filesystem.resources_dir() .. 'alltabels.lua', "wb")
-				f:write(b)
-				f:close()
-				util.toast("Successfully updated Selfmade. Restarting Script... :)")
-				util.restart_script()
-			end)
-			async_http.dispatch()  
-			util.yield(1000)
-        end)
-    end
-end, function() response = true end)
-async_http.dispatch()
-repeat 
-    util.yield()
-until response]]
+local SCRIPT_VERSION = "0.63"
 
 local auto_update_config = {
     source_url="https://raw.githubusercontent.com/TheaterChaos/Mein-zeug/main/1Meinzeug.lua",
@@ -2535,8 +2489,8 @@ menu.toggle(Entitymanageresp, "Deaktivieren andere ESP", {}, "deactiviere andere
 end)
 
 local enabledveh, showonlymissionveh = false, false
-local xValueveh, yValueveh, scaleValueveh = 0, 0, 35
-local colorveh = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
+xValueveh, yValueveh, scaleValueveh = 0, 0, 35
+colorveh = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 local maxDistanceveh = 700
 local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, showinvehveh, showmissionveh, showownerveh, showentitygroupveh, 
 showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true, true, true, true, false, false, false, false, true, false, false, true, true
@@ -6393,7 +6347,7 @@ menu.toggle_loop(Self, "anti idle cam", {}, "", function()
 	end
 end)
 
-local auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "kannst sagen was nicht aus gemacht werden muss\nmach am besste nichts an oder aus wärend du sachen aus machen lässt")
+auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "kannst sagen was nicht aus gemacht werden muss\nmach am besste nichts an oder aus wärend du sachen aus machen lässt")
 
 local commandreftableforjob = {}
 
@@ -7525,15 +7479,21 @@ local inspect = require("inspect")
 local config = {
     debug_mode = false,
     context_menu_enabled=false,
+	only_enable_when_disarmed=true,
+	use_aarons_model_hash=true,
+    wrap_read_model_with_pcall=false,
+	target_switch_ped_veh=false,
+	target_ignore_player_veh=true,
+	show_target_player_withtags=true,
 	target_snap_distance=0.09,
     target_player_distance=1000,
     target_vehicle_distance=1000,
     target_ped_distance=500,
-    target_object_distance=100,
+    target_object_distance=50,
 	target_snap_distance={
-        player=0.09,
-        vehicle=0.07,
-        ped=0.07,
+        player=0.13,
+        vehicle=0.10,
+        ped=0.09,
         object=0.05,
     },
     color = {
@@ -7542,12 +7502,13 @@ local config = {
         help_text={r=0.8, g=0.8, b=0.8, a=1},
         option_wedge={r=1, g=1, b=1, a=0.3},
         selected_option_wedge={r=1, g=0, b=1, a=0.3},
+        crosshair={r=1,g=1,b=1,a=0.8},
         target_ball={r=1,g=0,b=1,a=0.8},
         target_bounding_box={r=1,g=0,b=1,a=1},
         line_to_target={ r=1, g=1, b=1, a=0.5},
     },
     target_ball_size=0.4,
-    selection_distance=1000.0,
+    selection_distance=600.0,
     menu_radius=0.1,
     option_label_distance=0.6,
     option_wedge_deadzone=0.2,
@@ -7594,6 +7555,11 @@ cmm.draw_bounding_box = function(target, colour)
     draw_bounding_box_with_dimensions(target.handle, colour, minimum_vec, maximum_vec)
 end
 
+cmm.is_menu_available = function()
+    if not config.context_menu_enabled then return false end
+    return true
+end
+
 ---
 --- Main Menu Draw Tick
 ---
@@ -7602,7 +7568,7 @@ local timetodestroypgone = 0
 local createphoneoutofding = false
 
 cmm.context_menu_draw_tick = function()
-    if not config.context_menu_enabled then return true end
+    if not cmm.is_menu_available() then return true end
     local target = state.current_target
 
     --DISABLE_CONTROL_ACTION(2, 25, true) --aim
@@ -7648,33 +7614,76 @@ cmm.get_distance_from_player = function(target)
     end
 end
 
-local function check_handles_for_nearest_target(handles, result, max_distance, snap_distance)
-    if max_distance == nil then max_distance = 9999999 end
+function expand_target_screen_pos(target)
     local player_pos = GET_ENTITY_COORDS(players.user_ped(), 1)
+    target.distance_from_player = VDIST(
+        player_pos.x, player_pos.y, player_pos.z,
+        target.position.x, target.position.y, target.position.z
+    )
+    if GET_SCREEN_COORD_FROM_WORLD_COORD(target.position.x, target.position.y, target.position.z, pointx, pointy) then
+        target.screen_pos = { x=memory.read_float(pointx), y=memory.read_float(pointy)}
+        target.screen_distance = VDIST(0.5, 0.5, 0.0, target.screen_pos.x, target.screen_pos.y, 0.0)
+    end
+end
+
+function build_handle_target(handle)
+    local target = {
+        handle=handle,
+        position=GET_ENTITY_COORDS(handle),
+    }
+    expand_target_screen_pos(target)
+    return target
+end
+
+function check_handles_for_nearest_target(handles, result, max_distance, snap_distance)
+    if max_distance == nil then max_distance = 9999999 end
     for _, handle in handles do
-		if players.user_ped() == handle or GET_VEHICLE_PED_IS_IN(players.user_ped(), true) == handle then
-			goto end
-		end
-        local entity_pos = GET_ENTITY_COORDS(handle, 1)
-        local distance_from_player = VDIST(player_pos.x, player_pos.y, player_pos.z, entity_pos.x, entity_pos.y, entity_pos.z)
-        if distance_from_player < max_distance
-            and GET_SCREEN_COORD_FROM_WORLD_COORD(entity_pos.x, entity_pos.y, entity_pos.z, pointx, pointy)
-        then
-            local screen_pos = { x=memory.read_float(pointx), y=memory.read_float(pointy)}
-            local dist = VDIST(0.5, 0.5, 0.0, screen_pos.x, screen_pos.y, 0.0)
-            if dist < snap_distance and dist < result.min_distance then
-                result.min_distance = dist
-                result.closest_target = handle
+        if handle ~= players.user_ped() and (handle ~= GET_VEHICLE_PED_IS_IN(players.user_ped(), true)) then
+            local target = build_handle_target(handle)
+            if target.distance_from_player < max_distance
+                and target.screen_distance ~= nil
+                and target.screen_distance < snap_distance
+                and (
+                    result.closest_target.screen_distance == nil
+                    or target.screen_distance < result.closest_target.screen_distance
+                )
+            then
+                result.closest_target = target
             end
         end
-		::end::
+    end
+end
+
+function build_pointer_target(pointer)
+    local target = {
+        pointer=pointer,
+        position=entities.get_position(pointer),
+    }
+    expand_target_screen_pos(target)
+    return target
+end
+
+local function check_pointers_for_closest_target(pointers, result, max_distance, max_screen_distance)
+    local player_pointer = entities.handle_to_pointer(players.user_ped())
+	local player_vehicle_pointer = entities.handle_to_pointer(GET_VEHICLE_PED_IS_IN(players.user_ped(), false))
+    if result.closest_target.screen_distance == nil then result.closest_target.screen_distance = 9999999 end
+    for _, pointer in pointers do
+        local target = build_pointer_target(pointer)
+        if pointer ~= player_pointer and pointer ~= player_vehicle_pointer
+            and target.distance_from_player < max_distance
+            and target.screen_distance ~= nil
+            and target.screen_distance < max_screen_distance
+            and target.screen_distance < result.closest_target.screen_distance
+        then
+            result.closest_target = target
+        end
     end
 end
 
 cmm.find_nearest_target = function()
     local result = {
         min_distance = 9999,
-        closest_target = nil
+        closest_target = {}
     }
 
     local player_handles = {}
@@ -7683,19 +7692,35 @@ cmm.find_nearest_target = function()
     end
 
     check_handles_for_nearest_target(player_handles, result, config.target_player_distance, config.target_snap_distance.player)
-    check_handles_for_nearest_target(entities.get_all_vehicles_as_handles(), result, config.target_vehicle_distance, config.target_snap_distance.vehicle)
-    check_handles_for_nearest_target(entities.get_all_peds_as_handles(), result, config.target_ped_distance, config.target_snap_distance.ped)
-    check_handles_for_nearest_target(entities.get_all_objects_as_handles(), result, config.target_object_distance, config.target_snap_distance.object)
+    --check_handles_for_nearest_target(entities.get_all_vehicles_as_handles(), result, config.target_vehicle_distance, config.target_snap_distance.vehicle)
+    --check_handles_for_nearest_target(entities.get_all_peds_as_handles(), result, config.target_ped_distance, config.target_snap_distance.ped)
+    --check_handles_for_nearest_target(entities.get_all_objects_as_handles(), result, config.target_object_distance, config.target_snap_distance.object)
 
-    if result.closest_target then
-		if IS_ENTITY_A_PED(result.closest_target) then
-			if IS_PED_A_PLAYER(result.closest_target) then
-				if IS_PED_IN_ANY_VEHICLE(result.closest_target) then
-					result.closest_target = GET_VEHICLE_PED_IS_IN(result.closest_target, true)
+    check_pointers_for_closest_target(entities.get_all_vehicles_as_pointers(), result, config.target_vehicle_distance, config.target_snap_distance.vehicle)
+    check_pointers_for_closest_target(entities.get_all_peds_as_pointers(), result, config.target_ped_distance, config.target_snap_distance.ped)
+    --check_pointers_for_closest_target(entities.get_all_objects_as_pointers(), result, config.target_object_distance, config.target_snap_distance.object)
+
+    if result.closest_target.pointer then
+        result.closest_target.handle = entities.pointer_to_handle(result.closest_target.pointer)
+    end
+    if result.closest_target.handle then
+		if IS_ENTITY_A_PED(result.closest_target.handle) then
+			if IS_PED_A_PLAYER(result.closest_target.handle) then
+				if not config.target_ignore_player_veh then
+					if IS_PED_IN_ANY_VEHICLE(result.closest_target.handle) then
+						result.closest_target.handle = GET_VEHICLE_PED_IS_IN(result.closest_target.handle, false)
+					end
+				end
+			else
+				if not config.target_switch_ped_veh then
+					if IS_PED_IN_ANY_VEHICLE(result.closest_target.handle) then
+						result.closest_target.handle = GET_VEHICLE_PED_IS_IN(result.closest_target.handle, false)
+					end
 				end
 			end
 		end
-        return cmm.build_target_from_handle(result.closest_target)
+        cmm.expand_target_model(result.closest_target)
+        return result.closest_target
     end
 
     return cmm.get_raycast_target()
@@ -8167,7 +8192,7 @@ function get_target_name(target)
     if target.type == "PLAYER" then
         local pid = get_player_id_from_handle(target.handle)
         if pid then
-            return GET_PLAYER_NAME(pid)
+           	return GET_PLAYER_NAME(pid)
         end
     elseif target.type == "VEHICLE" then
         return util.get_label_text(GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(target.model_hash))
@@ -8208,23 +8233,29 @@ function get_model_hash(handle_or_ptr)
     end
 end
 
-cmm.build_target_from_handle = function(handle)
+cmm.build_target_from_pointer = function(handle)
+    if not handle then return end
     local target = {}
-    target.handle = handle
-    target.model_hash = get_model_hash(target.handle)
+    return target
+end
+
+cmm.expand_target_model = function(target)
+    target.model_hash = entities.get_model_hash(target.handle)
     if target.model_hash then
         target.model = util.reverse_joaat(target.model_hash)
     end
     target.type = get_target_type(target)
     target.name = get_target_name(target)
-	target.owner = get_target_owner(target)
+    target.owner = get_target_owner(target)
     target.pos = GET_ENTITY_COORDS(target.handle, true)
+    cmm.expand_target_position(target)
+end
 
-    target.menu_pos = { x=0.5, y=0.5, }
-    cmm.build_relevant_options(target)
-    target.screen_pos = { x=0.5, y=0.5, }
-    cmm.refresh_screen_pos(target)
-
+cmm.build_target_from_handle = function(handle)
+    if not handle then return end
+    local target = {}
+    target.handle = handle
+    cmm.expand_target_model(target)
     return target
 end
 
@@ -8233,20 +8264,33 @@ cmm.build_target_from_position = function(position)
     target.type = "COORDS"
     target.pos = { x=roundDecimals(position.x, 1), y=roundDecimals(position.y, 1), z=roundDecimals(position.z, 1)}
     target.name = target.pos.x..","..target.pos.y
+    cmm.expand_target_position(target)
+    return target
+end
 
+cmm.expand_target_position = function(target)
     target.menu_pos = { x=0.5, y=0.5, }
     cmm.build_relevant_options(target)
     target.screen_pos = { x=0.5, y=0.5, }
     cmm.refresh_screen_pos(target)
-
-    return target
 end
 
 cmm.build_target_from_raycast_result = function(raycastResult)
     local target = {}
     local model_hash
     if raycastResult.didHit then
-        model_hash = get_model_hash(raycastResult.hitEntity)
+        --util.log("Loading model hash from raycast: "..raycastResult.hitEntity)
+        -- Aaron's model hash function works for WORLD OBJECTs that dont normally return an entity type
+        -- but sometimes causes memory ACCESS_VIOLATION errors
+        if config.use_aarons_model_hash then
+            model_hash = get_model_hash(raycastResult.hitEntity)
+        else
+            local entity_type = ENTITY.GET_ENTITY_TYPE(raycastResult.hitEntity)
+            util.log("Loading entity type "..entity_type)
+            if entity_type > 0 then
+                model_hash = entities.get_model_hash(raycastResult.hitEntity)
+            end
+        end
     end
 
     if config.debug_mode then
@@ -8270,11 +8314,22 @@ end
 --local flag = TRACE_FLAG.VEHICLE | TRACE_FLAG.OBJECT | TRACE_FLAG.MOVER | TRACE_FLAG.PED | TRACE_FLAG.GLASS
 
 cmm.get_raycast_target = function()
-    local raycastResult = get_raycast_result(config.selection_distance, config.trace_flag_value)
-    return cmm.build_target_from_raycast_result(raycastResult)
+    local raycastResult
+
+    -- Raycast for Entity Objects
+    raycastResult = get_raycast_result(config.selection_distance, config.trace_flag_value)
+    local target = cmm.build_target_from_raycast_result(raycastResult)
+    if target then return target end
+
+    -- Raycast for World Coords
+    raycastResult = get_raycast_result(config.selection_distance, constants.TRACE_FLAG.ALL)
+    if raycastResult.endCoords.x ~= 0 and raycastResult.endCoords.y ~= 0 then
+        return cmm.build_target_from_position(raycastResult.endCoords)
+    end
 end
 
 cmm.refresh_screen_pos = function(target)
+    if not target then return end
     if target.handle then
         target.pos = GET_ENTITY_COORDS(target.handle, true)
     end
@@ -8353,9 +8408,12 @@ cmm.build_option_wedge_points = function(target)
     end
 end
 
-menu.toggle(Entitymanagercontextmenu, "Context Menu enabled", {}, "Right-click on in-game objects to open context menu.", function(value)
-    config.context_menu_enabled = value
-end, config.context_menu_enabled)
+menu.toggle_loop(Entitymanagercontextmenu, "Context Menu enabled", {}, "Right-click on in-game objects to open context menu.", function()
+    config.context_menu_enabled = true
+    cmm.context_menu_draw_tick()
+end, function()
+    config.context_menu_enabled = false
+end)
 
 ---
 --- Menu Options
@@ -8387,6 +8445,13 @@ end
 menus.settings = menu.list(Entitymanagercontextmenu, "Settings", {}, "Configuration options for this script.")
 
 menus.settings:divider("Targeting")
+
+menus.settings:toggle("Switch to NPC in veh possible", {}, "Makes it possible to change to npc in veh", function(value)
+    config.target_switch_ped_veh = value
+end, config.target_switch_ped_veh)
+menus.settings:toggle("Ignore player vehicle", {}, "ignores the players vehicle so the player is on focus", function(value)
+    config.target_ignore_player_veh = value
+end, config.target_ignore_player_veh)
 
 menus.settings_snap_distance = menus.settings:list("Snap Distance", {}, "How close your crosshair needs to be to an entity to snap to it")
 menus.settings_snap_distance:slider_float("Player Snap Distance", {"cmmsnapdistanceplayer"}, "How close your crosshair needs to be to a player to snap to it", 0, 100, math.floor(config.target_snap_distance.player * 100), 1, function(value)
@@ -12915,6 +12980,6 @@ end)]]
 --end
 loadtoggleoptionjobs()
 vehicle_spawn_list(antiactionvehicles)
-util.create_tick_handler(cmm.context_menu_draw_tick)
+--util.create_tick_handler(cmm.context_menu_draw_tick)
 
 util.keep_running()
