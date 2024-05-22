@@ -12768,15 +12768,27 @@ if auto_update_config and auto_updater then
 		end
 	end)
 end
-local settingsversiontab = menu.list(settings, "Versions", {}, "")
-menu.readonly(settingsversiontab, "Version: "..SCRIPT_VERSION)
-newversionaction = menu.action(settingsversiontab, "New Version: ", {}, "Click to load newest version", function()
+
+function loadnewversion()
+	if not loadingnewversion then
+		return false
+	end
 	async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Selfmade.lua", function(output)
 		output = output:match('SCRIPT_VERSION = "([^ ]+)"')
 		menu.set_menu_name(newversionaction, "New Version: ".. output)
 	end)
 	async_http.dispatch()
+	util.yield(3000)
+end
+
+local settingsversiontab = menu.list(settings, "Versions", {}, "", function(on_click)
+	loadingnewversion = true
+	util.create_tick_handler(loadnewversion)
+end, function(on_back)
+	loadingnewversion = false
 end)
+menu.readonly(settingsversiontab, "Version: "..SCRIPT_VERSION)
+newversionaction = menu.readonly(settingsversiontab, "New Version: ")
 
 local entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
 local enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
