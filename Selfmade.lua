@@ -3,7 +3,7 @@ util.require_natives("2944b", "g")
 --local response = false
 
 
-local SCRIPT_VERSION = "0.63"
+local SCRIPT_VERSION = "0.64"
 
 
 local auto_update_config = {
@@ -14,6 +14,7 @@ local auto_update_config = {
     dependencies={
         "lib/SelfmadeContextstuff/Tele To me.lua",
         "lib/SelfmadeContextstuff/boost.lua",
+		"lib/SelfmadeContextstuff/clean.lua",
         "lib/SelfmadeContextstuff/cleartasks ped.lua",
         "lib/SelfmadeContextstuff/copyveh.lua",
         "lib/SelfmadeContextstuff/crash.lua",
