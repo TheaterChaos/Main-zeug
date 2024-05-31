@@ -524,64 +524,6 @@ draw_bounding_box_with_dimensions = function(entity, colour, minimum_vec, maximu
     )
 end
 
-function drawboxatentity(entity)
-	if IS_ENTITY_A_PED(entity) then
-		ePosori = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, 0, 0, 0)
-		pedhight = GET_ENTITY_HEIGHT(entity, ePosori.x, ePosori.y, ePosori.z, true,true)
-		if IS_PED_IN_ANY_VEHICLE(entity) then
-			postocode = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, 0, 0, +1)
-			pedhight = postocode.z
-		end
-		--rechts von ped
-		ePos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, -0.98)
-		ePos1 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, +1)
-		ePos2 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, +1)
-		ePos3 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, +1)
-		ePos4 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, +1)
-		ePos5 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, -0.98)
-		ePos6 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, -0.98)
-		ePos7 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, -0.98)
-		--links von ped
-		ePos8 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, -0.98)
-		ePos9 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, +1)
-		ePos10 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, +1)
-		ePos11 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, +1)
-		ePos12 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, +1)
-		ePos13 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, -0.98)
-		ePos14 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, -0.98)
-		ePos15 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, -0.98)
-		--hinten linien
-		ePos16 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, -0.98)
-		ePos17 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, -0.98)
-		ePos18 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, -0.3, +1)
-		ePos19 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, -0.3, +1)
-		--vordere linien
-		ePos20 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, -0.98)
-		ePos21 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, -0.98)
-		ePos22 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -0.3, +0.3, +1)
-		ePos23 = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, +0.3, +0.3, +1)
-
-		--util.toast("test")
-		DRAW_LINE(ePos.x, ePos.y, ePos.z, ePos1.x, ePos1.y, pedhight, 255, 0, 0, 255)
-		DRAW_LINE(ePos2.x, ePos2.y, pedhight, ePos3.x, ePos3.y, pedhight, 255, 0, 0, 255)
-
-		DRAW_LINE(ePos4.x, ePos4.y, pedhight, ePos5.x, ePos5.y, ePos5.z, 255, 0, 0, 255)
-		DRAW_LINE(ePos6.x, ePos6.y, ePos6.z, ePos7.x, ePos7.y, ePos7.z, 255, 0, 0, 255)
-
-		DRAW_LINE(ePos8.x, ePos8.y, ePos8.z, ePos9.x, ePos9.y, pedhight, 255, 0, 0, 255)
-		DRAW_LINE(ePos10.x, ePos10.y, pedhight, ePos11.x, ePos11.y, pedhight, 255, 0, 0, 255)
-
-		DRAW_LINE(ePos12.x, ePos12.y, pedhight, ePos13.x, ePos13.y, ePos13.z, 255, 0, 0, 255)
-		DRAW_LINE(ePos14.x, ePos14.y, ePos14.z, ePos15.x, ePos15.y, ePos15.z, 255, 0, 0, 255)
-
-		DRAW_LINE(ePos16.x, ePos16.y, ePos16.z, ePos17.x, ePos17.y, ePos17.z, 255, 0, 0, 255)
-		DRAW_LINE(ePos18.x, ePos18.y, pedhight, ePos19.x, ePos19.y, pedhight, 255, 0, 0, 255)
-		
-		DRAW_LINE(ePos20.x, ePos20.y, ePos20.z, ePos21.x, ePos21.y, ePos21.z, 255, 0, 0, 255)
-		DRAW_LINE(ePos22.x, ePos22.y, pedhight, ePos23.x, ePos23.y, pedhight, 255, 0, 0, 255)
-	end
-end
-
 local menus = {}
 
 function get_friend_count()
@@ -982,13 +924,6 @@ getseatname = {
 	[9]= "IDK Seat",
 	[10]= "IDK Seat"}
 
-local parenttableforcustom = {
-	actionlistcustomselection,
-	actionlistcustomselectionteleport,
-	actionlistcustomselectionfriendly,
-	actionlistcustomselectiontrolling,
-	actionlistcustomselectionkickcrash}
-
 function send_script_event(first_arg, receiver, args)
 	table.insert(args, 1, first_arg)
 	util.trigger_script_event(1 << receiver, args)
@@ -1005,7 +940,7 @@ function roundDecimals(float, decimals)
 	return math.floor(float * decimals) / decimals
 end
 
-local keyLookupTable = {
+keyLookupTable = {
     ['VK_LBUTTON']              =  0x01,	--Left mouse button
     ['VK_RBUTTON']              =  0x02,	--Right mouse button
     ['VK_CANCEL']               =  0x03,	--Control-break processing
@@ -7465,6 +7400,64 @@ gravitiygunOBJECT = menu.get_value(EntitymanagergravitygunOBJECT)
 
 
 --- Context Menu Manager
+
+preset_slot_values = {
+    PAUSE_SINGLE_LEFT = 0,
+    PAUSE_SINGLE_MIDDLE = 0,
+    PAUSE_SINGLE_RIGHT = 0,
+    FACE_CREATION_PRESET = 4,
+    MPLOBBY_ALL5SLOTS = 2,
+    FACE_CREATION_CONFIRM = 0,
+    CELEBRATION_WINNER = 2,
+    CHARACTER_CREATOR_HERITAGE = 1
+}
+preset_name_index_map = {
+    PAUSE_SINGLE_LEFT = 1,
+    PAUSE_SINGLE_MIDDLE = 2,
+    PAUSE_SINGLE_RIGHT = 3,
+    FACE_CREATION_PRESET = 4,
+    MPLOBBY_ALL5SLOTS = 5,
+    FACE_CREATION_CONFIRM = 6,
+    CELEBRATION_WINNER = 7,
+    CHARACTER_CREATOR_HERITAGE = 8
+}
+preset_name_list = {
+    "PAUSE_SINGLE_LEFT",
+    "PAUSE_SINGLE_MIDDLE",
+    "PAUSE_SINGLE_RIGHT",
+    "FACE_CREATION_PRESET",
+    "MPLOBBY_ALL5SLOTS",
+    "FACE_CREATION_CONFIRM",
+    "CELEBRATION_WINNER",
+    "CHARACTER_CREATOR_HERITAGE"
+}
+hotkey_map = {
+    BACKSPACE=0x08,
+    TAB=0x09,
+    RETURN=0X0D,
+    SHIFT=0x10,
+    CONTROL=0x11,
+    ALT=0x12,
+    ESC=0x1B,
+    SPACE=0x20,
+    INSERT=0x2D,
+    DEL=0x2E,
+    HELP=0x2F,
+}
+TRACE_FLAG = {
+	WORLD = 1,
+	VEHICLE = 2,
+	PED = 4,
+	RAGDOLL = 8,
+	OBJECT = 16,
+	PICKUP = 32,
+	GLASS = 64,
+	RIVER = 128,
+	FOLIAGE = 256,
+	ALL = 511,
+}
+
+
 local cmm = {
     menu_options = {},
 }
@@ -7486,16 +7479,26 @@ local config = {
 	target_switch_ped_veh=false,
 	target_ignore_player_veh=true,
 	show_target_player_withtags=true,
+	ped_preview = {
+        enabled=true,
+        preset_name="PAUSE_SINGLE_LEFT",
+        preset_slot=0,
+        pos={
+            x=0.0,
+            y=-1.0,
+            z=0.0,
+        },
+    },
 	target_snap_distance=0.09,
     target_player_distance=1000,
     target_vehicle_distance=1000,
     target_ped_distance=500,
     target_object_distance=50,
 	target_snap_distance={
-        player=0.13,
-        vehicle=0.10,
-        ped=0.09,
-        object=0.05,
+        player=0.05,
+        vehicle=0.04,
+        ped=0.02,
+        object=0.01,
     },
     color = {
         options_circle={r=1, g=1, b=1, a=0.1},
@@ -7556,11 +7559,6 @@ cmm.draw_bounding_box = function(target, colour)
     draw_bounding_box_with_dimensions(target.handle, colour, minimum_vec, maximum_vec)
 end
 
-cmm.is_menu_available = function()
-    if not config.context_menu_enabled then return false end
-    return true
-end
-
 ---
 --- Main Menu Draw Tick
 ---
@@ -7570,11 +7568,6 @@ local createphoneoutofding = false
 
 cmm.context_menu_draw_tick = function()
     if not cmm.is_menu_available() then return true end
-    local target = state.current_target
-
-    --DISABLE_CONTROL_ACTION(2, 25, true) --aim
-    --DISABLE_CONTROL_ACTION(2, 24, true) --attack
-    --DISABLE_CONTROL_ACTION(2, 257, true) --attack2
 
     if state.is_menu_open then
 		cmm.refresh_screen_pos(target)
@@ -7583,6 +7576,7 @@ cmm.context_menu_draw_tick = function()
 		directx.draw_circle(0.5, 0.5, 0.001, config.color.target_ball)
     end
 
+	local target = state.current_target
     if target ~= nil and target.pos ~= nil then
         cmm.draw_selection(target)
         --if IS_DISABLED_CONTROL_PRESSED(2, 25) then
@@ -7604,6 +7598,29 @@ cmm.context_menu_draw_tick = function()
 
     return true
 end
+
+cmm.is_menu_available = function()
+    if not config.context_menu_enabled then return false end
+	if config.disable_in_vehicles then if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then return false end end
+    if IS_PAUSE_MENU_ACTIVE() then return false end
+	return true
+end
+
+cmm.draw_ped_preview = function(target)
+    if not config.ped_preview.enabled or target.type ~= "PLAYER" then return end
+    if UI3DSCENE_IS_AVAILABLE() then
+        if UI3DSCENE_PUSH_PRESET(config.ped_preview.preset_name) then
+            UI3DSCENE_ASSIGN_PED_TO_SLOT(
+                config.ped_preview.preset_name, target.handle, config.ped_preview.preset_slot,
+                config.ped_preview.pos.x, config.ped_preview.pos.y, config.ped_preview.pos.z
+            )
+            UI3DSCENE_MAKE_PUSHED_PRESET_PERSISTENT()
+            UI3DSCENE_CLEAR_PATCHED_DATA()
+        end
+    end
+end
+
+--- Targetting
 
 cmm.get_distance_from_player = function(target)
     local player_pos = GET_ENTITY_COORDS(players.user_ped(), 1)
@@ -7666,11 +7683,10 @@ end
 
 local function check_pointers_for_closest_target(pointers, result, max_distance, max_screen_distance)
     local player_pointer = entities.handle_to_pointer(players.user_ped())
-	local player_vehicle_pointer = entities.handle_to_pointer(GET_VEHICLE_PED_IS_IN(players.user_ped(), false))
     if result.closest_target.screen_distance == nil then result.closest_target.screen_distance = 9999999 end
     for _, pointer in pointers do
         local target = build_pointer_target(pointer)
-        if pointer ~= player_pointer and pointer ~= player_vehicle_pointer
+        if pointer ~= player_pointer
             and target.distance_from_player < max_distance
             and target.screen_distance ~= nil
             and target.screen_distance < max_screen_distance
@@ -7681,18 +7697,21 @@ local function check_pointers_for_closest_target(pointers, result, max_distance,
     end
 end
 
+function get_all_players_as_handles()
+    local player_handles = {}
+    for _, pid in players.list(false) do
+        table.insert(player_handles, GET_PLAYER_PED_SCRIPT_INDEX(pid))
+    end
+    return player_handles
+end
+
 cmm.find_nearest_target = function()
     local result = {
         min_distance = 9999,
         closest_target = {}
     }
 
-    local player_handles = {}
-    for _, pid in players.list(false) do
-        table.insert(player_handles, GET_PLAYER_PED_SCRIPT_INDEX(pid))
-    end
-
-    check_handles_for_nearest_target(player_handles, result, config.target_player_distance, config.target_snap_distance.player)
+    check_handles_for_nearest_target(get_all_players_as_handles(), result, config.target_player_distance, config.target_snap_distance.player)
     --check_handles_for_nearest_target(entities.get_all_vehicles_as_handles(), result, config.target_vehicle_distance, config.target_snap_distance.vehicle)
     --check_handles_for_nearest_target(entities.get_all_peds_as_handles(), result, config.target_ped_distance, config.target_snap_distance.ped)
     --check_handles_for_nearest_target(entities.get_all_objects_as_handles(), result, config.target_object_distance, config.target_snap_distance.object)
@@ -7720,8 +7739,10 @@ cmm.find_nearest_target = function()
 				end
 			end
 		end
-        cmm.expand_target_model(result.closest_target)
-        return result.closest_target
+		if GET_VEHICLE_PED_IS_IN(players.user_ped(), true) != result.closest_target.handle then
+        	cmm.expand_target_model(result.closest_target)
+        	return result.closest_target
+		end
     end
 
     return cmm.get_raycast_target()
@@ -7737,10 +7758,15 @@ cmm.add_context_menu_option = function(menu_option)
     table.insert(cmm.menu_options, menu_option)
 end
 
+local unique_id_counter = 0
 cmm.default_menu_option = function(menu_option)
     if menu_option.name == nil then menu_option.name = "Unknown Name" end
     if menu_option.enabled == nil then menu_option.enabled = true end
     if menu_option.priority == nil then menu_option.priority = 0 end
+    if menu_option.id == nil then
+        unique_id_counter = unique_id_counter + 1
+        menu_option.id = unique_id_counter
+    end
 end
 
 cmm.empty_menu_option = function()
@@ -7772,6 +7798,7 @@ cmm.refresh_menu_options_from_files = function(directory, path)
 end
 
 cmm.refresh_menu_options_from_files(CONTEXT_MENUS_DIR)
+table.sort(cmm.menu_options, function(a,b) return a.name < b.name end)
 
 local ENTITY_TYPES = {"PED", "VEHICLE", "OBJECT"}
 
@@ -8040,6 +8067,21 @@ cmm.handle_inputs = function(target)
     end
 end
 
+cmm.check_option_hotkeys = function(target)
+    --PAD.DISABLE_CONTROL_ACTION(2, 245, true) --chat
+    for option_index, option in target.relevant_options do
+        local hotkey = option.hotkey
+        if hotkey_map[hotkey] ~= nil then hotkey = hotkey_map[hotkey] end
+		if hotkey ~= nil then
+			hotkey = string.upper(hotkey)
+		end
+        if hotkey ~= nil and util.is_key_down(hotkey) then
+            target.selected_option = option
+            cmm.execute_selected_action(target)
+        end
+    end
+end
+
 cmm.find_selected_option = function(target)
     for option_index, option in target.relevant_options do
         if target.cursor_pos then
@@ -8083,6 +8125,10 @@ cmm.execute_selected_action = function(target)
     state.is_menu_open = false
     if target.selected_option.execute ~= nil and type(target.selected_option.execute) == "function" then
         util.log("Triggering option "..target.selected_option.name)
+        --if cmm.is_target_a_player_in_vehicle(target) then
+        --    target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
+        --    cmm.update_target_data(target)
+        --end
         target.selected_option.execute(target)
     end
 end
@@ -8109,19 +8155,8 @@ cmm.draw_options_menu = function(target)
     --if target.screen_pos.x > 0 and target.screen_pos.y > 0 then
     --    directx.draw_line(0.5, 0.5, target.screen_pos.x, target.screen_pos.y, config.color.line_to_target)
     --end
-    --directx.draw_circle(target.cursor_pos.x, target.cursor_pos.y, 0.001, config.color.crosshair)
 
-    if config.show_target_name and target.name ~= nil then
-        local label = target.type .. ": " .. target.name
-        if config.show_target_owner and target.owner and target.owner ~= target.name then
-            label = label .. " (" .. target.owner .. ")"
-        end
-        cmm.get_distance_from_player(target)
-        if target.distance_from_player then
-            label = label .. " [" .. roundDecimals(target.distance_from_player, 1) .. "m]"
-        end
-        cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y - (config.menu_radius * 1.9), label, 5, 0.5, config.color.option_text, true)
-    end
+    cmm.draw_target_label(target)
 
     for option_index, option in target.relevant_options do
         if option.name ~= nil then
@@ -8132,20 +8167,59 @@ cmm.draw_options_menu = function(target)
 
             if config.show_option_help and target.selected_option == option then
                 cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y + (config.menu_radius * 1.9), option.help, 5, 0.5, config.color.help_text, true)
+                if option.hotkey then
+                    cmm.draw_text_with_shadow(
+                        target.menu_pos.x, target.menu_pos.y + (config.menu_radius * 1.9) + 0.02,
+                        "Hotkey: "..option.hotkey, 5, 0.5, config.color.help_text, true
+                    )
+                end
             end
         end
     end
+end
 
+cmm.draw_target_label = function(target)
+    if config.show_target_name and target.name ~= nil then
+        local label = target.type .. ": " .. target.name
+        if config.show_target_owner and target.owner and target.owner ~= target.name then
+            label = label .. " (" .. target.owner .. ")"
+        end
+        cmm.get_distance_from_player(target)
+        if target.distance_from_player then
+            label = label .. " [" .. roundDecimals(target.distance_from_player, 1) .. "m]"
+        end
+
+        if cmm.is_target_a_player_in_vehicle(target) then
+            local row_offset = 0.02
+            cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y - (config.menu_radius * 1.9) - row_offset, label, 5, 0.5, config.color.option_text, true)
+            local players_vehicle = GET_VEHICLE_PED_IS_IN(target.handle, false)
+            label = "VEHICLE: " .. cmm.get_vehicle_name_by_handle(players_vehicle)
+            cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y - (config.menu_radius * 1.9), label, 5, 0.5, config.color.option_text, true)
+        else
+            cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y - (config.menu_radius * 1.9), label, 5, 0.5, config.color.option_text, true)
+       end
+    end
 end
 
 function is_menu_option_relevant(menu_option, target)
-    if menu_option.enabled == false then
-        return false
+    -- Disabled options never apply to any target
+    if menu_option.enabled == false then return false end
+    -- If no applicable_to set then apply to all targets
+    if menu_option.applicable_to == nil then return true end
+    -- If type is specifically listed as applicable then allow it
+    if table.contains(menu_option.applicable_to, target.type) then
+        return true
     end
-    if menu_option.applicable_to ~= nil and not table.contains(menu_option.applicable_to, target.type) then
-        return false
-    end
-    return true
+    -- Also include vehicle options for players in vehicles
+    --if cmm.is_target_a_player_in_vehicle(target) and table.contains(menu_option.applicable_to, "VEHICLE") then
+    --    return true
+    --end
+    -- Disallow anything else
+    return false
+end
+
+cmm.is_target_a_player_in_vehicle = function(target)
+    return target.type == "PLAYER" and IS_PED_IN_ANY_VEHICLE(target.handle)
 end
 
 cmm.deep_table_copy = function(obj)
@@ -8167,7 +8241,6 @@ cmm.build_relevant_options = function(target)
         end
     end
     --if #relevant_options == 1 then table.insert(relevant_options, cmm.empty_menu_option()) end
-    table.sort(target.relevant_options, function(a,b) return a.name > b.name end)
     table.sort(target.relevant_options, function(a,b) return a.priority > b.priority end)
     cmm.build_option_wedge_points(target)
 end
@@ -8189,14 +8262,22 @@ function get_player_id_from_handle(handle)
     end
 end
 
+cmm.get_vehicle_name_by_model= function(model_hash)
+    return util.get_label_text(GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(model_hash))
+end
+
+cmm.get_vehicle_name_by_handle = function(handle)
+    return cmm.get_vehicle_name_by_model(entities.get_model_hash(handle))
+end
+
 function get_target_name(target)
     if target.type == "PLAYER" then
         local pid = get_player_id_from_handle(target.handle)
         if pid then
-           	return GET_PLAYER_NAME(pid)
+            return GET_PLAYER_NAME(pid)
         end
     elseif target.type == "VEHICLE" then
-        return util.get_label_text(GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(target.model_hash))
+        return cmm.get_vehicle_name_by_model(target.model_hash)
     end
     return target.model
 end
@@ -8222,13 +8303,17 @@ function get_model_hash(handle_or_ptr)
         pointer = entities.handle_to_pointer(handle_or_ptr)
     end
     if pointer == nil or not (pointer > 0) then return end
-    --util.log("Attempting to load model hash Handle: "..handle_or_ptr.." Pointer:"..pointer)
-    local status, model_info = pcall(memory.read_long, pointer + 0x20)
-    if not status then
-        util.toast("Warning: Access Violation for Handle: "..handle_or_ptr.." Pointer:"..pointer, TOAST_ALL)
-        return
+    local status, model_info
+    if config.wrap_read_model_with_pcall then
+        status, model_info = pcall(memory.read_long, pointer + 0x20)
+        if not status then
+            util.toast("Warning: Access Violation for Handle: "..handle_or_ptr.." Pointer:"..pointer, TOAST_ALL)
+            return
+        end
+    else
+        --util.log("Reading model hash Handle: "..handle_or_ptr.." Pointer:"..pointer, TOAST_ALL)
+        model_info = memory.read_long(pointer + 0x20)
     end
-    --local model_info = memory.read_long(handle_or_ptr + 0x20)
     if model_info ~= 0 then
         return memory.read_int(model_info + 0x18)
     end
@@ -8240,14 +8325,18 @@ cmm.build_target_from_pointer = function(handle)
     return target
 end
 
+cmm.update_target_data = function(target)
+    target.type = get_target_type(target)
+    target.name = get_target_name(target)
+    target.owner = get_target_owner(target)
+end
+
 cmm.expand_target_model = function(target)
     target.model_hash = entities.get_model_hash(target.handle)
     if target.model_hash then
         target.model = util.reverse_joaat(target.model_hash)
     end
-    target.type = get_target_type(target)
-    target.name = get_target_name(target)
-    target.owner = get_target_owner(target)
+    cmm.update_target_data(target)
     target.pos = GET_ENTITY_COORDS(target.handle, true)
     cmm.expand_target_position(target)
 end
@@ -8277,7 +8366,6 @@ cmm.expand_target_position = function(target)
 end
 
 cmm.build_target_from_raycast_result = function(raycastResult)
-    local target = {}
     local model_hash
     if raycastResult.didHit then
         --util.log("Loading model hash from raycast: "..raycastResult.hitEntity)
@@ -8286,7 +8374,7 @@ cmm.build_target_from_raycast_result = function(raycastResult)
         if config.use_aarons_model_hash then
             model_hash = get_model_hash(raycastResult.hitEntity)
         else
-            local entity_type = ENTITY.GET_ENTITY_TYPE(raycastResult.hitEntity)
+            local entity_type = GET_ENTITY_TYPE(raycastResult.hitEntity)
             util.log("Loading entity type "..entity_type)
             if entity_type > 0 then
                 model_hash = entities.get_model_hash(raycastResult.hitEntity)
@@ -8304,12 +8392,9 @@ cmm.build_target_from_raycast_result = function(raycastResult)
     if raycastResult.didHit and model_hash ~= nil then
         -- Handle Entity Target
         if raycastResult.hitEntity ~= nil and DOES_ENTITY_EXIST(raycastResult.hitEntity) then
-            target = cmm.build_target_from_handle(raycastResult.hitEntity)
+            return cmm.build_target_from_handle(raycastResult.hitEntity)
         end
-    elseif raycastResult.endCoords.x ~= 0 and raycastResult.endCoords.y ~= 0 then
-        target = cmm.build_target_from_position(raycastResult.endCoords)
     end
-    return target
 end
 
 --local flag = TRACE_FLAG.VEHICLE | TRACE_FLAG.OBJECT | TRACE_FLAG.MOVER | TRACE_FLAG.PED | TRACE_FLAG.GLASS
@@ -8323,7 +8408,7 @@ cmm.get_raycast_target = function()
     if target then return target end
 
     -- Raycast for World Coords
-    raycastResult = get_raycast_result(config.selection_distance, constants.TRACE_FLAG.ALL)
+    raycastResult = get_raycast_result(config.selection_distance, TRACE_FLAG.ALL)
     if raycastResult.endCoords.x ~= 0 and raycastResult.endCoords.y ~= 0 then
         return cmm.build_target_from_position(raycastResult.endCoords)
     end
@@ -8343,8 +8428,10 @@ end
 
 cmm.update_menu = function(target)
     cmm.handle_inputs(target)
+    cmm.check_option_hotkeys(target)
     cmm.find_selected_option(target)
     cmm.draw_options_menu(target)
+    cmm.draw_ped_preview(target)
 end
 
 cmm.open_options_menu = function(target)
@@ -8429,14 +8516,27 @@ function build_menu_option_description(menu_option)
     local text = menu_option.help or ""
     if menu_option.author then text = text.."\nAuthor: "..menu_option.author end
     if menu_option.filename then text = text.."\nFilename: "..menu_option.filename end
+    if menu_option.filepath then text = text.."\nFilepath: "..menu_option.filepath end
     return text
 end
 
 menus.menu_options:divider("Menu Options")
 for _, menu_option in cmm.menu_options do
-    menus.menu_options:toggle(menu_option.name, {}, build_menu_option_description(menu_option), function(value)
+    menu_option.menu = menus.menu_options:list(menu_option.name, {"cmmconfig"..menu_option.name}, "Configuration options for this specific menu option")
+    menu_option.menu:toggle("Enabled", {}, "Enabled options will show up in menu", function(value)
         menu_option.enabled = value
     end, menu_option.enabled)
+    menu_option.menu:text_input("Hotkey", {"cmmhotkey"..menu_option.name}, "Press this key while the menu is open to select this option", function(value)
+        menu_option.hotkey = value
+    end, menu_option.hotkey or "")
+    menu_option.menu:slider("Priority", {"cmmpriority"..menu_option.name}, "Higher priority options appear higher in the menu order", -1000, 1000, menu_option.priority, 1, function(value)
+        menu_option.priority = value
+    end)
+    -- build_menu_option_description(menu_option)
+    if menu_option.config_menu ~= nil then
+        menu_option.menu:divider("Config")
+        menu_option.config_menu(menu_option.menu)
+    end
 end
 
 ---
@@ -8444,6 +8544,9 @@ end
 ---
 
 menus.settings = menu.list(Entitymanagercontextmenu, "Settings", {}, "Configuration options for this script.")
+menus.settings:toggle("Disable In Vehicles", {}, "Only display the menu when on foot, outside of a vehicle", function(value)
+    config.disable_in_vehicles = value
+end, config.disable_in_vehicles)
 
 menus.settings:divider("Targeting")
 
@@ -8518,6 +8621,28 @@ menus.settings:slider("Deadzone", {"cmmdeadzone"}, "The center of the menu where
 end)
 menus.settings:slider("Option Padding", {"cmmoptionpadding"}, "The spacing between options", 0, 25, config.option_wedge_padding * 100, 1, function(value)
     config.option_wedge_padding = value / 100
+end)
+
+menus.settings_player_previews = menus.settings:list("Player Previews", {}, "Options about displaying previews when targeting other players")
+menus.settings_player_previews:toggle("Enable Player Previews", {}, "Display previews of the players model when targeting", function(value)
+    config.ped_preview.enabled = value
+end, config.ped_preview.enabled)
+menus.settings_player_previews:list_select("Preset Name", {"cmmplayerpreviewpresetname"}, "The selected preset name used for the rendering.", preset_name_list, preset_name_index_map[config.ped_preview.preset_name], function(value, menu_name)
+    config.ped_preview.preset_name = menu_name
+    menu.set_value(menus.settings_player_previews_preset_slot, config.ped_preview.preset_slot)
+    menu.set_max_value(menus.settings_player_previews_preset_slot, preset_slot_values[config.ped_preview.preset_name])
+end)
+menus.settings_player_previews_preset_slot = menus.settings_player_previews:slider("Preset Slot", {"cmmplayerpreviewpresetslot"}, "The selected preset slot used for the rendering.", 0, preset_slot_values[config.ped_preview.preset_name], 0, 1, function(value)
+    config.ped_preview.preset_slot = value
+end)
+menus.settings_player_previews:slider("Player Preview Pos X", {"cmmplayerpreviewposx"}, "", -20, 20, config.ped_preview.pos.x * 10, 1, function(value)
+    config.ped_preview.pos.x = value / 10
+end)
+menus.settings_player_previews:slider("Player Preview Pos Y", {"cmmplayerpreviewposy"}, "", -100, 10, config.ped_preview.pos.y * 10, 1, function(value)
+    config.ped_preview.pos.y = value / 10
+end)
+menus.settings_player_previews:slider("Player Preview Pos Z", {"cmmplayerpreviewposz"}, "", -20, 20, config.ped_preview.pos.z * 10, 1, function(value)
+    config.ped_preview.pos.z = value / 10
 end)
 
 menus.settings_colors = menus.settings:list("Colors")
@@ -12769,21 +12894,19 @@ if auto_update_config and auto_updater then
 	end)
 end
 
-function loadnewversion()
-	if not loadingnewversion then
-		return false
-	end
-	async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Selfmade.lua", function(output)
-		output = output:match('SCRIPT_VERSION = "([^ ]+)"')
-		menu.set_menu_name(newversionaction, "New Version: ".. output)
-	end)
-	async_http.dispatch()
-	util.yield(3000)
-end
-
 local settingsversiontab = menu.list(settings, "Versions", {}, "", function(on_click)
 	loadingnewversion = true
-	util.create_tick_handler(loadnewversion)
+	util.create_tick_handler(function()
+		if not loadingnewversion then
+			return false
+		end
+		async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Selfmade.lua", function(output)
+			output = output:match('SCRIPT_VERSION = "([^ ]+)"')
+			menu.set_menu_name(newversionaction, "New Version: ".. output)
+		end)
+		async_http.dispatch()
+		util.yield(3000)
+	end)
 end, function(on_back)
 	loadingnewversion = false
 end)
