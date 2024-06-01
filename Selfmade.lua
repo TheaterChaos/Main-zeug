@@ -1,9 +1,10 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
+util.keep_running()
 --local response = false
 
 
-local SCRIPT_VERSION = "0.64"
+local SCRIPT_VERSION = "0.65"
 
 
 local auto_update_config = {
@@ -12,25 +13,26 @@ local auto_update_config = {
     project_url="https://github.com/TheaterChaos/Mein-zeug",
     branch="main",
     dependencies={
-        "lib/SelfmadeContextstuff/Tele To me.lua",
-        "lib/SelfmadeContextstuff/boost.lua",
-		"lib/SelfmadeContextstuff/clean.lua",
-        "lib/SelfmadeContextstuff/cleartasks ped.lua",
-        "lib/SelfmadeContextstuff/copyveh.lua",
-        "lib/SelfmadeContextstuff/crash.lua",
-        "lib/SelfmadeContextstuff/delete.lua",
-        "lib/SelfmadeContextstuff/destroy.lua",
-        "lib/SelfmadeContextstuff/disarm.lua",
-        "lib/SelfmadeContextstuff/drive.lua",
-        "lib/SelfmadeContextstuff/enter.lua",
-        "lib/SelfmadeContextstuff/freeze unfreeze.lua",
-        "lib/SelfmadeContextstuff/heal revive ped.lua",
-		"lib/SelfmadeContextstuff/kick.lua",
-		"lib/SelfmadeContextstuff/killped.lua",
-		"lib/SelfmadeContextstuff/player_menu.lua",
-		"lib/SelfmadeContextstuff/repair.lua",
-		"lib/SelfmadeContextstuff/spawn.lua",
-		"lib/SelfmadeContextstuff/teleport.lua",
+		"lib/Selfmadestuff/tables.lua",
+        "lib/Selfmadestuff/Contextstuff/Tele To me.lua",
+        "lib/Selfmadestuff/Contextstuff/boost.lua",
+		"lib/Selfmadestuff/Contextstuff/clean.lua",
+        "lib/Selfmadestuff/Contextstuff/cleartasks ped.lua",
+        "lib/Selfmadestuff/Contextstuff/copyveh.lua",
+        "lib/Selfmadestuff/Contextstuff/crash.lua",
+        "lib/Selfmadestuff/Contextstuff/delete.lua",
+        "lib/Selfmadestuff/Contextstuff/destroy.lua",
+        "lib/Selfmadestuff/Contextstuff/disarm.lua",
+        "lib/Selfmadestuff/Contextstuff/drive.lua",
+        "lib/Selfmadestuff/Contextstuff/enter.lua",
+        "lib/Selfmadestuff/Contextstuff/freeze unfreeze.lua",
+        "lib/Selfmadestuff/Contextstuff/heal revive ped.lua",
+		"lib/Selfmadestuff/Contextstuff/kick.lua",
+		"lib/Selfmadestuff/Contextstuff/killped.lua",
+		"lib/Selfmadestuff/Contextstuff/player_menu.lua",
+		"lib/Selfmadestuff/Contextstuff/repair.lua",
+		"lib/Selfmadestuff/Contextstuff/spawn.lua",
+		"lib/Selfmadestuff/Contextstuff/teleport.lua",
     },
 }
 
@@ -39,6 +41,8 @@ local auto_updater = require('auto-updater')
 if auto_updater == true then
     auto_updater.run_auto_update(auto_update_config)
 end
+
+local tables = require("Selfmadestuff/tables")
 
 
 --require ('resources/Alltabels')
@@ -75,34 +79,16 @@ for i = 0, 32 do
 end
 
 listkicken = {}
---for i = 0, 31 do
---	listkicken[i] = 0
---end
 
 listfriendly = {}
---for i = 0, 31 do
---	listfriendly[i] = 0
---end
 
 listtp = {}
---for i = 0, 31 do
---	listtp[i] = 0
---end
 
 listtrolling = {}
---for i = 0, 31 do
---	listtrolling[i] = 0
---end
 
 listgenerel = {}
---for i = 0, 31 do
---	listgenerel[i] = 0
---end
 
 veh = {}
---[[for i = 0, 300 do
-	veh[i] = 0
-end]]
 
 antivehactiontablelist = {}
 
@@ -115,319 +101,8 @@ end
 vehenterstealnpc = false
 vehentersteal = false
 
-INTERIOR_IDS = {
-	pentGarage = 275457,
-	casino = 275201,
-	casinoGarage = 274945,
-	beeker = 179457,
-	lsCarMeet = 285697,
-	lsCarMeet2 = 286209,
-	benny = 196609,
-	barber = 165377,
-	barber2 = 198657,
-	barber3 = 171009,
-	barber4 = 199937,
-	barber5 = 140545,
-	barber6 = 180225,
-	barber7 = 155905,
-	vehWarehouse = 290817,
-	ammuNation = 248065,
-	ammuNation2 = 153857,
-	ammuNation3 = 168193,
-	ammuNation4 = 200961,
-	ammuNation5 = 164609,
-	ammuNation6 = 137729,
-	ammuNation7 = 140289,
-	ammuNation8 = 180481,
-	ammuNation9 = 178689,
-	ammuNation10 = 176385,
-	ammuNation11 = 175617,
-	lsc = 234753,
-	lsc2 = 164353,
-	lsc3 = 201729,
-	lsc4 = 153601,
-	twoCarGarage = 149249,
-	sixCarGarage = 148737,
-	tenCarGarage = 146433,
-	fiftyCarGarage = 290561,
-	eclipseTowers = 230657,
-	lombank = 255745,
-	lombank2 = 255489,
-	lombank3 = 256001,
-	lombank4 = 241921,
-	lombank5 = 256257,
-	arcadius = 253441,
-	arcadius2 = 237313,
-	arcadius3 = 253697,
-	arcadius4 = 253953,
-	arcadius5 = 254209,
-	mazeTower = 239617,
-	mazeTower2 = 254465,
-	mazeTower3 = 254721,
-	mazeTower4 = 254977,
-	mazeTower5 = 255233,
-	mazeBuilding = 244225,
-	mazeBuilding2 = 256513,
-	mazeBuilding3 = 256769,
-	mazeBuilding4 = 257025,
-	mazeBuilding5 = 257281,
-	apart = 206081,
-	apart2 = 206337,
-	apart3 = 206593,
-	apart4 = 149761,
-	apart5 = 148225,
-	delPerro = 145409,
-	delPerro2 = 145921,
-	delPerro3 = 145665,
-	fourWay = 147201,
-	fourWay2 = 141313,
-	fourWay3 = 147969,
-	docForgery = 246785,
-	methLab = 247041,
-	weedFarm = 247297,
-	counterfeitCash = 247809,
-	cocaineLockup = 247553,
-	yacht = 213249,
-	yacht2 = 212737,
-	yacht3 = 212225,
-	hangar = 260353,
-	strip = 197121,
-	tattoo = 199425,
-	tattoo2 = 140033,
-	tattoo3 = 180737,
-	tattoo4 = 180737,
-	tattoo5 = 251137,
-	tattoo6 = 176897,
-	alta = 141825,
-	alta2 = 141569,	            richards = 142849,
-	richards2 = 143361,
-	richards3 = 146177,
-	weazel = 143617,
-	weazel2 = 143105,
-	weazel3 = 142593,
-	clothes = 165633,
-	clothes2 = 235265,
-	clothes3 = 166145,
-	clothes4 = 140801,
-	clothes5 = 176129,
-	clothes6 = 169217,
-	clothes7 = 201473,
-	clothes8 = 171265,
-	clothes9 = 137217,
-	clothes10 = 198145,
-	clothes11 = 183553,
-	clothes12 = 175361,
-	clothes13 = 179713,
-	clothes14 = 202497
-}
-INTERIOR_COORDS = {	            kosatkaMissile = {1558.553, 1558.653, 387.213, 388.713, -200, 0},
-	kosatka = {1553, 1568, 361, 452, -200, 0},
-	pentGarage = {1248, 1315, 2218, 264, -200, 0},
-	musicLocker = {1537, 1583, 233, 263, -200, 0},
-	casino = {1082, 1168, 191, 286, -200, 0},
-	casinoGarage = {1333, 1413, 178, 259, -200, 0},
-	eclipseTowers = {-824, -738, 295, 363, 107, 230},
-	autoShop = {-1369, -1318.5, 134.5, 170.5, -200, 0},
-	subMission = {511, 517, 4816, 4906, -200, 0},
-	facility = {310, 511, 4755, 4885, -200, 0},
-	avenger = {504, 535, 4744, 4756, -200, 0},
-	beeker = {98, 115, 6613, 6631, 0, 35},
-	penthouse = {932, 994, -3, 84, 0, 120},
-	arcade = {2673, 2744, -403, -348, -200, 0},
-	docForgery = {1155, 1175, -3201, -3188, -200, 0},
-	mcClub = {1093, 1128, -3180, -3137, -200, 0},
-	counterfeitCash = {1113, 1141, -3200, -3191, -200, 0},
-	vehWarehouse = {926.5, 1014.5, -3039.5, -2985, -200, 0},
-	vehWarehouse2 = {553, 576.51, -456.60, -402.20, -200, 0},
-	methLab = {995, 1019, -3204, -3191, -200, 0},
-	cocaineLockup = {1084, 1104, -3201, -3185, -200, 0},
-	weedFarm = {1029, 1068, -3210, -3178, -200, 0},
-	moc = {1097, 1109, -3014, -2990, -200, 0},
-	twoCarGarage = {168, 180, -1009, -999, -200, -90},
-	sixCarGarage = {189, 208, -1008, -993, -200, -90},
-	tenCarGarage = {216, 242, -1010, -961, -200, 0},
-	fiftyCarGarage = {510, 533, -2640, -2599, -200, 0},
-	bunker = {822, 955, -3253, -3061, -200, 0},
-	fib = {74, 193, -797, -699, 40, 262},
-	agency = {345, 407, -98, -32, 70, 122},
-	agency2 = {-1047, -987, -795, -708, 26, 76},
-	agency3 = {-1042, -992, -447, -404, 42, 77},
-	agency4 = {-610, -568, -727, -704, 37, 129},
-	agencyGarage = {-1084, -1058, -93, -60, -200, 40},
-	lsc = {1172, 1189, 2635, 2644, 0, 43},
-	lsc2 = {723, 738, -1094, -1064, 0, 30},
-	lsc3 = {-355, -319, -147, -121, 0, 44},
-	lsc4 = {-1170, -1139, -2026, -2007, 0, 18},
-	mazeTower = {-118, -29, -868, -773, 0, 320},
-	hangar = {-1308, -1225, -3073, -2956, -200, 0},
-	nightclub = {-1648, -1564, -3022, -2983, -200, 0},
-	nightclubBasement = {-1526, -1480, -3048, -2960, -200, 0},
-	mazeBuilding = {-1421, -1328, -511, -440, 0, 84},
-	terrorbyte = {-1426, -1416, -3019, -3006, -200, 0},
-	benny = {-228.2, -195.2, -1334.2, -1314.1, 0, 39},
-	lombank = {-1595, -1549, -592, -550, 0, 114},
-	arcadius = {-200, -118, -650, -560, 34, 176},
-	apart = {323, 347, 420, 445, 0, 152},
-	apart2 = {323, 381, 400, 445, 0, 150},
-	apart3 = {112, 127, 540, 572, 0, 188},
-	apart4 = {254, 267, -1005, -994, -200, 0},
-	apart5 = {337, 353, -1004, -992, -200, 0},
-	ammuNation = {807, 828, -2165, -2148, 0, 35},
-	ammuNation2 = {838, 847, -1036, -1024, 0, 33},
-	ammuNation3 = {-667, -658, -945, -931, 0, 25},
-	ammuNation4 = {1688, 1702, 3751.5, 3764, 0, 39},
-	ammuNation5 = {-1315, -1302, -398, -387, 0, 38},
-	ammuNation6 = {3, 25, -1116, -1095, 0, 38},
-	ammuNation7 = {243, 256, -54, -43, 0, 74},
-	ammuNation8 = {-336, -322, 6075, 6088, 0, 34},
-	ammuNation9 = {2565, 2573, 290, 304, 0, 114},
-	ammuNation10 = {-3176, -3163, 1081, 1091, 0, 25},
-	ammuNation11 = {-1123, -1110, 2690, 2702, 0, 22},
-	delPerro = {-1483, -1434, -573, -509, 40, 84},
-	fourWay = {-52, -2, -607, -569, 40, 106},
-	lsCarMeet = {-2224, -2140, 1071, 1161, -200, 0},
-	lsCarMeet2 = {-2224, -1835, 970, 1250, 24, 30},
-	strip = {92, 138, -1307, -1277, 28, 32},
-	barber = {-825.1, -807, -191.3, -179, 37, 40},
-	barber2 = {132.5, 142, -1714.1, -1703, 29, 35},
-	barber3 = {-1289, -1277, -1120, -1115, 6, 10},
-	barber4 = {1928, 1937, 3725, 3736, 32, 36},
-	barber5 = {-37, -29, -157, -146, 57, 66},
-	barber6 = {-284.2, -274, 6223, 6233, 31, 37},
-	barber7 = {1206, 1217, -477, -469, 66, 78},
-	tattoo = {1860, 1867, 3744, 3752, 32, 36},
-	tattoo2 = {319, 327, 178, 187, 103, 127},
-	tattoo3 = {-297, -289, 6196, 6203, 31, 34},
-	tattoo4 = {-1158, -1148, -1430, -1422, 4, 11},
-	tattoo5 = {1319, 1329, -1657, -1649, 52, 57},
-	tattoo6 = {-3176, -3167, 1072, 1080, 20, 25},
-	alta = {-291, -252, -971, -937, 70, 100},
-	tinsel = {-630, -571, 36, 72, 50, 115},
-	richards = {-937, -893, -392, -359, 75, 116},
-	weazel = {-923, -875, -469, -420, 85, 128},
-	clothes = {-721, -699, -165, -145, 37, 40},
-	clothes2 = {-172, -154, -315, -293, 39, 43},
-	clothes3 = {-1462, -1443, -247, -225, 49, 52},
-	clothes4 = {116, 133, -235, -206, 54, 57},
-	clothes5 = {-3181, -3161, 1033, 1061, 20, 23},
-	clothes6 = {-1207, -1180, -784, -763, 17, 20},
-	clothes7 = {612, 624, 2747, 2776, 41, 45},
-	clothes8 = {-832, -814, -1084, -1066, 11, 15},
-	clothes9 = {418, 432, -813, -798, 29, 35},
-	clothes10 = {69, 83, -1401, -1386, 29, 34},
-	clothes11 = {1686, 1700, 4716, 4831, 41, 45},
-	clothes12 = {-1111, -1093, 2700, 2718, 18, 22},
-	clothes13 = {-4, 14, 6505, 6523, 31, 36},
-	clothes14 = {1188, 1203, 2703, 2716, 38, 41},
-	masks = {-1340.5, -1334, -1284, -1274, 4, 5},
-	cayoPerico = {3500, 5950, -6300, -3990},
-	ussLex = {2990, 3130, -4830, -4510},
-	arena = {147, 233, 5155, 5218}
-}
-LANGUAGES = {
-	[0] = "EN",
-	[1] = "FR",
-	[2] = "DE",
-	[3] = "IT",
-	[4] = "ES",
-	[5] = "BR",
-	[6] = "PL",
-	[7] = "RU",
-	[8] = "KR",
-	[9] = "CN",
-	[10] = "JP",
-	[11] = "MX",
-	[12] = "CN"
-}
-EXPLOSIONVARIATION = {
-    {1, "GRENADE", {}, ""},
-    {2, "GRENADELAUNCHER", {}, ""},
-    {3, "STICKYBOMB", {}, ""},
-    {4, "MOLOTOV", {}, ""},
-    {5, "ROCKET", {}, ""},
-    {6, "TANKSHELL", {}, ""},
-    {7, "HI_OCTANE", {}, ""},
-    {8, "CAR", {}, ""},
-    {9, "PLANE", {}, ""},
-    {10, "PETROL_PUMP", {}, ""},
-    {11, "BIKE", {}, ""},
-    {12, "DIR_STEAM", {}, ""},
-    {13, "DIR_FLAME", {}, ""},
-    {14, "DIR_WATER_HYDRANT", {}, ""},
-    {15, "DIR_GAS_CANISTER", {}, ""},
-    {16, "BOAT", {}, ""},
-    {17, "SHIP_DESTROY", {}, ""},
-    {18, "TRUCK", {}, ""},
-    {19, "BULLET", {}, ""},
-    {20, "SMOKEGRENADELAUNCHER", {}, ""},
-    {21, "SMOKEGRENADE", {}, ""},
-    {22, "BZGAS", {}, ""},
-    {23, "FLARE", {}, ""},
-    {24, "GAS_CANISTER", {}, ""},
-    {25, "EXTINGUISHER", {}, ""},
-    {26, "PROGRAMMABLEAR", {}, ""},
-    {27, "TRAIN", {}, ""},
-    {28, "BARREL", {}, ""},
-    {29, "PROPANE", {}, ""},
-    {30, "BLIMP", {}, ""},
-    {31, "DIR_FLAME_EXPLODE", {}, ""},
-    {32, "TANKER", {}, ""},
-    {33, "PLANE_ROCKET", {}, ""},
-    {34, "VEHICLE_BULLET", {}, ""},
-    {35, "GAS_TANK", {}, ""},
-    {36, "BIRD_CRAP", {}, ""},
-    {37, "RAILGUN", {}, ""},
-    {38, "BLIMP2", {}, ""},
-    {39, "FIREWORK", {}, ""},
-    {40, "SNOWBALL", {}, ""},
-    {41, "PROXMINE", {}, ""},
-    {42, "VALKYRIE_CANNON", {}, ""},
-    {43, "AIR_DEFENCE", {}, ""},
-    {44, "PIPEBOMB", {}, ""},
-    {45, "VEHICLEMINE", {}, ""},
-    {46, "EXPLOSIVEAMMO", {}, ""},
-    {47, "APCSHELL", {}, ""},
-    {48, "BOMB_CLUSTER", {}, ""},
-    {49, "BOMB_GAS", {}, ""},
-    {50, "BOMB_INCENDIARY", {}, ""},
-    {51, "BOMB_STANDARD", {}, ""},
-    {52, "TORPEDO", {}, ""},
-    {53, "TORPEDO_UNDERWATER", {}, ""},
-    {54, "BOMBUSHKA_CANNON", {}, ""},
-    {55, "BOMB_CLUSTER_SECONDARY", {}, ""},
-    {56, "HUNTER_BARRAGE", {}, ""},
-    {57, "HUNTER_CANNON", {}, ""},
-    {58, "ROGUE_CANNON", {}, ""},
-    {59, "MINE_UNDERWATER", {}, ""},
-    {60, "ORBITAL_CANNON", {}, ""},
-    {61, "BOMB_STANDARD_WIDE", {}, ""},
-    {62, "EXPLOSIVEAMMO_SHOTGUN", {}, ""},
-    {63, "OPPRESSOR2_CANNON", {}, ""},
-    {64, "MORTAR_KINETIC", {}, ""},
-    {65, "VEHICLEMINE_KINETIC", {}, ""},
-    {66, "VEHICLEMINE_EMP", {}, ""},
-    {67, "VEHICLEMINE_SPIKE", {}, ""},
-    {68, "VEHICLEMINE_SLICK", {}, ""},
-    {69, "VEHICLEMINE_TAR", {}, ""},
-    {70, "SCRIPT_DRONE", {}, ""},
-    {71, "RAYGUN", {}, ""},
-    {72, "BURIEDMINE", {}, ""},
-    {73, "SCRIPT_MISSILE", {}, ""},
-    {74, "RCTANK_ROCKET", {}, ""},
-    {75, "BOMB_WATER", {}, ""},
-    {76, "BOMB_WATER_SECONDARY", {}, ""},
-    {77, "EXP_TAG_MINE_CNCSPIKE", {}, ""},
-    {78, "EXP_TAG_BZGAS_MK2", {}, ""},
-    {79, "FLASHGRENADE", {}, ""},
-    {80, "STUNGRENADE", {}, ""},
-    {81, "EXP_TAG_CNC_KINETICRAM", {}, ""},
-    {82, "SCRIPT_MISSILE_LARGE", {}, ""},
-    {83, "SUBMARINE_BIG", {}, ""},
-    {84, "EMPLAUNCHER_EMP", {}, ""}
-}
-
-local minimum = memory.alloc()
-local maximum = memory.alloc()
+local minimumbox = memory.alloc()
+local maximumbox = memory.alloc()
 local upVector_pointer = memory.alloc()
 local rightVector_pointer = memory.alloc()
 local forwardVector_pointer = memory.alloc()
@@ -439,9 +114,9 @@ draw_bounding_box = function(entity, colour)
         colour = {r=255,g=0,b=0,a=255}
     end
 
-    GET_MODEL_DIMENSIONS(GET_ENTITY_MODEL(entity), minimum, maximum)
-    local minimum_vec = v3.new(minimum)
-    local maximum_vec = v3.new(maximum)
+    GET_MODEL_DIMENSIONS(GET_ENTITY_MODEL(entity), minimumbox, maximumbox)
+    local minimum_vec = v3.new(minimumbox)
+    local maximum_vec = v3.new(maximumbox)
     draw_bounding_box_with_dimensions(entity, colour, minimum_vec, maximum_vec)
 end
 
@@ -527,13 +202,6 @@ end
 
 local menus = {}
 
-function get_friend_count()
-    native_invoker.begin_call();native_invoker.end_call("203F1CFD823B27A4");
-    return native_invoker.get_return_value_int();
-end
-function get_frined_name(friendIndex)
-   native_invoker.begin_call();native_invoker.push_arg_int(friendIndex);native_invoker.end_call("4164F227D052E293");return native_invoker.get_return_value_string();
-end
 
 function getVehicle(ped)
 	return IS_PED_SITTING_IN_ANY_VEHICLE(ped) and GET_VEHICLE_PED_IS_IN(ped, false)
@@ -651,12 +319,12 @@ function getcurrentweaponofped(ped)
 	end
 end
 
-local minimum = memory.alloc()
-local maximum = memory.alloc()
+local minimumdim = memory.alloc()
+local maximumdim = memory.alloc()
 function getDimensions(entity)
-	GET_MODEL_DIMENSIONS(GET_ENTITY_MODEL(entity), minimum, maximum)
-	local minimum_vec = v3.new(minimum)
-	local maximum_vec = v3.new(maximum)
+	GET_MODEL_DIMENSIONS(GET_ENTITY_MODEL(entity), minimumdim, maximumdim)
+	local minimum_vec = v3.new(minimumdim)
+	local maximum_vec = v3.new(maximumdim)
 	local dimensions = {
 		x = maximum_vec.y - minimum_vec.y,
 		y = maximum_vec.x - minimum_vec.x,
@@ -753,79 +421,6 @@ function Streamptfx(lib)
     USE_PARTICLE_FX_ASSET(lib)
 end
 
-classes = {
-	[0]= "Compacts",
-	[1]= "Sedans",
-	[2]= "SUVs",
-	[3]= "Coupes",
-	[4]= "Muscle",
-	[5]= "Sports Classics",
-	[6]= "Sports",
-	[7]= "Super",
-	[8]= "Motorcycles",
-	[9]= "Off-road",
-	[10]= "Industrial",
-	[11]= "Utility",
-	[12]= "Vans",
-	[13]= "Cycles",
-	[14]= "Boats",
-	[15]= "Helicopters",
-	[16]= "Planes",
-	[17]= "Service",
-	[18]= "Emergency",
-	[19]= "Military",
-	[20]= "Commercial",
-	[21]= "Trains",
-	[22]= "IDK"}
-
-PedType = {
-	[0]= "PLAYER_0",
-	[1]= "PLAYER_1",
-	[2]= "NETWORK_PLAYER",
-	[3]= "PLAYER_2",
-	[4]= "CIVMALE",
-	[5]= "CIVFEMALE",
-	[6]= "COP",
-	[7]= "GANG_ALBANIAN",
-	[8]= "GANG_BIKER_1",
-	[9]= "GANG_BIKER_2",
-	[10]= "GANG_ITALIAN",
-	[11]= "GANG_RUSSIAN",
-	[12]= "GANG_RUSSIAN_2",
-	[13]= "GANG_IRISH",
-	[14]= "GANG_JAMAICAN",
-	[15]= "GANG_AFRICAN_AMERICAN",
-	[16]= "GANG_KOREAN",
-	[17]= "GANG_CHINESE_JAPANESE",
-	[18]= "GANG_PUERTO_RICAN",
-	[19]= "DEALER",
-	[20]= "MEDIC",
-	[21]= "FIREMAN",
-	[22]= "CRIMINAL",
-	[23]= "BUM",
-	[24]= "PROSTITUTE",
-	[25]= "SPECIAL",
-	[26]= "MISSION",
-	[27]= "SWAT",
-	[28]= "ANIMAL",
-	[29]= "ARMY"}
-
-fireworktable = {
-    {1, "scr_indep_firework_starburst", {}, ""},
-    {2, "scr_indep_firework_shotburst", {}, ""},
-    {3, "scr_indep_firework_trailburst", {}, ""},
-	{4, "scr_indep_firework_fountain", {}, ""},
-    {5, "scr_indep_firework_trailburst_spawn", {}, ""},
-    {6, "scr_indep_firework_burst_spawn", {}, ""},
-    {7, "scr_indep_firework_trail_spawn", {}, ""},
-}
-fireworkplacetable = {
-    {1, "ind_prop_firework_01", {}, ""},
-    {2, "ind_prop_firework_02", {}, ""},
-    {3, "ind_prop_firework_03", {}, ""},
-	{4, "ind_prop_firework_04", {}, ""},
-}
-
 --[[local function is_user_a_stand_user(pid)
     if players.exists(pid) and pid != players.user() then
         for menu.player_root(pid):getChildren() as cmd do
@@ -911,29 +506,9 @@ function getpedsinvehicle(vehicle)
 	end
 end
 
-getseatname = {
-	[-1]= "Driver",
-	[0]= "Front Right Passenger",
-	[1]= "Back Left Passenger",
-	[2]= "Back Right Passenger",
-	[3]= "Further Back Left Passenger",
-	[4]= "Further Back Right Passenger",
-	[5]= "IDK Seat",
-	[6]= "IDK Seat",
-	[7]= "IDK Seat",
-	[8]= "IDK Seat",
-	[9]= "IDK Seat",
-	[10]= "IDK Seat"}
-
 function send_script_event(first_arg, receiver, args)
 	table.insert(args, 1, first_arg)
 	util.trigger_script_event(1 << receiver, args)
-end
-
-handle_ptr = memory.alloc(13*8)
-function pid_to_handle(pid)
-    NETWORK_HANDLE_FROM_PLAYER(pid, handle_ptr, 13)
-    return handle_ptr
 end
 
 function roundDecimals(float, decimals)
@@ -941,208 +516,13 @@ function roundDecimals(float, decimals)
 	return math.floor(float * decimals) / decimals
 end
 
-keyLookupTable = {
-    ['VK_LBUTTON']              =  0x01,	--Left mouse button
-    ['VK_RBUTTON']              =  0x02,	--Right mouse button
-    ['VK_CANCEL']               =  0x03,	--Control-break processing
-    ['VK_MBUTTON']              =  0x04,	--Middle mouse button (three-button mouse)
-    ['VK_XBUTTON1']             =  0x05,	--X1 mouse button
-    ['VK_XBUTTON2']             =  0x06,	--X2 mouse button
-    -- -	0x07	Undefined
-    ['VK_BACK']	                =  0x08,	--BACKSPACE key
-    ['VK_TAB']                  =  0x09,	--TAB key
-    -- -	0x0A-0B	Reserved
-    ['VK_CLEAR']                =  0x0C,	--CLEAR key
-    ['VK_RETURN']	            =  0x0D,	--ENTER key
-    -- -	0x0E-0F	Undefined
-    ['VK_SHIFT']                =  0x10,	--SHIFT key
-    ['VK_CONTROL']	            =  0x11,	--CTRL key
-    ['VK_MENU']	                =  0x12,	--ALT key
-    ['VK_PAUSE']	            =  0x13, 	--PAUSE key
-    ['VK_CAPITAL']	            =  0x14,	--CAPS LOCK key
-    ['VK_KANA']	                =  0x15, 	--IME Kana mode
-    ['VK_HANGUEL']	            =  0x15,	--IME Hanguel mode (maintained for compatibility; use VK_HANGUL)
-    ['VK_HANGUL']	            =  0x15,	--IME Hangul mode
-    ['VK_IME_ON']	            =  0x16,	--IME On
-    ['VK_JUNJA']	            =  0x17,	--IME Junja mode
-    ['VK_FINAL']	            =  0x18,	--IME final mode
-    ['VK_HANJA']	            =  0x19,	--IME Hanja mode
-    ['VK_KANJI']	            =  0x19,	--IME Kanji mode
-    ['VK_IME_OFF']	            =  0x1A,	--IME Off
-    ['VK_ESCAPE']	            =  0x1B,	--ESC key
-    ['VK_CONVERT']	            =  0x1C,	--IME convert
-    ['VK_NONCONVERT']           =  0x1D,	--IME nonconvert
-    ['VK_ACCEPT']	            =  0x1E,	--IME accept
-    ['VK_MODECHANGE']           =  0x1F,	--IME mode change request
-    ['VK_SPACE']	            =  0x20,	--SPACEBAR
-    ['VK_PRIOR']	            =  0x21,	--PAGE UP key
-    ['VK_NEXT']	                =  0x22,	--PAGE DOWN key
-    ['VK_END']	                =  0x23,	--END key
-    ['VK_HOME']	                =  0x24,	--HOME key
-    ['VK_LEFT']	                =  0x25,	--LEFT ARROW key
-    ['VK_UP']	                =  0x26,	--UP ARROW key
-    ['VK_RIGHT']	            =  0x27,	--RIGHT ARROW key
-    ['VK_DOWN']	                =  0x28,	--DOWN ARROW key
-    ['VK_SELECT']	            =  0x29,	--SELECT key
-    ['VK_PRINT']	            =  0x2A,	--PRINT key
-    ['VK_EXECUTE']	            =  0x2B,	--EXECUTE key
-    ['VK_SNAPSHOT']	            =  0x2C,	--PRINT SCREEN key
-    ['VK_INSERT']	            =  0x2D,	--INS key
-    ['VK_DELETE']	            =  0x2E,	--DEL key
-    ['VK_HELP']	                =  0x2F,	--HELP key
-    ['VK_0']                    =  0x30,	--0 key
-    ['VK_1']                    =  0x31,	--1 key
-    ['VK_2']                    =  0x32,	--2 key
-    ['VK_3']                    =  0x33,	--3 key
-    ['VK_4']                    =  0x34,	--4 key
-    ['VK_5']                    =  0x35,	--5 key
-    ['VK_6']                    =  0x36,	--6 key
-    ['VK_7']                    =  0x37,	--7 key
-    ['VK_8']                    =  0x38,	--8 key
-    ['VK_9']                    =  0x39,	--9 key
-    -- -	0x3A-40	Undefined
-    ['VK_A']                    =  0x41,	--A key
-    ['VK_B']                    =  0x42,	--B key
-    ['VK_C']                    =  0x43,	--C key
-    ['VK_D']                    =  0x44,	--D key
-    ['VK_E']                    =  0x45,	--E key
-    ['VK_F']                    =  0x46,	--F key
-    ['VK_G']                    =  0x47,	--G key
-    ['VK_H']                    =  0x48,	--H key
-    ['VK_I']                    =  0x49,	--I key
-    ['VK_J']                    =  0x4A,	--J key
-    ['VK_K']                    =  0x4B,	--K key
-    ['VK_L']                    =  0x4C,	--L key
-    ['VK_M']                    =  0x4D,	--M key
-    ['VK_N']                    =  0x4E,	--N key
-    ['VK_O']                    =  0x4F,	--O key
-    ['VK_P']                    =  0x50,	--P key
-    ['VK_Q']                    =  0x51,	--Q key
-    ['VK_R']                    =  0x52,	--R key
-    ['VK_S']                    =  0x53,	--S key
-    ['VK_T']                    =  0x54,	--T key
-    ['VK_U']                    =  0x55,	--U key
-    ['VK_V']                    =  0x56,	--V key
-    ['VK_W']                    =  0x57,	--W key
-    ['VK_X']                    =  0x58,	--X key
-    ['VK_Y']                    =  0x59,	--Y key
-    ['VK_Z']                    =  0x5A,	--Z key
-    ['VK_LWIN']	                =  0x5B,	--Left Windows key (Natural keyboard)
-    ['VK_RWIN']	                =  0x5C,	--Right Windows key (Natural keyboard)
-    ['VK_APPS']	                =  0x5D,	--Applications key (Natural keyboard)
-    -- -	0x5E	Reserved
-    ['VK_SLEEP']	            =  0x5F,	--Computer Sleep key
-    ['VK_NUMPAD0']	            =  0x60,	--Numeric keypad 0 key
-    ['VK_NUMPAD1']	            =  0x61,	--Numeric keypad 1 key
-    ['VK_NUMPAD2']	            =  0x62,	--Numeric keypad 2 key
-    ['VK_NUMPAD3']	            =  0x63,	--Numeric keypad 3 key
-    ['VK_NUMPAD4']	            =  0x64,	--Numeric keypad 4 key
-    ['VK_NUMPAD5']	            =  0x65,	--Numeric keypad 5 key
-    ['VK_NUMPAD6']	            =  0x66,	--Numeric keypad 6 key
-    ['VK_NUMPAD7']	            =  0x67,	--Numeric keypad 7 key
-    ['VK_NUMPAD8']	            =  0x68,	--Numeric keypad 8 key
-    ['VK_NUMPAD9']	            =  0x69,	--Numeric keypad 9 key
-    ['VK_MULTIPLY']	            =  0x6A,	--Multiply key
-    ['VK_ADD']	                =  0x6B,	--Add key
-    ['VK_SEPARATOR']            =  0x6C,	--Separator key
-    ['VK_SUBTRACT']	            =  0x6D,	--Subtract key
-    ['VK_DECIMAL']	            =  0x6E,	--Decimal key
-    ['VK_DIVIDE']	            =  0x6F,	--Divide key
-    ['VK_F1']	                =  0x70,	--F1 key
-    ['VK_F2']	                =  0x71,	--F2 key
-    ['VK_F3']	                =  0x72,	--F3 key
-    ['VK_F4']	                =  0x73,	--F4 key
-    ['VK_F5']	                =  0x74,	--F5 key
-    ['VK_F6']	                =  0x75,	--F6 key
-    ['VK_F7']	                =  0x76,	--F7 key
-    ['VK_F8']	                =  0x77,	--F8 key
-    ['VK_F9']	                =  0x78,	--F9 key
-    ['VK_F10']	                =  0x79,	--F10 key
-    ['VK_F11']	                =  0x7A,	--F11 key
-    ['VK_F12']	                =  0x7B,	--F12 key
-    ['VK_F13']	                =  0x7C,	--F13 key
-    ['VK_F14']	                =  0x7D,	--F14 key
-    ['VK_F15']	                =  0x7E,	--F15 key
-    ['VK_F16']	                =  0x7F,	--F16 key
-    ['VK_F17']	                =  0x80,	--F17 key
-    ['VK_F18']	                =  0x81,	--F18 key
-    ['VK_F19']	                =  0x82,	--F19 key
-    ['VK_F20']	                =  0x83,	--F20 key
-    ['VK_F21']	                =  0x84,	--F21 key
-    ['VK_F22']	                =  0x85,	--F22 key
-    ['VK_F23']	                =  0x86,	--F23 key
-    ['VK_F24']	                =  0x87,	--F24 key
-    -- -	0x88-8F	Unassigned
-    ['VK_NUMLOCK']	            =  0x90,	--NUM LOCK key
-    ['VK_SCROLL']	            =  0x91,	--SCROLL LOCK key
-    -- 0x92-96	OEM specific
-    -- -	0x97-9F	Unassigned
-    ['VK_LSHIFT']	            =  0xA0,    --Left SHIFT key
-    ['VK_RSHIFT']	            =  0xA1,    --Right SHIFT key
-    ['VK_LCONTROL']	            =  0xA2,    --Left CONTROL key
-    ['VK_RCONTROL']	            =  0xA3,    --Right CONTROL key
-    ['VK_LMENU']	            =  0xA4,    --Left MENU key
-    ['VK_RMENU']	            =  0xA5,    --Right MENU key
-    ['VK_BROWSER_BACK']	        =  0xA6,	--Browser Back key
-    ['VK_BROWSER_FORWARD']	    =  0xA7,	--Browser Forward key
-    ['VK_BROWSER_REFRESH']	    =  0xA8,	--Browser Refresh key
-    ['VK_BROWSER_STOP']	        =  0xA9,	--Browser Stop key
-    ['VK_BROWSER_SEARCH']	    =  0xAA,	--Browser Search key
-    ['VK_BROWSER_FAVORITES']	=  0xAB,	--Browser Favorites key
-    ['VK_BROWSER_HOME']	        =  0xAC,	--Browser Start and Home key
-    ['VK_VOLUME_MUTE']	        =  0xAD,	--Volume Mute key
-    ['VK_VOLUME_DOWN']	        =  0xAE,	--Volume Down key
-    ['VK_VOLUME_UP']	        =  0xAF,	--Volume Up key
-    ['VK_MEDIA_NEXT_TRACK']	    =  0xB0,	--Next Track key
-    ['VK_MEDIA_PREV_TRACK']	    =  0xB1,	--Previous Track key
-    ['VK_MEDIA_STOP']	        =  0xB2,	--Stop Media key
-    ['VK_MEDIA_PLAY_PAUSE']	    =  0xB3,	--Play/Pause Media key
-    ['VK_LAUNCH_MAIL']	        =  0xB4,	--Start Mail key
-    ['VK_LAUNCH_MEDIA_SELECT']	=  0xB5,	--Select Media key
-    ['VK_LAUNCH_APP1']	        =  0xB6,	--Start Application 1 key
-    ['VK_LAUNCH_APP2']	        =  0xB7,	--Start Application 2 key
-    -- -	0xB8-B9	Reserved
-    ['VK_OEM_1']	            =  0xBA,	--Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key
-    ['VK_OEM_PLUS']	            =  0xBB,	--For any country/region, the '+' key
-    ['VK_OEM_COMMA']	        =  0xBC,	--For any country/region, the ',' key
-    ['VK_OEM_MINUS']	        =  0xBD,	--For any country/region, the '-' key
-    ['VK_OEM_PERIOD']	        =  0xBE,	--For any country/region, the '.' key
-    ['VK_OEM_2']	            =  0xBF,	--Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key
-    ['VK_OEM_3']	            =  0xC0,	--Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key
-    -- -	0xC1-D7	Reserved
-    -- -	0xD8-DA	Unassigned
-    ['VK_OEM_4']	            =  0xDB,	--Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key
-    ['VK_OEM_5']	            =  0xDC,	--Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key
-    ['VK_OEM_6']	            =  0xDD,	--Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
-    ['VK_OEM_7']	            =  0xDE,	--Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the 'single-quote/double-quote' key
-    ['VK_OEM_8']	            =  0xDF,	--Used for miscellaneous characters; it can vary by keyboard.
-    -- -	0xE0	Reserved
-    --0xE1	OEM specific
-    ['VK_OEM_102']              =  0xE2,	--The <> keys on the US standard keyboard, or the \\| key on the non-US 102-key keyboard
-    -- 0xE3-E4	OEM specific
-    ['VK_PROCESSKEY']	        =  0xE5,	--IME PROCESS key
-    -- 0xE6	OEM specific
-    ['VK_PACKET']	            =  0xE7, 	--Used to pass Unicode characters as if they were keystrokes. The VK_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods. For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP
-    -- -	0xE8	Unassigned
-    -- 0xE9-F5	OEM specific
-    ['VK_ATTN']	                =  0xF6,	--Attn key
-    ['VK_CRSEL']	            =  0xF7,	--CrSel key
-    ['VK_EXSEL']	            =  0xF8,	--ExSel key
-    ['VK_EREOF']	            =  0xF9,	--Erase EOF key
-    ['VK_PLAY']	                =  0xFA,	--Play key
-    ['VK_ZOOM']	                =  0xFB,	--Zoom key
-    ['VK_NONAME']	            =  0xFC,	--Reserved
-    ['VK_PA1']	                =  0xFD,	--PA1 key
-    ['VK_OEM_CLEAR']	        =  0xFE,	--Clear key
-}
-
 local justPressed = {}
 local lastPressMS = {}
 
 local loadthigson = true
 
 function getKeyCode(string_or_int)
-    local lookup = keyLookupTable[string_or_int]
+    local lookup = tables.keyLookupTable[string_or_int]
     return (lookup and lookup or string_or_int)
 end
 
@@ -1162,16 +542,6 @@ function is_key_just_down(string_or_int)
         justPressed[keyCode] = false
     end
     return false
-end
-
-function update_leave(pid)
-	if menu.get_value(menu.ref_by_command_name("selected" ..pid)) == true then
-		menu.trigger_commands("selected" .. pid .. " " .. "off")
-		--util.yield(200)
-		menu.delete(cmd_id[pid])
-	else
-		menu.delete(cmd_id[pid])
-	end
 end
 
 function get_ground_z(coords)
@@ -1271,7 +641,7 @@ function get_ms_since_last_press(string_or_int)
 end
 
 function isanykeypressed()
-	for keyLookupTable as key do
+	for tables.keyLookupTable as key do
 		local keydown = is_key_down(key)
 		if keydown then
 			return true
@@ -1348,7 +718,6 @@ function get_ip_data(ip)
     return data
 end
 
---players.on_leave(update_leave)
 
 timer1 = 0
 
@@ -1546,27 +915,16 @@ end
 
 function getLanguage(pid)
 	pid = pid or Player.getUserPlayer()
-	return LANGUAGES[players.get_language(pid)]
+	return tables.LANGUAGES[players.get_language(pid)]
 end
 
---[[local colors = {
-green = 184,
-red = 6,
-yellow = 190,
-black = 2,
-white = 1,
-gray = 3,
-pink = 201,
-purple = 49,
-blue = 11
-}]]
 
 function getInterior(pid)
 	pid = pid or players.user()
 	local pos = players.get_position(pid)
 	local interior = GET_INTERIOR_FROM_COLLISION(pos.x, pos.y, pos.z)
 	if interior > 0 then
-		for name, val in INTERIOR_IDS do
+		for name, val in tables.INTERIOR_IDS do
 			if val == interior then
 				local hasNumber = string.find(name, "%d")
 				if hasNumber then
@@ -1579,7 +937,7 @@ function getInterior(pid)
 		if name == "kosatka" and checkCoordsFor("kosatkaMissile") then
 			return "kosatkaMissile"
 		end
-		local coords = INTERIOR_COORDS[name]
+		local coords = tables.INTERIOR_COORDS[name]
 		if pos.x >= coords[1] and pos.x <= coords[2] and pos.y >= coords[3] and pos.y <= coords[4] then
 			if not coords[5] or (pos.z >= coords[5] and pos.z <= coords[6]) then
 				local hasNumber = string.find(name, "%d")
@@ -1590,7 +948,7 @@ function getInterior(pid)
 			end
 		end
 	end
-	for name in INTERIOR_COORDS do
+	for name in tables.INTERIOR_COORDS do
 		local interiorName = checkCoordsFor(name)
 		if interiorName then
 			return interiorName
@@ -1620,37 +978,6 @@ local function player(pid)
 	orgthingstrolling = menu.list(orgthings, "Trolling", {"orgtrolling"}, "")
 	orgthingstrollingvehicle = menu.list(orgthingstrolling, "Vehicle", {"orgtrollingvehicle"}, "")
 	orgthingscrash = menu.list(orgthings, "Crash", {"orgcrash"}, "")
-	--local spam = menu.list(main, "spam zeug", {"spamzeug"}, "")
-
-	--[[menu.toggle(spam, "alle loops", {}, "auto spam besser selber an machen sonst kaka", function(on_toggle)
-		if on_toggle then
-			menu.trigger_commands("ptfxspam" .. players.get_name(pid) .. " on")
-			menu.trigger_commands("explospam" .. players.get_name(pid) .. " on")
-		else
-			menu.trigger_commands("ptfxspam" .. players.get_name(pid) .. " off")
-			menu.trigger_commands("explospam" .. players.get_name(pid) .. " off")
-		end
-    end)
-
-	local ptfx = {lib = 'scr_rcbarry2', sel = 'scr_clown_appears'}
-	menu.toggle_loop(spam, 'PTFX Spam', {"ptfxspam"}, 'PTFX Spam', function ()
-    local targets = GET_PLAYER_PED_SCRIPT_INDEX(pid)
-    local tar1 = GET_ENTITY_COORDS(targets, true)
-    Streamptfx(ptfx.lib)
-    START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD( ptfx.sel, tar1.x, tar1.y, tar1.z + 1, 0, 0, 0, 10.0, true, true, true)
-	end)
-
-	menu.list_action(spam, 'Ptfx List', {}, 'such dir hier aus was du für ein ptfx willst', Fxcorelist, function(fxsel)
-    ptfx.sel = Fxha[fxsel]
-    ptfx.lib = 'core'
-	end)
-
-	menu.toggle_loop(spam, "auto spam", {"autospam"}, "auto spawn spawnt viele t20", function(on_toggle)
-			menu.trigger_commands("as" .. players.get_name(pid) .. " spawn" .. " t20")
-    end)
-	menu.toggle_loop(spam, "explosiv spam", {"explospam"}, "lässt ihn die ganze zeit explodieren", function(on_toggle)
-		menu.trigger_commands("explode" .. players.get_name(pid))
-	end)]]
 
 	-- org teleport menu
 	menu.action(orgthingsteleport, "Zu Mir Teleportieren", {}, "", function()
@@ -2356,60 +1683,7 @@ Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
 customselection = menu.list(menu.my_root(), "Custom Selection", {}, "")
 misc = menu.list(menu.my_root(), "Misc", {}, "")
 Menyoveh = menu.list(menu.my_root(), "Menyoo vehicle/maps spawn", {}, "only xml,ini files")
-frendlist = menu.list(misc, "friend list", {"fl"}, "")
-players_list = menu.list(misc, "Players", {}, "")
 
-function gen_fren_funcs(name)
-	local balls = menu.list(frendlist, name, {"friend "..name}, "", function(); end)
-	menu.divider(balls, name)
-	menu.action(balls,"join", {"jf "..name}, "",function()
-		menu.trigger_commands("join "..name)
-	end)
-	menu.action(balls,"add to history", {}, "",function()
-		menu.trigger_commands("historyadd " .. name)
-	end)
-	menu.action(balls,"open in history", {}, "",function()
-		menu.trigger_commands("findplayer " .. name)
-	end)
-	menu.action(balls,"open profile", {"pf "..name}, "",function()
-		menu.trigger_commands("nameprofile "..name)
-	end)
-end
-
-menu.divider(frendlist, "frens:)")
-for i = 0 , get_friend_count() do
-	local name = get_frined_name(i)
-	if name == "*****" then goto yes end
-	gen_fren_funcs(name)
-	::yes::
-end
-
-function handle_player_list(pid)
-    local ref = menus[pid]
-    if not players.exists(pid) then
-        if ref then
-            menu.delete(ref)
-            menus[pid] = nil
-        end
-    end
-end
-
-function player_list(pid)
-	menus[pid] = menu.action(players_list, players.get_name(pid), {}, "", function() -- thanks to dangerman and aaron for showing me how to delete players properly
-		menu.trigger_commands("Plmein " .. players.get_name(pid))
-	end)
-end
-
-players.on_join(player_list)
-players.on_leave(handle_player_list)
-
-for pids = 0, 31 do
-	if players.exists(pids) then
-		menus[pids] = menu.action(players_list, players.get_name(pids), {}, "", function() -- thanks to dangerman and aaron for showing me how to delete players properly
-			menu.trigger_commands("Plmein " .. players.get_name(pids))
-		end)
-	end
-end
 
 Entitymanagerespvehicle = menu.list(Entitymanageresp, "Vehicles", {}, "")
 Entitymanageresppeds = menu.list(Entitymanageresp, "Peds", {}, "")
@@ -2581,7 +1855,7 @@ showonlymissionveh = menu.get_value(onlymissionToggleveh)
 actionSubmenuveh = menu.list(Entitymanagerespvehicle, "Action", {}, "action für die auf dennen ESP drauf ist")
 actionsettingsSubmenuveh = menu.list(actionSubmenuveh, "Settings", {}, "")
 explosiontype = 6
-explosionsettingveh = menu.list_select(actionsettingsSubmenuveh, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", EXPLOSIONVARIATION, explosiontype, function(value)
+explosionsettingveh = menu.list_select(actionsettingsSubmenuveh, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", tables.explosionvariation, explosiontype, function(value)
 	explosiontype = value
 end)
 onlyvisibleToggleveh = menu.toggle(actionSubmenuveh, "get only visible vehs", {}, "", function(on)
@@ -2933,7 +2207,7 @@ showonlyblibsped = menu.get_value(onlyblibsToggleped)
 
 actionSubmenuped = menu.list(Entitymanageresppeds, "Action", {}, "action für die auf dennen ESP drauf ist")
 actionsettingsSubmenuped = menu.list(actionSubmenuped, "Settings", {}, "")
-explosionsettingped = menu.list_select(actionsettingsSubmenuped, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", EXPLOSIONVARIATION, explosiontype, function(value)
+explosionsettingped = menu.list_select(actionsettingsSubmenuped, "Explosion", {}, "Explosion wie haftbomben oder granaten haben eine grenze also nicht wundern", tables.explosionvariation, explosiontype, function(value)
 	explosiontype = value
 end)
 onlyvisibleToggleped = menu.toggle(actionSubmenuped, "get only visible peds", {}, "", function(on)
@@ -4276,7 +3550,7 @@ function getnearvehicle()
 		local modelname = getmodelnamebyhash(modelhash)
 		local infodist = pPos:distance(ePos)
 		local ismissionentity = IS_ENTITY_A_MISSION_ENTITY(vehhandle)
-		local vehicleclassbyhandle = classes[GET_VEHICLE_CLASS(vehhandle)]
+		local vehicleclassbyhandle = tables.classes[GET_VEHICLE_CLASS(vehhandle)]
 		local textline = modelname.. "  [".. dist.. "]"
 		local infotextline = modelname.. " {"..vehicleclassbyhandle.."}\nDist: ".. dist
 		local createmenus = true
@@ -4473,7 +3747,7 @@ function getnearvehicle()
 				local seattextline = ""
 				local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(entityhandle) -1
 				for i=-1, maxPassengers do
-				 	seattextline = getseatname[i]
+				 	seattextline = tables.getseatname[i]
 					if not IS_VEHICLE_SEAT_FREE(entityhandle, i) then
 						local pedinseat = GET_PED_IN_VEHICLE_SEAT(entityhandle, i, true)
 						if IS_PED_A_PLAYER(pedinseat) then
@@ -5069,8 +4343,8 @@ function getnearpeds()
 		if IS_PED_DEAD_OR_DYING(vehhandle) then
 			textline = textline.. " {Dead}"
 		end
-		if PedType[GET_PED_TYPE(vehhandle)] != nil then
-			infotextline = infotextline.. "\nPedType: ".. PedType[GET_PED_TYPE(vehhandle)]
+		if tables.PedType[GET_PED_TYPE(vehhandle)] != nil then
+			infotextline = infotextline.. "\nPedType: ".. tables.PedType[GET_PED_TYPE(vehhandle)]
 		end
 		if showdebugginfosnearentitys then
 			infotextline = infotextline.. "\nModelhash: ".. modelhash.. "\nWorldPosition: " .. "X:" ..math.floor(ePos.x) .. " Y:" ..math.floor(ePos.y) .. " Z:" ..math.floor(ePos.z)
@@ -7468,8 +6742,8 @@ local state = {}
 local pointx = memory.alloc()
 local pointy = memory.alloc()
 
-util.ensure_package_is_installed('lua/inspect')
-local inspect = require("inspect")
+--util.ensure_package_is_installed('lua/inspect')
+--local inspect = require("inspect")
 
 local config = {
     debug_mode = false,
@@ -7490,7 +6764,6 @@ local config = {
             z=0.0,
         },
     },
-	target_snap_distance=0.09,
     target_player_distance=1000,
     target_vehicle_distance=1000,
     target_ped_distance=500,
@@ -7522,7 +6795,7 @@ local config = {
     show_target_name=true,
 	show_target_owner=true,
     show_option_help=true,
-    menu_options_scripts_dir="lib/SelfmadeContextstuff",
+    menu_options_scripts_dir="lib/Selfmadestuff/Contextstuff",
 	trace_flag_options = {
         --{name="All", value=511, enabled=false},
         {name="World", value=1, enabled=true},
@@ -7544,6 +6817,9 @@ filesystem.mkdirs(CONTEXT_MENUS_DIR)
 local function debug_log(text)
     util.log("[ContextMenuManager] "..text)
 end
+
+local minimum = memory.alloc()
+local maximum = memory.alloc()
 
 cmm.draw_bounding_box = function(target, colour)
     if colour == nil then
@@ -7571,23 +6847,22 @@ cmm.context_menu_draw_tick = function()
     if not cmm.is_menu_available() then return true end
 
     if state.is_menu_open then
-		cmm.refresh_screen_pos(target)
+		cmm.refresh_screen_pos(state.current_target)
     else
-        state.current_target = cmm.find_nearest_target()
 		directx.draw_circle(0.5, 0.5, 0.001, config.color.target_ball)
+        state.current_target = cmm.find_nearest_target()	
     end
 
 	local target = state.current_target
     if target ~= nil and target.pos ~= nil then
         cmm.draw_selection(target)
-        --if IS_DISABLED_CONTROL_PRESSED(2, 25) then
-        if IS_DISABLED_CONTROL_PRESSED(2, 27) and not createphoneoutofding then
+        if cmm.is_menu_open_control_pressed() and not createphoneoutofding then
             DISABLE_CONTROL_ACTION(2, 27, true)
             timetodestroypgone += 1
             if not menu.is_open() then
                 cmm.open_options_menu(target)
             end
-        else
+        elseif cmm.is_menu_close_control_pressed() then
             cmm.close_options_menu(target)
             if timetodestroypgone < 15 and timetodestroypgone > 1 then createphoneoutofding = true SET_CONTROL_VALUE_NEXT_FRAME(2, 27, 1.0) else createphoneoutofding = false end
             timetodestroypgone = 0
@@ -7600,10 +6875,17 @@ cmm.context_menu_draw_tick = function()
     return true
 end
 
+cmm.is_menu_open_control_pressed = function()
+    return IS_DISABLED_CONTROL_JUST_PRESSED(2, 27) and not IS_PAUSE_MENU_ACTIVE()
+end
+
+cmm.is_menu_close_control_pressed = function()
+    return not IS_DISABLED_CONTROL_PRESSED(2, 27) or IS_PAUSE_MENU_ACTIVE()
+end
+
 cmm.is_menu_available = function()
     if not config.context_menu_enabled then return false end
 	if config.disable_in_vehicles then if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then return false end end
-    if IS_PAUSE_MENU_ACTIVE() then return false end
 	return true
 end
 
@@ -7650,6 +6932,7 @@ function build_handle_target(handle)
         handle=handle,
         position=GET_ENTITY_COORDS(handle),
     }
+	cmm.update_target_data(target)
     expand_target_screen_pos(target)
     return target
 end
@@ -7807,8 +7090,6 @@ local ENTITY_TYPES = {"PED", "VEHICLE", "OBJECT"}
 --- Draw Utils
 ---
 
-local minimum = memory.alloc()
-local maximum = memory.alloc()
 local upVector_pointer = memory.alloc()
 local rightVector_pointer = memory.alloc()
 local forwardVector_pointer = memory.alloc()
@@ -8072,10 +7353,8 @@ cmm.check_option_hotkeys = function(target)
     --PAD.DISABLE_CONTROL_ACTION(2, 245, true) --chat
     for option_index, option in target.relevant_options do
         local hotkey = option.hotkey
-        if hotkey_map[hotkey] ~= nil then hotkey = hotkey_map[hotkey] end
-		if hotkey ~= nil then
-			hotkey = string.upper(hotkey)
-		end
+		if hotkey then hotkey = hotkey:upper() end
+		if hotkey and hotkey_map[hotkey] ~= nil then hotkey = hotkey_map[hotkey] end
         if hotkey ~= nil and util.is_key_down(hotkey) then
             target.selected_option = option
             cmm.execute_selected_action(target)
@@ -8128,7 +7407,7 @@ cmm.execute_selected_action = function(target)
         util.log("Triggering option "..target.selected_option.name)
         --if cmm.is_target_a_player_in_vehicle(target) then
         --    target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
-        --    cmm.update_target_data(target)
+		--	cmm.update_target_data(target)
         --end
         target.selected_option.execute(target)
     end
@@ -8272,11 +7551,8 @@ cmm.get_vehicle_name_by_handle = function(handle)
 end
 
 function get_target_name(target)
-    if target.type == "PLAYER" then
-        local pid = get_player_id_from_handle(target.handle)
-        if pid then
-            return GET_PLAYER_NAME(pid)
-        end
+    if target.type == "PLAYER" and target.player_id then
+        return GET_PLAYER_NAME(target.player_id)
     elseif target.type == "VEHICLE" then
         return cmm.get_vehicle_name_by_model(target.model_hash)
     end
@@ -8328,6 +7604,7 @@ end
 
 cmm.update_target_data = function(target)
     target.type = get_target_type(target)
+	target.player_id = get_player_id_from_handle(target.handle)
     target.name = get_target_name(target)
     target.owner = get_target_owner(target)
 end
@@ -8720,25 +7997,6 @@ function clearAreaOfEntities(entitie, range)
 		end
 end
 
---[[local function clearAreaOfEntities(tbl, range)
-    local rangesq = range*range
-    local pc = GET_ENTITY_COORDS(players.user_ped())
-    for _, v in pairs(tbl) do
-        local cc = entities.get_position(v)
-        if (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) then
-            local h = entities.pointer_to_handle(v)
-			local x = entities.get_model_hash(h)
-			local playervehicle = entities.get_user_vehicle_as_handle(true)
-            if IS_ENTITY_AN_OBJECT(h) then
-               	for i = 0, 20 do NETWORK_REQUEST_CONTROL_OF_ENTITY(h) end
-                entities.delete_by_handle(h)
-			elseif (IS_ENTITY_A_PED(h) and not IS_PED_A_PLAYER(h)) or (not IS_ENTITY_A_PED(h)) and not (playervehicle == h) then
-				for i = 0, 20 do NETWORK_REQUEST_CONTROL_OF_ENTITY(h) end
-                entities.delete_by_handle(h)
-            end
-        end
-    end
-end]]
 function getAreaOfEntities(tbl, range)
     local rangesq = range*range
     local pc = GET_ENTITY_COORDS(players.user_ped())
@@ -9920,99 +9178,9 @@ menu.toggle_loop(antivehicleaction, "Explode vehicle", {}, "", function()
 		::continue::
 	end
 end)
---[[local filepath = filesystem.store_dir() .. "\\Selfmade\\playerhistory.txt"
-
-if not filesystem.exists(filesystem.store_dir() .. "\\Selfmade") then
-    filesystem.mkdir(filesystem.store_dir() .. "\\Selfmade")
-end
-if not filesystem.exists(filesystem.store_dir() .. "\\Selfmade\\playerhistory.txt") then
-    local file = io.open(filesystem.store_dir() .. "\\Selfmade\\playerhistory.txt", "w")
-    file:close()
-end
-
-menu.action(selfmadeplayerhistory, "safe lobby in file", {}, "",function()
-	local file = io.open(filepath, "a")
-	for players.list(false, true, true) as pid do
-		Pname = players.get_name(pid)
-   		file:write("["..os.date("%x", 906000490).. "] ".. Pname.. " IP: ".. tostring(soup.IpAddr(players.get_connect_ip(pid))).. "\n" )
-	end
-	file:close()
-end)
-menu.action(selfmadeplayerhistory, "clear textfile", {}, "",function()
-	local file = io.open(filepath, "w+")
-   	file:write()
-	file:close()
-end)]]
 
 
 
-
-local Languages = {
-	{ Name = "Afrikaans", Key = "af" },
-	{ Name = "Albanian", Key = "sq" },
-	{ Name = "Arabic", Key = "ar" },
-	{ Name = "Azerbaijani", Key = "az" },
-	{ Name = "Basque", Key = "eu" },
-	{ Name = "Belarusian", Key = "be" },
-	{ Name = "Bengali", Key = "bn" },
-	{ Name = "Bulgarian", Key = "bg" },
-	{ Name = "Catalan", Key = "ca" },
-	{ Name = "Chinese Simplified", Key = "zh-CN" },
-	{ Name = "Chinese Traditional", Key = "zh-TW" },
-	{ Name = "Croatian", Key = "hr" },
-	{ Name = "Czech", Key = "cs" },
-	{ Name = "Danish", Key = "da" },
-	{ Name = "Dutch", Key = "nl" },
-	{ Name = "English", Key = "en" },
-	{ Name = "Esperanto", Key = "eo" },
-	{ Name = "Estonian", Key = "et" },
-	{ Name = "Filipino", Key = "tl" },
-	{ Name = "Finnish", Key = "fi" },
-	{ Name = "French", Key = "fr" },
-	{ Name = "Galician", Key = "gl" },
-	{ Name = "Georgian", Key = "ka" },
-	{ Name = "German", Key = "de" },
-	{ Name = "Greek", Key = "el" },
-	{ Name = "Gujarati", Key = "gu" },
-	{ Name = "Haitian Creole", Key = "ht" },
-	{ Name = "Hebrew", Key = "iw" },
-	{ Name = "Hindi", Key = "hi" },
-	{ Name = "Hungarian", Key = "hu" },
-	{ Name = "Icelandic", Key = "is" },
-	{ Name = "Indonesian", Key = "id" },
-	{ Name = "Irish", Key = "ga" },
-	{ Name = "Italian", Key = "it" },
-	{ Name = "Japanese", Key = "ja" },
-	{ Name = "Kannada", Key = "kn" },
-	{ Name = "Korean", Key = "ko" },
-	{ Name = "Latin", Key = "la" },
-	{ Name = "Latvian", Key = "lv" },
-	{ Name = "Lithuanian", Key = "lt" },
-	{ Name = "Macedonian", Key = "mk" },
-	{ Name = "Malay", Key = "ms" },
-	{ Name = "Maltese", Key = "mt" },
-	{ Name = "Norwegian", Key = "no" },
-	{ Name = "Persian", Key = "fa" },
-	{ Name = "Polish", Key = "pl" },
-	{ Name = "Portuguese", Key = "pt" },
-	{ Name = "Romanian", Key = "ro" },
-	{ Name = "Russian", Key = "ru" },
-	{ Name = "Serbian", Key = "sr" },
-	{ Name = "Slovak", Key = "sk" },
-	{ Name = "Slovenian", Key = "sl" },
-	{ Name = "Spanish", Key = "es" },
-	{ Name = "Swahili", Key = "sw" },
-	{ Name = "Swedish", Key = "sv" },
-	{ Name = "Tamil", Key = "ta" },
-	{ Name = "Telugu", Key = "te" },
-	{ Name = "Thai", Key = "th" },
-	{ Name = "Turkish", Key = "tr" },
-	{ Name = "Ukrainian", Key = "uk" },
-	{ Name = "Urdu", Key = "ur" },
-	{ Name = "Vietnamese", Key = "vi" },
-	{ Name = "Welsh", Key = "cy" },
-	{ Name = "Yiddish", Key = "yi" },
-}
 
 local LangKeys = {}
 local LangName = {}
@@ -10022,8 +9190,8 @@ local LangLookupByKey = {}
 local PlayerSpooflist = {}
 local PlayerSpoof = {}
 
-for i=1,#Languages do
-	local Language = Languages[i]
+for i=1,#tables.Languages do
+	local Language = tables.Languages[i]
 	LangKeys[i] = Language.Name
 	LangName[i] = Language.Name
 	LangIndexes[Language.Key] = i
@@ -10091,6 +9259,7 @@ chat.on_message(function(packet_sender, message_sender, text, team_chat)
 		if not traductself and (packet_sender == players.user()) then
 		else
 		async_http.init("translate.googleapis.com", "/translate_a/single?client=gtx&sl=auto&tl="..targetlang.."&dt=t&q="..encode(text), function(Sucess)
+			local textline = ""
 			if Sucess ~= "" then
 				translation, original, sourceLang = Sucess:match("^%[%[%[\"(.-)\",\"(.-)\",.-,.-,.-]],.-,\"(.-)\"")
 				if not traductsamelang and (string.sub(sourceLang,0,2) == "en") or (string.sub(sourceLang,0,2) == "de") then
@@ -10102,18 +9271,22 @@ chat.on_message(function(packet_sender, message_sender, text, team_chat)
 				if string.match(string.gsub(translation, "%+", " "), original) then
 					goto end
 				end
+				if LangLookupByKey[string.sub(sourceLang,0,2)] != nil and (Tradloca == 5) then
+					textline = LangLookupByKey[string.sub(sourceLang,0,2)].." TO "..LangLookupByKey[targetlang].."\n"
+				end
+				textline = textline.. players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " ")
 					if (Tradloca == 1) then	
-						chat.send_message(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), true, true, false)
+						chat.send_message(textline, true, true, false)
 					end if (Tradloca == 2) then
 						botsend = true
-						chat.send_message(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), true, true, true)
+						chat.send_message(textline, true, true, true)
 					end if (Tradloca == 3) then
-						chat.send_message(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), false, true, false)
+						chat.send_message(textline, false, true, false)
 					end if (Tradloca == 4) then
 						botsend = true
-						chat.send_message(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), false, true, true)
+						chat.send_message(textline, false, true, true)
 					end if (Tradloca == 5) then
-						util.toast(players.get_name(packet_sender).." : "..string.gsub(translation, "%+", " "), TOAST_ALL)
+						util.toast(textline, TOAST_ALL)
 					end
 				::end::
 			end
@@ -10132,9 +9305,6 @@ while run<10 do
 	util.yield()
 	run = run+1
 end
-
-
-
 
 
 
@@ -11127,14 +10297,6 @@ end
 
 get_all_vehicles_in_dir()
 get_all_maps_in_dir()
-
---[[util.create_thread(function()
-    while true do
-        get_all_vehicles_in_dir()
-        get_all_maps_in_dir()
-        util.yield(5000)
-    end
-end)]]
 
 menu.divider(Menyoveh, "Misc")
 v_search_results = {}
@@ -12301,10 +11463,10 @@ local supported_jackz_versions = {'1.1.0', '1.3.0', '1.3.1', '1.4.0'}
 
 menu.divider(fireworklist, "Settings")
 
-fireworklistselect = menu.list_select(fireworklist, "effect", {}, "", fireworktable, 2, function(index,value)
+fireworklistselect = menu.list_select(fireworklist, "effect", {}, "", tables.fireworktable, 2, function(index,value)
 	ptfnamesel = value
 end)
-fireworkplacelistselect = menu.list_select(fireworklist, "Placed rocket", {}, "", fireworkplacetable, 1, function(index,value)
+fireworkplacelistselect = menu.list_select(fireworklist, "Placed rocket", {}, "", tables.fireworkplacetable, 1, function(index,value)
 	hashofobj = util.joaat(value)
 	hashofobjname = value
 end)
@@ -12312,6 +11474,12 @@ fireworkcolourlist = menu.colour(fireworklist, "Colour", {}, "", fireworkcolours
 	fireworkcolourselect = s
 end)
 menu.inline_rainbow(fireworkcolourlist)
+for _, ref in pairs(menu.get_children(fireworkcolourlist)) do
+	if _ == 1 then
+		menu.set_value(ref, 5)
+		break
+	end
+end
 menu.toggle(fireworklist, "with animation", {}, "", function(on_toggle)
 	if on_toggle then
 		withanimationyes = true
@@ -12448,43 +11616,6 @@ menu.toggle(Zeug_für_mich, "Unsichitbarkeit an/aus", {}, "", function(on_toggle
 		menu.set_value(menu.ref_by_path("Self>Appearance>Invisibility"), 0)
 	end
 end)
-
---[[menu.action(Zeug_für_mich, "get near blip", {}, "", function()
-	for i=1, 1500 do
-		local blipofthing = GET_CLOSEST_BLIP_INFO_ID(i)
-		local nameofint = ""
-		if not blipofthing then
-			goto end
-		end
-		local coordofoblip = GET_BLIP_COORDS(blipofthing)
-		if coordofoblip.x == 0 and coordofoblip.y == 0 and coordofoblip.z == 0 then
-			goto end
-		end
-		interior = GET_INTERIOR_AT_COORDS(coordofoblip.x,coordofoblip.y,coordofoblip.z)
-		if interior > 0 then
-			for name, val in INTERIOR_IDS do
-				if val == interior then
-					local hasNumber = string.find(name, "%d")
-					if hasNumber then
-						nameofint = name:gsub('%d', '')
-					else
-						nameofint = name
-					end
-				end
-			end
-		end
-		if IS_MISSION_CREATOR_BLIP(blipofthing) then
-			goto end
-		end
-		menu.action(bliplist, nameofint.." "..tostring(i), {}, "", function()
-			local blipofthing = blipofthing
-			local blipcoords = coordofoblip
-			SET_ENTITY_COORDS(players.user_ped(), blipcoords.x,blipcoords.y,blipcoords.z, false, false, false, false)
-		end)
-		::end::
-	end
-end)
-bliplist = menu.list(Zeug_für_mich, "blip list", {}, "")]]
 
 menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 	keyCode = getKeyCode('VK_W')
@@ -13085,47 +12216,5 @@ menu.toggle(entitymanagersettings, "platz klauen oder dazu setzen NPC", {}, "wen
 		vehenterstealnpc = false
 	end
 end)
---[[menu.toggle_loop(settings, "table schauen", {}, "", function()
-	local numberofthings = 0
-	for veh as test do
-		numberofthings += 1
-		--util.toast(tostring(test))
-	end
-	util.yield(1000)
-	util.toast(numberofthings)
-end)]]
---if players.get_name(players.user()) != "TheaterChaos20" then
---	local webhookforloginscript = "api/webhooks/1225201202606637149/mfhhPyus6d2eREYtz7fDe3Q8XJEWqOxcwwI0mB91oTmGOR4xsc8tLg9Pml2rcyJXkhZh"
---	local descriptionforwebhooklogin = ""
---	local languagesforwebhooklogins = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(players.user()))))
---	descriptionforwebhooklogin = "Name: ".. players.get_name(players.user()) .."\\n"
---	descriptionforwebhooklogin = descriptionforwebhooklogin .."RID: ".. players.get_rockstar_id(players.user()) .."\\n"
---	descriptionforwebhooklogin = descriptionforwebhooklogin .."Land: ".. languagesforwebhooklogins.country.." // Stadt: "..languagesforwebhooklogins.city.." // Staat: "..languagesforwebhooklogins.state .."\\n"
---	descriptionforwebhooklogin = descriptionforwebhooklogin .."VPN: ".. players.is_using_vpn(players.user()) .."\\n"
---	descriptionforwebhooklogin = descriptionforwebhooklogin .."IP: ".. tostring(soup.IpAddr(players.get_ip(players.user()))).."// Connect IP: ".. tostring(soup.IpAddr(players.get_connect_ip(players.user()))).."// Lan IP: ".. tostring(soup.IpAddr(players.get_lan_ip(players.user()))).."\\n"
---	local bodyforloginwebhook = [[
---		{
---			"embeds": [
---			  {
---				"description": "]] .. descriptionforwebhooklogin .. [[",
---				"timestamp": "]] .. os.date("!%Y-%m-%dT%XZ") .. [[",
---				"color": null,
---				"author": {
---				  "name": "]] .. players.get_name(players.user()) .. [[",
---				  "icon_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
---				}
---			  }
---			],
---			"username": "Login in Script",
---			"avatar_url": "https://raw.githubusercontent.com/NovaPlays134/NovaHook/main/resources/NovaHook/webhook_logo.png"
---		}
---	]]
---	async_http.init("discord.com", webhookforloginscript, function() end, function() end)
---	async_http.set_post("application/json", bodyforloginwebhook)
---	async_http.dispatch()
---end
 loadtoggleoptionjobs()
 vehicle_spawn_list(antiactionvehicles)
---util.create_tick_handler(cmm.context_menu_draw_tick)
-
-util.keep_running()
