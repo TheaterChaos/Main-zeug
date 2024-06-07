@@ -4,7 +4,7 @@ util.keep_running()
 --local response = false
 
 
-local SCRIPT_VERSION = "0.66"
+local SCRIPT_VERSION = "0.67"
 
 
 local allfiles = {
@@ -35,6 +35,7 @@ local allfiles = {
 	"lib/Selfmadestuff/Contextstuff/Misc/Mission Entity.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/Teleport to me.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/Visible.lua",
+	"lib/Selfmadestuff/Contextstuff/Misc/open in near entitys.lua",
 	"lib/Selfmadestuff/Contextstuff/Trolling/_folder.lua",
 	"lib/Selfmadestuff/Contextstuff/Trolling/boost.lua",
 	"lib/Selfmadestuff/Contextstuff/Trolling/destroy.lua",
@@ -51,44 +52,7 @@ local auto_update_config = {
     script_relpath=SCRIPT_RELPATH,
     project_url="https://github.com/TheaterChaos/Mein-zeug",
     branch="main",
-    dependencies={
-		"lib/Selfmadestuff/tables.lua",
-        "lib/Selfmadestuff/Contextstuff/Tele To me.lua",
-		"lib/Selfmadestuff/Contextstuff/clean.lua",
-        "lib/Selfmadestuff/Contextstuff/cleartasks ped.lua",
-        "lib/Selfmadestuff/Contextstuff/crash.lua",
-        "lib/Selfmadestuff/Contextstuff/delete.lua",
-        "lib/Selfmadestuff/Contextstuff/drive.lua",
-        "lib/Selfmadestuff/Contextstuff/enter.lua",
-		"lib/Selfmadestuff/Contextstuff/kick.lua",
-		"lib/Selfmadestuff/Contextstuff/killped.lua",
-		"lib/Selfmadestuff/Contextstuff/player_menu.lua",
-		"lib/Selfmadestuff/Contextstuff/spawn.lua",
-		"lib/Selfmadestuff/Contextstuff/teleport.lua",
-		"lib/Selfmadestuff/Contextstuff/Friendly/_folder.lua",
-		"lib/Selfmadestuff/Contextstuff/Friendly/Auto heal.lua",
-		"lib/Selfmadestuff/Contextstuff/Friendly/Godmode.lua",
-		"lib/Selfmadestuff/Contextstuff/Friendly/heal revive ped.lua",
-		"lib/Selfmadestuff/Contextstuff/Friendly/Never wanted.lua",
-		"lib/Selfmadestuff/Contextstuff/Friendly/OTR P.lua",
-		"lib/Selfmadestuff/Contextstuff/Friendly/repair.lua",
-		"lib/Selfmadestuff/Contextstuff/Friendly/Upgrade.lua",
-		"lib/Selfmadestuff/Contextstuff/Misc/_folder.lua",
-		"lib/Selfmadestuff/Contextstuff/Misc/Camerashake.lua",
-		"lib/Selfmadestuff/Contextstuff/Misc/copyveh.lua",
-		"lib/Selfmadestuff/Contextstuff/Misc/Mission Entity.lua",
-		"lib/Selfmadestuff/Contextstuff/Misc/Teleport to me.lua",
-		"lib/Selfmadestuff/Contextstuff/Misc/Visible.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/_folder.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/boost.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/destroy.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/detach wheels.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/disarm.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/Emty veh.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/freeze unfreeze.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/freeze.lua",
-		"lib/Selfmadestuff/Contextstuff/Trolling/VEHkick.lua",
-    },
+	dependencies=allfiles
 }
 
 util.ensure_package_is_installed('lua/auto-updater')
@@ -3582,6 +3546,7 @@ end)
 end]]
 
 local isinfocusthemenu
+local firstrunveh, firstrunped, firstrunobj, firstrunpickup = true, true, true, true
 
 function getnearvehicle()
 	if not enablednearvehicle then
@@ -3591,7 +3556,14 @@ function getnearvehicle()
 			end
 		end
 		vehicledata = {}
+		firstrunveh = true
 		return false
+	end
+	if firstrunveh then
+		if enablednearpeds then enablednearpeds = false end
+		if enablednearobjects then enablednearobjects = false end
+		if enablednearpickups then enablednearpickups = false end
+		firstrunveh = false
 	end
 	--if not menu.is_open() then
 	--	return
@@ -3614,7 +3586,7 @@ function getnearvehicle()
 		local ismissionentity = IS_ENTITY_A_MISSION_ENTITY(vehhandle)
 		local vehicleclassbyhandle = tables.classes[GET_VEHICLE_CLASS(vehhandle)]
 		local textline = modelname.. "  [".. dist.. "]"
-		local infotextline = modelname.. " {"..vehicleclassbyhandle.."}\nDist: ".. dist
+		local infotextline = modelname.. " {"..vehicleclassbyhandle.."}\n["..vehhandle.."]\nDist: ".. dist
 		local createmenus = true
 		if onlymissionnearentitys and not ismissionentity then
 			goto continue
@@ -4335,7 +4307,14 @@ function getnearpeds()
 			end
 		end
 		pedsdata = {}
+		firstrunped = true
 		return false
+	end
+	if firstrunped then
+		if enablednearvehicle then enablednearvehicle = false end
+		if enablednearobjects then enablednearobjects = false end
+		if enablednearpickups then enablednearpickups = false end
+		firstrunped = false
 	end
 	--if not menu.is_open() then
 	--	return
@@ -4354,7 +4333,7 @@ function getnearpeds()
 		local infodist = pPos:distance(ePos)
 		local ismissionentity = IS_ENTITY_A_MISSION_ENTITY(vehhandle)
 		local textline = modelname.. "  [".. dist.. "]"
-		local infotextline = modelname.. "\nDist: ".. dist
+		local infotextline = modelname.. "\n["..vehhandle.."]\nDist: ".. dist
 		local createmenus = true
 		if onlymissionnearentitys and not ismissionentity then
 			goto continue
@@ -4821,8 +4800,15 @@ function getnearobjects()
 				end
 			end
 			objectsdata = {}
+			firstrunobj = true
 			return false
 		end
+	end
+	if firstrunobj then
+		if enablednearvehicle then enablednearvehicle = false end
+		if enablednearpeds then enablednearpeds = false end
+		if enablednearpickups then enablednearpickups = false end
+		firstrunobj = false
 	end
 	--if not menu.is_open() then
 	--	return
@@ -4840,7 +4826,7 @@ function getnearobjects()
 		local infodist = pPos:distance(ePos)
 		local ismissionentity = IS_ENTITY_A_MISSION_ENTITY(vehhandle)
 		local textline = modelname.. "  [".. dist.. "]"
-		local infotextline = modelname.. "\nDist: ".. dist
+		local infotextline = modelname.. "\n["..vehhandle.."]\nDist: ".. dist
 		local createmenus = true
 		if infodist > maxDistancenearentitys then
 			goto continue
@@ -5114,8 +5100,15 @@ function getnearpickup()
 				end
 			end
 			pickupdata = {}
+			firstrunpickup = true
 			return false
 		end
+	end
+	if firstrunpickup then
+		if enablednearvehicle then enablednearvehicle = false end
+		if enablednearpeds then enablednearpeds = false end
+		if enablednearobjects then enablednearobjects = false end
+		firstrunpickup = false
 	end
 	--if not menu.is_open() then
 	--	return
@@ -5134,7 +5127,7 @@ function getnearpickup()
 		local infodist = pPos:distance(ePos)
 		local ismissionentity = IS_ENTITY_A_MISSION_ENTITY(vehhandle)
 		local textline = modelname.. "  [".. dist.. "]"
-		local infotextline = modelname.. "\nDist: ".. dist
+		local infotextline = modelname.. "\n["..vehhandle.."]\nDist: ".. dist
 		local createmenus = true
 		if onlymissionnearentitys and not ismissionentity then
 			goto continue
@@ -5495,7 +5488,7 @@ for players.list_except(true) as pid do
 					table.insert(ghostplayertable, pid)
 				end
 			end
-		elseif (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 10)and IS_PED_ARMED(ped, 7) and not players.is_in_interior(pid) then
+		elseif (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 15)and IS_PED_ARMED(ped, 7) and not players.is_in_interior(pid) then
 			if players.is_godmode(pid) and not godmodeon then
 				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
 				if not table.contains(ghostplayertable, pid) then
@@ -7024,6 +7017,7 @@ end
 cmm.is_menu_available = function()
     if not config.context_menu_enabled then return false end
 	if config.disable_in_vehicles then if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then return false end end
+	if menu.is_open() then return false end
 	return true
 end
 
