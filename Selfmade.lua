@@ -4,8 +4,47 @@ util.keep_running()
 --local response = false
 
 
-local SCRIPT_VERSION = "0.65"
+local SCRIPT_VERSION = "0.66"
 
+
+local allfiles = {
+	"lib/Selfmadestuff/tables.lua",
+	"lib/Selfmadestuff/Contextstuff/Tele To me.lua",
+	"lib/Selfmadestuff/Contextstuff/clean.lua",
+	"lib/Selfmadestuff/Contextstuff/cleartasks ped.lua",
+	"lib/Selfmadestuff/Contextstuff/crash.lua",
+	"lib/Selfmadestuff/Contextstuff/delete.lua",
+	"lib/Selfmadestuff/Contextstuff/drive.lua",
+	"lib/Selfmadestuff/Contextstuff/enter.lua",
+	"lib/Selfmadestuff/Contextstuff/kick.lua",
+	"lib/Selfmadestuff/Contextstuff/killped.lua",
+	"lib/Selfmadestuff/Contextstuff/player_menu.lua",
+	"lib/Selfmadestuff/Contextstuff/spawn.lua",
+	"lib/Selfmadestuff/Contextstuff/teleport.lua",
+	"lib/Selfmadestuff/Contextstuff/Friendly/_folder.lua",
+	"lib/Selfmadestuff/Contextstuff/Friendly/Auto heal.lua",
+	"lib/Selfmadestuff/Contextstuff/Friendly/Godmode.lua",
+	"lib/Selfmadestuff/Contextstuff/Friendly/heal revive ped.lua",
+	"lib/Selfmadestuff/Contextstuff/Friendly/Never wanted.lua",
+	"lib/Selfmadestuff/Contextstuff/Friendly/OTR P.lua",
+	"lib/Selfmadestuff/Contextstuff/Friendly/repair.lua",
+	"lib/Selfmadestuff/Contextstuff/Friendly/Upgrade.lua",
+	"lib/Selfmadestuff/Contextstuff/Misc/_folder.lua",
+	"lib/Selfmadestuff/Contextstuff/Misc/Camerashake.lua",
+	"lib/Selfmadestuff/Contextstuff/Misc/copyveh.lua",
+	"lib/Selfmadestuff/Contextstuff/Misc/Mission Entity.lua",
+	"lib/Selfmadestuff/Contextstuff/Misc/Teleport to me.lua",
+	"lib/Selfmadestuff/Contextstuff/Misc/Visible.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/_folder.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/boost.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/destroy.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/detach wheels.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/disarm.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/Emty veh.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/freeze unfreeze.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/freeze.lua",
+	"lib/Selfmadestuff/Contextstuff/Trolling/VEHkick.lua",
+}
 
 local auto_update_config = {
     source_url="https://raw.githubusercontent.com/TheaterChaos/Mein-zeug/main/Selfmade.lua",
@@ -15,24 +54,40 @@ local auto_update_config = {
     dependencies={
 		"lib/Selfmadestuff/tables.lua",
         "lib/Selfmadestuff/Contextstuff/Tele To me.lua",
-        "lib/Selfmadestuff/Contextstuff/boost.lua",
 		"lib/Selfmadestuff/Contextstuff/clean.lua",
         "lib/Selfmadestuff/Contextstuff/cleartasks ped.lua",
-        "lib/Selfmadestuff/Contextstuff/copyveh.lua",
         "lib/Selfmadestuff/Contextstuff/crash.lua",
         "lib/Selfmadestuff/Contextstuff/delete.lua",
-        "lib/Selfmadestuff/Contextstuff/destroy.lua",
-        "lib/Selfmadestuff/Contextstuff/disarm.lua",
         "lib/Selfmadestuff/Contextstuff/drive.lua",
         "lib/Selfmadestuff/Contextstuff/enter.lua",
-        "lib/Selfmadestuff/Contextstuff/freeze unfreeze.lua",
-        "lib/Selfmadestuff/Contextstuff/heal revive ped.lua",
 		"lib/Selfmadestuff/Contextstuff/kick.lua",
 		"lib/Selfmadestuff/Contextstuff/killped.lua",
 		"lib/Selfmadestuff/Contextstuff/player_menu.lua",
-		"lib/Selfmadestuff/Contextstuff/repair.lua",
 		"lib/Selfmadestuff/Contextstuff/spawn.lua",
 		"lib/Selfmadestuff/Contextstuff/teleport.lua",
+		"lib/Selfmadestuff/Contextstuff/Friendly/_folder.lua",
+		"lib/Selfmadestuff/Contextstuff/Friendly/Auto heal.lua",
+		"lib/Selfmadestuff/Contextstuff/Friendly/Godmode.lua",
+		"lib/Selfmadestuff/Contextstuff/Friendly/heal revive ped.lua",
+		"lib/Selfmadestuff/Contextstuff/Friendly/Never wanted.lua",
+		"lib/Selfmadestuff/Contextstuff/Friendly/OTR P.lua",
+		"lib/Selfmadestuff/Contextstuff/Friendly/repair.lua",
+		"lib/Selfmadestuff/Contextstuff/Friendly/Upgrade.lua",
+		"lib/Selfmadestuff/Contextstuff/Misc/_folder.lua",
+		"lib/Selfmadestuff/Contextstuff/Misc/Camerashake.lua",
+		"lib/Selfmadestuff/Contextstuff/Misc/copyveh.lua",
+		"lib/Selfmadestuff/Contextstuff/Misc/Mission Entity.lua",
+		"lib/Selfmadestuff/Contextstuff/Misc/Teleport to me.lua",
+		"lib/Selfmadestuff/Contextstuff/Misc/Visible.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/_folder.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/boost.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/destroy.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/detach wheels.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/disarm.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/Emty veh.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/freeze unfreeze.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/freeze.lua",
+		"lib/Selfmadestuff/Contextstuff/Trolling/VEHkick.lua",
     },
 }
 
@@ -40,6 +95,13 @@ util.ensure_package_is_installed('lua/auto-updater')
 local auto_updater = require('auto-updater')
 if auto_updater == true then
     auto_updater.run_auto_update(auto_update_config)
+end
+
+for _, files in pairs(allfiles) do
+	if not filesystem.exists(filesystem.scripts_dir()..files) then
+		util.toast("Dir fehlt eine datei leite update ein")
+		auto_updater.run_auto_update(auto_update_config)
+	end
 end
 
 local tables = require("Selfmadestuff/tables")
@@ -651,7 +713,7 @@ function isanykeypressed()
 end
 
 function upgrade_vehicle(vehicle)
-	if getcontrole then
+	if getcontrole(vehicle) then
 		SET_VEHICLE_MOD_KIT(vehicle, 0)
     	for i = 0, 49 do
        		local num = entities.get_upgrade_max_value(vehicle, i)
@@ -661,7 +723,7 @@ function upgrade_vehicle(vehicle)
 end
 
 function randomupgrade_vehicle(vehicle)
-	if getcontrole then
+	if getcontrole(vehicle) then
 		SET_VEHICLE_MOD_KIT(vehicle, 0)
     	for i = 0, 49 do
        		local num = entities.get_upgrade_max_value(vehicle, i)
@@ -675,7 +737,7 @@ function randomupgrade_vehicle(vehicle)
 end
 
 function downggrade_vehicle(vehicle)
-	if getcontrole then
+	if getcontrole(vehicle) then
     	for i = 0, 49 do
        		--local num = entities.get_upgrade_max_value(vehicle, i)
 			   REMOVE_VEHICLE_MOD(vehicle, i)
@@ -5373,12 +5435,31 @@ drawboxtoggleentitys = menu.toggle(Entitymanagernearvehicle, "Show Box", {}, "",
 end, showboxnearentitys)
 showboxnearentitys = menu.get_value(drawboxtoggleentitys)
 
-
+local teltakedriverwith = true
 menu.action(Self, "Tp waypoint or mission point", {"tpwpob"}, "wenn ein waypoint gesetzt ist geht er da hin wenn keiner da ist geht er zu missions punkt", function()
+	local veh = entities.get_user_vehicle_as_handle(false)
+	local driver = GET_PED_IN_VEHICLE_SEAT(veh, -1)
+	local namepid
+	isdrivernotme = veh and IS_PED_A_PLAYER(driver) and driver != players.user_ped()
+	if isdrivernotme then
+		pid = NETWORK_GET_PLAYER_INDEX_FROM_PED(driver)
+		namepid = players.get_name(pid)
+		if not teltakedriverwith then
+			CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
+		end
+	end
 	if IS_WAYPOINT_ACTIVE() then
-		menu.trigger_commands("tpwp")
+		if teltakedriverwith and isdrivernotme then
+			menu.trigger_commands("wpsummon"..namepid)
+		else
+			menu.trigger_commands("tpwp")
+		end
 	else
-		menu.trigger_commands("tpobjective")
+		if not teltakedriverwith and isdrivernotme then
+			menu.trigger_commands("summonobj"..namepid)
+		else
+			menu.trigger_commands("tpobjective")
+		end
 	end
 end)
 
@@ -6753,7 +6834,7 @@ local config = {
     wrap_read_model_with_pcall=false,
 	target_switch_ped_veh=false,
 	target_ignore_player_veh=true,
-	show_target_player_withtags=true,
+	hold_to_view_wheel=false,
 	ped_preview = {
         enabled=true,
         preset_name="PAUSE_SINGLE_LEFT",
@@ -6836,6 +6917,17 @@ cmm.draw_bounding_box = function(target, colour)
     draw_bounding_box_with_dimensions(target.handle, colour, minimum_vec, maximum_vec)
 end
 
+local function deep_table_copy(obj)
+    if type(obj) ~= 'table' then
+        return obj
+    end
+    local res = setmetatable({}, getmetatable(obj))
+    for k, v in pairs(obj) do
+        res[deep_table_copy(k)] = deep_table_copy(v)
+    end
+    return res
+end
+
 ---
 --- Main Menu Draw Tick
 ---
@@ -6856,31 +6948,77 @@ cmm.context_menu_draw_tick = function()
 	local target = state.current_target
     if target ~= nil and target.pos ~= nil then
         cmm.draw_selection(target)
-        if cmm.is_menu_open_control_pressed() and not createphoneoutofding then
-            DISABLE_CONTROL_ACTION(2, 27, true)
-            timetodestroypgone += 1
-            if not menu.is_open() then
-                cmm.open_options_menu(target)
-            end
-        elseif cmm.is_menu_close_control_pressed() then
-            cmm.close_options_menu(target)
-            if timetodestroypgone < 15 and timetodestroypgone > 1 then createphoneoutofding = true SET_CONTROL_VALUE_NEXT_FRAME(2, 27, 1.0) else createphoneoutofding = false end
-            timetodestroypgone = 0
-        end
-		if state.is_menu_open then
-            cmm.update_menu(target)
-        end
+		if config.hold_to_view_wheel then
+        	if cmm.is_menu_open_control_pressed() and not createphoneoutofding then
+           		DISABLE_CONTROL_ACTION(2, 27, true)
+            	timetodestroypgone += 1
+            	if not menu.is_open() then
+                	cmm.open_options_menu(target)
+            	end
+       		elseif cmm.is_menu_close_control_pressed() then
+            	cmm.close_options_menu(target)
+            	if timetodestroypgone < 15 and timetodestroypgone > 1 then createphoneoutofding = true SET_CONTROL_VALUE_NEXT_FRAME(2, 27, 1.0) else createphoneoutofding = false end
+           		timetodestroypgone = 0
+        	end
+			if cmm.is_menu_select_control_pressed() then
+				cmm.execute_selected_action(target)
+			end
+			if state.is_menu_open then
+            	cmm.update_menu(target)
+       		end
+		else
+			DISABLE_CONTROL_ACTION(2, 27, true)
+			if state.is_menu_open then
+				cmm.disable_controls()
+				cmm.update_menu(target)
+				if cmm.is_menu_select_control_pressed() then
+					cmm.execute_selected_action(target)
+				end
+				if cmm.is_menu_close_control_pressed() then
+					if target.previous_relevant_options then
+						cmm.build_relevant_options(target, target.previous_relevant_options.relevant_options)
+						target.previous_relevant_options = target.previous_relevant_options.parent
+					else
+						cmm.close_options_menu(target)
+					end
+				end
+				-- TODO: why doesnt disabling here work?
+				--PAD.DISABLE_CONTROL_ACTION(2, 245, true) --chat
+			else
+				if cmm.is_menu_open_control_pressed() then
+					cmm.open_options_menu(target)
+				end
+			end
+		end
     end
 
     return true
 end
 
+cmm.disable_controls = function()
+    DISABLE_CONTROL_ACTION(2, 25, true) --aim
+    DISABLE_CONTROL_ACTION(2, 24, true) --attack
+    DISABLE_CONTROL_ACTION(2, 257, true) --attack2
+end
+
+cmm.is_menu_select_control_pressed = function()
+    return IS_DISABLED_CONTROL_JUST_PRESSED(2, 176)
+end
+
 cmm.is_menu_open_control_pressed = function()
-    return IS_DISABLED_CONTROL_JUST_PRESSED(2, 27) and not IS_PAUSE_MENU_ACTIVE()
+	if config.hold_to_view_wheel then
+		return IS_DISABLED_CONTROL_PRESSED(2, 27) and not IS_PAUSE_MENU_ACTIVE()
+	else
+    	return IS_DISABLED_CONTROL_JUST_PRESSED(2, 27) and not IS_PAUSE_MENU_ACTIVE()
+	end
 end
 
 cmm.is_menu_close_control_pressed = function()
-    return not IS_DISABLED_CONTROL_PRESSED(2, 27) or IS_PAUSE_MENU_ACTIVE()
+	if config.hold_to_view_wheel then
+    	return not IS_DISABLED_CONTROL_PRESSED(2, 27) or IS_PAUSE_MENU_ACTIVE()
+	else
+		return IS_DISABLED_CONTROL_JUST_PRESSED(2, 27) or IS_DISABLED_CONTROL_JUST_PRESSED(2, 177)
+	end
 end
 
 cmm.is_menu_available = function()
@@ -7036,10 +7174,10 @@ end
 --- Menu Options
 ---
 
-cmm.add_context_menu_option = function(menu_option)
+cmm.add_context_menu_option = function(menu_option, options_list)
     cmm.default_menu_option(menu_option)
     --debug_log("Adding menu option "..menu_option.name or "Unknown")
-    table.insert(cmm.menu_options, menu_option)
+    table.insert(options_list, menu_option)
 end
 
 local unique_id_counter = 0
@@ -7061,24 +7199,53 @@ cmm.empty_menu_option = function()
     }
 end
 
-cmm.refresh_menu_options_from_files = function(directory, path)
+cmm.refresh_menu_options_from_files = function(directory, path, options_list)
     if path == nil then path = "" end
+    if options_list == nil then options_list = cmm.menu_options end
     for _, filepath in ipairs(filesystem.list_files(directory)) do
         if filesystem.is_dir(filepath) then
             local _2, dirname = string.match(filepath, "(.-)([^\\/]-%.?)$")
-            cmm.refresh_menu_options_from_files(filepath, path.."/"..dirname)
+            local filerelpath = path.."/"..dirname
+            local menu_option = cmm.default_container_menu_option(filerelpath, dirname)
+            cmm.refresh_menu_options_from_files(filepath, filerelpath, menu_option.items)
+            debug_log("Adding "..#menu_option.items.." items to "..menu_option.name)
+            cmm.add_context_menu_option(menu_option, options_list)
         else
             local _3, filename, ext = string.match(filepath, "(.-)([^\\/]-%.?)[.]([^%.\\/]*)$")
-            if ext == "lua" or ext == "pluto" then
+            if (ext == "lua" or ext == "pluto") and filename ~= "_folder" then
                 local menu_option = require(config.menu_options_scripts_dir..path.."/"..filename)
                 menu_option.filename = filename.."."..ext
-				menu_option.filepath = filepath
+                menu_option.filepath = filepath
                 --debug_log("Loading menu option "..config.menu_options_scripts_dir..path.."/"..filename..": "..inspect(menu_option))
                 --cc.expand_chat_command_defaults(command, filename, path)
-                cmm.add_context_menu_option(menu_option)
+                cmm.add_context_menu_option(menu_option, options_list)
             end
         end
     end
+end
+
+function file_exists(name)
+    local f=io.open(name,"r")
+    if f~=nil then io.close(f) return true else return false end
+end
+
+cmm.default_container_menu_option = function(filepath, name)
+    local menu_option = {}
+    local folder_info_filepath = config.menu_options_scripts_dir..filepath.."/_folder"
+    local full_filepath = filesystem.scripts_dir()..folder_info_filepath..".lua"
+    --debug_log("defaulting container from "..full_filepath)
+    if file_exists(full_filepath) then
+        local status, extra_menu_option = pcall(require, folder_info_filepath)
+        if not status then
+            util.toast("Failed to load context menu option "..extra_menu_option, TOAST_ALL)
+        else
+            menu_option = extra_menu_option
+        end
+    end
+
+    if menu_option.name == nil then menu_option.name = name end
+    if menu_option.items == nil then menu_option.items = {} end
+    return menu_option
 end
 
 cmm.refresh_menu_options_from_files(CONTEXT_MENUS_DIR)
@@ -7096,6 +7263,7 @@ local forwardVector_pointer = memory.alloc()
 local position_pointer = memory.alloc()
 
 cmm.draw_text_with_shadow = function(posx, posy, text, alignment, scale, color, force_in_bounds)
+    if text == nil then return end
     if alignment == nil then alignment = 5 end
     if scale == nil then scale = 0.5 end
     if color == nil then color = config.color.option_text end
@@ -7320,12 +7488,14 @@ function is_angle_between(angle, left, right)
 end
 
 function get_controls_angle_magnitude()
+    DISABLE_CONTROL_ACTION(0, 31, false) --x
+    DISABLE_CONTROL_ACTION(0, 30, false) --y
     local mouse_movement = {
-        x=GET_CONTROL_NORMAL(0, 13),
-        y=GET_CONTROL_NORMAL(0, 12),
+        x=GET_DISABLED_CONTROL_NORMAL(0, 30),
+        y=GET_DISABLED_CONTROL_NORMAL(0, 31),
     }
     local magnitude = math.sqrt(mouse_movement.x ^ 2 + mouse_movement.y ^ 2)
-    local angle = math.deg(math.atan(mouse_movement.y, mouse_movement.x))
+    local angle = normalize_angle(math.deg(math.atan(mouse_movement.y, mouse_movement.x)))
     return angle, magnitude
 end
 
@@ -7403,13 +7573,21 @@ end
 
 cmm.execute_selected_action = function(target)
     state.is_menu_open = false
+    if not target.selected_option then return end
     if target.selected_option.execute ~= nil and type(target.selected_option.execute) == "function" then
         util.log("Triggering option "..target.selected_option.name)
         --if cmm.is_target_a_player_in_vehicle(target) then
         --    target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
-		--	cmm.update_target_data(target)
+        --    cmm.update_target_data(target)
         --end
         target.selected_option.execute(target)
+    elseif target.selected_option.items ~= nil and type(target.selected_option.items) == "table" then
+        state.is_menu_open = true
+        target.previous_relevant_options = {
+            parent=target.previous_relevant_options,
+            relevant_options=deep_table_copy(target.relevant_options)
+        }
+        cmm.build_relevant_options(target, target.selected_option.items)
     end
 end
 
@@ -7440,14 +7618,18 @@ cmm.draw_options_menu = function(target)
 
     for option_index, option in target.relevant_options do
         if option.name ~= nil then
+            local option_text = option.name
+            if option.num_relevant_children and option.num_relevant_children > 0 then
+                option_text = option_text.." ("..option.num_relevant_children..")"
+            end
             local option_text_coords = get_circle_coords(target.menu_pos, config.menu_radius*config.option_label_distance, option.option_angle)
-            cmm.draw_text_with_shadow(option_text_coords.x, option_text_coords.y, option.name, 5, 0.5, config.color.option_text, true)
+            cmm.draw_text_with_shadow(option_text_coords.x, option_text_coords.y, option_text, 5, 0.5, config.color.option_text, true)
 
             draw_polygon(option.wedge_points, get_option_wedge_draw_color(target, option))
 
             if config.show_option_help and target.selected_option == option then
                 cmm.draw_text_with_shadow(target.menu_pos.x, target.menu_pos.y + (config.menu_radius * 1.9), option.help, 5, 0.5, config.color.help_text, true)
-                if option.hotkey then
+                if option.hotkey and config.hot_keys_enabled then
                     cmm.draw_text_with_shadow(
                         target.menu_pos.x, target.menu_pos.y + (config.menu_radius * 1.9) + 0.02,
                         "Hotkey: "..option.hotkey, 5, 0.5, config.color.help_text, true
@@ -7482,6 +7664,16 @@ cmm.draw_target_label = function(target)
 end
 
 function is_menu_option_relevant(menu_option, target)
+    -- If menu option is a container, then check for at least one relevant child
+    if menu_option.items ~= nil then
+        menu_option.num_relevant_children = 0
+        for _, child_option in menu_option.items do
+            if is_menu_option_relevant(child_option, target) then
+                menu_option.num_relevant_children = menu_option.num_relevant_children + 1
+            end
+        end
+        return menu_option.num_relevant_children > 0
+    end
     -- Disabled options never apply to any target
     if menu_option.enabled == false then return false end
     -- If no applicable_to set then apply to all targets
@@ -7513,15 +7705,24 @@ cmm.deep_table_copy = function(obj)
     return res
 end
 
-cmm.build_relevant_options = function(target)
+cmm.build_relevant_options = function(target, options)
+    if options == nil then options = cmm.menu_options end
     target.relevant_options = {}
-    for _, option in cmm.menu_options do
+    for _, option in options do
         if is_menu_option_relevant(option, target) then
+            if option.on_open and type(option.on_open) == "function" then
+                option.on_open(target, option)
+            end
             table.insert(target.relevant_options, cmm.deep_table_copy(option))
         end
     end
     --if #relevant_options == 1 then table.insert(relevant_options, cmm.empty_menu_option()) end
-    table.sort(target.relevant_options, function(a,b) return a.priority > b.priority end)
+    table.sort(target.relevant_options, function(a,b)
+        if (a.priority ~= nil or b.priority ~= nil) and a.priority ~= b.priority then
+            return (a.priority or 0) > (b.priority or 0)
+        end
+        return a.name < b.name
+    end)
     cmm.build_option_wedge_points(target)
 end
 
@@ -7723,13 +7924,18 @@ cmm.open_options_menu = function(target)
     end
 end
 
+--ändern wegen unter ordner
 cmm.close_options_menu = function(target)
-    if state.is_menu_open then
-        cmm.trigger_selected_action(target)
-    end
-    if not target.selected_option then
-        state.is_menu_open = false
-    end
+	if config.hold_to_view_wheel then
+    	if state.is_menu_open then
+        	cmm.trigger_selected_action(target)
+    	end
+    	if not target.selected_option then
+        	state.is_menu_open = false
+    	end
+	else
+		state.is_menu_open = false
+	end
 end
 
 cmm.draw_pointer_line = function(target)
@@ -7834,6 +8040,9 @@ end, config.target_switch_ped_veh)
 menus.settings:toggle("Ignore player vehicle", {}, "ignores the players vehicle so the player is on focus", function(value)
     config.target_ignore_player_veh = value
 end, config.target_ignore_player_veh)
+menus.settings:toggle("hold to get wheel", {}, "", function(value)
+    config.hold_to_view_wheel = value
+end, config.hold_to_view_wheel)
 
 menus.settings_snap_distance = menus.settings:list("Snap Distance", {}, "How close your crosshair needs to be to an entity to snap to it")
 menus.settings_snap_distance:slider_float("Player Snap Distance", {"cmmsnapdistanceplayer"}, "How close your crosshair needs to be to a player to snap to it", 0, 100, math.floor(config.target_snap_distance.player * 100), 1, function(value)
@@ -9262,6 +9471,9 @@ chat.on_message(function(packet_sender, message_sender, text, team_chat)
 			local textline = ""
 			if Sucess ~= "" then
 				translation, original, sourceLang = Sucess:match("^%[%[%[\"(.-)\",\"(.-)\",.-,.-,.-]],.-,\"(.-)\"")
+				if sourceLang == nil then
+					goto end
+				end
 				if not traductsamelang and (string.sub(sourceLang,0,2) == "en") or (string.sub(sourceLang,0,2) == "de") then
 					goto end
 				end
@@ -12045,9 +12257,10 @@ end)
 menu.readonly(settingsversiontab, "Version: "..SCRIPT_VERSION)
 newversionaction = menu.readonly(settingsversiontab, "New Version: ")
 
-local entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
-local enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
-local miscs = menu.list(settings, "Misc", {}, "", function(); end)
+entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
+enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
+settingswaypointobj = menu.list(settings, "Waypoint/objective", {}, "", function(); end)
+miscs = menu.list(settings, "Misc", {}, "", function(); end)
 
 menu.toggle(miscs, "host kick freunde", {}, "AN = kickt auch freunde\nAUS = kickt keine freunde", function(on_toggle)
 	if on_toggle then
@@ -12216,5 +12429,8 @@ menu.toggle(entitymanagersettings, "platz klauen oder dazu setzen NPC", {}, "wen
 		vehenterstealnpc = false
 	end
 end)
+menu.toggle(settingswaypointobj, "take driver with you", {}, "beim wegpunkt teleportieren nimmst du den fahren mit. \nsolltest du der fahren nicht sein", function(value)
+	teltakedriverwith = value
+end, teltakedriverwith)
 loadtoggleoptionjobs()
 vehicle_spawn_list(antiactionvehicles)
