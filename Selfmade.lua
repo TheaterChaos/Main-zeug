@@ -4,11 +4,12 @@ util.keep_running()
 --local response = false
 
 
-local SCRIPT_VERSION = "0.67"
+local SCRIPT_VERSION = "0.68"
 
 
 local allfiles = {
 	"lib/Selfmadestuff/tables.lua",
+	"lib/Selfmadestuff/item_browser.lua",
 	"lib/Selfmadestuff/Contextstuff/Tele To me.lua",
 	"lib/Selfmadestuff/Contextstuff/clean.lua",
 	"lib/Selfmadestuff/Contextstuff/cleartasks ped.lua",
@@ -36,6 +37,9 @@ local allfiles = {
 	"lib/Selfmadestuff/Contextstuff/Misc/Teleport to me.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/Visible.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/open in near entitys.lua",
+	"lib/Selfmadestuff/Contextstuff/Spawn/garage.lua",
+	"lib/Selfmadestuff/Contextstuff/Spawn/spawn.lua",
+	"lib/Selfmadestuff/Contextstuff/Spawn/vehicle_class.lua",
 	"lib/Selfmadestuff/Contextstuff/Trolling/_folder.lua",
 	"lib/Selfmadestuff/Contextstuff/Trolling/boost.lua",
 	"lib/Selfmadestuff/Contextstuff/Trolling/destroy.lua",
@@ -69,6 +73,7 @@ for _, files in pairs(allfiles) do
 end
 
 local tables = require("Selfmadestuff/tables")
+local item_browser = require("Selfmadestuff/item_browser")
 
 
 --require ('resources/Alltabels')
@@ -3547,6 +3552,7 @@ end]]
 
 local isinfocusthemenu
 local firstrunveh, firstrunped, firstrunobj, firstrunpickup = true, true, true, true
+local aktivlisthandle
 
 function getnearvehicle()
 	if not enablednearvehicle then
@@ -3674,8 +3680,13 @@ function getnearvehicle()
 			if createmenus then
 			table.insert(vehicledata, vehhandle)
 			veh[vehhandle] = menu.list(Entitymanagernearvehiclevehicles, textlinemain, {"nearveh".. modelname}, infotextline, function(on_click)
-				isinfocusthemenu = true
-				repeat
+				if isinfocusthemenu then
+					isinfocusthemenu = false
+					util.yield(200)
+				end
+					isinfocusthemenu = true
+					aktivlisthandle = vehhandle
+				util.create_tick_handler(function()
 					local vehhandle = vehhandle
 					local entitypointer = vehpointer
 					local pPos = players.get_position(players.user())
@@ -3689,10 +3700,14 @@ function getnearvehicle()
 					if showboxnearentitys then
 						draw_bounding_box(vehhandle)
 					end
-					util.yield()
-				until not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu
+					if not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu then
+							aktivlisthandle = ""
+						return false
+					end
+				end)
 			end, function(on_back)
 				isinfocusthemenu = false
+				aktivlisthandle = ""
 			end)
 			menu.set_temporary(veh[vehhandle])
 			local numbertimercall = 0
@@ -4284,9 +4299,11 @@ function getnearvehicle()
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearveh)
 			end
 			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) or (delethandlelist) then
-				if menu.is_ref_valid(veh[vehhandle]) then
-					menu.delete(veh[vehhandle])
-					tableremove(vehicledata, vehhandle)
+				if vehhandle != aktivlisthandle then
+					if menu.is_ref_valid(veh[vehhandle]) then
+						menu.delete(veh[vehhandle])
+						tableremove(vehicledata, vehhandle)
+					end
 				end
 			end
 		elseif not DOES_ENTITY_EXIST(vehhandle) or (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) then
@@ -4410,8 +4427,13 @@ function getnearpeds()
 			if createmenus then
 			table.insert(pedsdata, vehhandle)
 			veh[vehhandle] = menu.list(Entitymanagernearvehiclepeds, textlinemain, {}, infotextline, function(on_click)
-				isinfocusthemenu = true
-				repeat
+				if isinfocusthemenu then
+					isinfocusthemenu = false
+					util.yield(200)
+				end
+					isinfocusthemenu = true
+					aktivlisthandle = vehhandle
+				util.create_tick_handler(function()
 					local vehhandle = vehhandle
 					local entitypointer = vehpointer
 					local pPos = players.get_position(players.user())
@@ -4425,10 +4447,14 @@ function getnearpeds()
 					if showboxnearentitys then
 						draw_bounding_box(vehhandle)
 					end
-					util.yield()
-				until not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu
+					if not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu then
+							aktivlisthandle = ""
+						return false
+					end
+				end)
 			end, function(on_back)
 				isinfocusthemenu = false
+				aktivlisthandle = ""
 			end)
 			local numbertimercall = 0
 			numbertimercall += 1
@@ -4775,9 +4801,11 @@ function getnearpeds()
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearpeds)
 			end
 			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) then
-				if menu.is_ref_valid(veh[vehhandle]) then
-					menu.delete(veh[vehhandle])
-					tableremove(pedsdata, vehhandle)
+				if vehhandle != aktivlisthandle then
+					if menu.is_ref_valid(veh[vehhandle]) then
+						menu.delete(veh[vehhandle])
+						tableremove(pedsdata, vehhandle)
+					end
 				end
 			end
 		elseif not DOES_ENTITY_EXIST(vehhandle) or (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) then
@@ -4885,8 +4913,13 @@ function getnearobjects()
 			if createmenus then
 			table.insert(objectsdata, vehhandle)
 			veh[vehhandle] = menu.list(Entitymanagernearvehicleobjects, textlinemain, {}, infotextline, function(on_click)
-				isinfocusthemenu = true
-				repeat
+				if isinfocusthemenu then
+					isinfocusthemenu = false
+					util.yield(200)
+				end
+					isinfocusthemenu = true
+					aktivlisthandle = vehhandle
+				util.create_tick_handler(function()
 					local vehhandle = vehhandle
 					local entitypointer = vehpointer
 					local pPos = players.get_position(players.user())
@@ -4900,10 +4933,14 @@ function getnearobjects()
 					if showboxnearentitys then
 						draw_bounding_box(vehhandle)
 					end
-					util.yield()
-				until not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu
+					if not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu then
+							aktivlisthandle = ""
+						return false
+					end
+				end)
 			end, function(on_back)
 				isinfocusthemenu = false
+				aktivlisthandle = ""
 			end)
 			local numbertimercall = 0
 			numbertimercall += 1
@@ -5075,9 +5112,11 @@ function getnearobjects()
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearobjects)
 			end
 			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) then
-				if menu.is_ref_valid(veh[vehhandle]) then
-					menu.delete(veh[vehhandle])
-					tableremove(objectsdata, vehhandle)
+				if vehhandle != aktivlisthandle then
+					if menu.is_ref_valid(veh[vehhandle]) then
+						menu.delete(veh[vehhandle])
+						tableremove(objectsdata, vehhandle)
+					end
 				end
 			end
 		elseif not DOES_ENTITY_EXIST(vehhandle) or (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) then
@@ -5183,8 +5222,13 @@ function getnearpickup()
 			if createmenus then
 			table.insert(pickupdata, vehhandle)
 			veh[vehhandle] = menu.list(Entitymanagernearvehiclepickup, textlinemain, {}, infotextline, function(on_click)
-				isinfocusthemenu = true
-				repeat
+				if isinfocusthemenu then
+					isinfocusthemenu = false
+					util.yield(200)
+				end
+					isinfocusthemenu = true
+					aktivlisthandle = vehhandle
+				util.create_tick_handler(function()
 					local vehhandle = vehhandle
 					local entitypointer = vehpointer
 					local pPos = players.get_position(players.user())
@@ -5198,10 +5242,14 @@ function getnearpickup()
 					if showboxnearentitys then
 						draw_bounding_box(vehhandle)
 					end
-					util.yield()
-				until not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu
+					if not menu.is_ref_valid(veh[vehhandle]) or not isinfocusthemenu then
+							aktivlisthandle = ""
+						return false
+					end
+				end)
 			end, function(on_back)
 				isinfocusthemenu = false
+				aktivlisthandle = ""
 			end)
 			local numbertimercall = 0
 			numbertimercall += 1
@@ -5363,9 +5411,11 @@ function getnearpickup()
 				stringmatcher = not string.match(string.replace(textline, "["..dist.."]", ""), searchnearpickups)
 			end
 			if (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) or (infodist > maxDistancenearentitys) or (stringmatcher) or (showonlyblibsnearentitys and (GET_BLIP_FROM_ENTITY(vehhandle) == 0)) then
-				if menu.is_ref_valid(veh[vehhandle]) then
-					menu.delete(veh[vehhandle])
-					tableremove(pickupdata, vehhandle)
+				if vehhandle != aktivlisthandle then
+					if menu.is_ref_valid(veh[vehhandle]) then
+						menu.delete(veh[vehhandle])
+						tableremove(pickupdata, vehhandle)
+					end
 				end
 			end
 		elseif not DOES_ENTITY_EXIST(vehhandle) or (onlymissionnearentitys and not IS_ENTITY_A_MISSION_ENTITY(vehhandle)) then
@@ -7183,6 +7233,11 @@ cmm.default_menu_option = function(menu_option)
         unique_id_counter = unique_id_counter + 1
         menu_option.id = unique_id_counter
     end
+    if menu_option.items ~= nil then
+        for _, child_item in menu_option.items do
+            cmm.default_menu_option(child_item)
+        end
+    end
 end
 
 cmm.empty_menu_option = function()
@@ -7909,6 +7964,7 @@ end
 
 cmm.open_options_menu = function(target)
     if not state.is_menu_open then
+		cmm.build_relevant_options(target)
         target.selected_option = nil
         target.cursor_pos = { x=0.5, y=0.5, }
         SET_CURSOR_POSITION(target.cursor_pos.x, target.cursor_pos.y)
@@ -7983,31 +8039,18 @@ end)
 
 ---
 --- Menu Options
----
 
-menus.menu_options = menu.list(Entitymanagercontextmenu, "Menu Options", {}, "Enable or disable specific context menu options.")
-menus.menu_options:action("Open ContextMenus Folder", {}, "Add ContextMenu scripts to this folder", function()
-    util.open_folder(CONTEXT_MENUS_DIR)
-end)
-
-function build_menu_option_description(menu_option)
-    local text = menu_option.help or ""
-    if menu_option.author then text = text.."\nAuthor: "..menu_option.author end
-    if menu_option.filename then text = text.."\nFilename: "..menu_option.filename end
-    if menu_option.filepath then text = text.."\nFilepath: "..menu_option.filepath end
-    return text
-end
-
-menus.menu_options:divider("Menu Options")
-for _, menu_option in cmm.menu_options do
-    menu_option.menu = menus.menu_options:list(menu_option.name, {"cmmconfig"..menu_option.name}, "Configuration options for this specific menu option")
+function add_option_to_menu(root_menu, menu_option)
+    if menu_option.menu ~= nil then return root_menu:link(menu_option.menu) end
+    menu_option.menu = root_menu:list(menu_option.name, {}, "")
+    menu_option.menu:divider(menu_option.name)
     menu_option.menu:toggle("Enabled", {}, "Enabled options will show up in menu", function(value)
         menu_option.enabled = value
     end, menu_option.enabled)
-    menu_option.menu:text_input("Hotkey", {"cmmhotkey"..menu_option.name}, "Press this key while the menu is open to select this option", function(value)
+    menu_option.menu:text_input("Hotkey", {"cmmhotkey"..menu_option.item_id}, "Press this key while the menu is open to select this option", function(value)
         menu_option.hotkey = value
     end, menu_option.hotkey or "")
-    menu_option.menu:slider("Priority", {"cmmpriority"..menu_option.name}, "Higher priority options appear higher in the menu order", -1000, 1000, menu_option.priority, 1, function(value)
+    menu_option.menu:slider("Priority", {"cmmpriority"..menu_option.item_id}, "Higher priority options appear higher in the menu order", -1000, 1000, menu_option.priority or 0, 1, function(value)
         menu_option.priority = value
     end)
     -- build_menu_option_description(menu_option)
@@ -8015,7 +8058,21 @@ for _, menu_option in cmm.menu_options do
         menu_option.menu:divider("Config")
         menu_option.config_menu(menu_option.menu)
     end
+
+    return menu_option.menu
 end
+
+function add_menu_options_menus()
+    local root_item = {
+        name="Menu Options",
+        items=cmm.menu_options,
+        description="Browsable list of all menu options you have installed"
+    }
+    item_browser.browse_item(Entitymanagercontextmenu, root_item, add_option_to_menu)
+    return root_item.menu
+end
+
+add_menu_options_menus()
 
 ---
 --- Settings Menu
@@ -12426,5 +12483,15 @@ end)
 menu.toggle(settingswaypointobj, "take driver with you", {}, "beim wegpunkt teleportieren nimmst du den fahren mit. \nsolltest du der fahren nicht sein", function(value)
 	teltakedriverwith = value
 end, teltakedriverwith)
+
+async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Selfmade.lua", function(output)
+	output = output:match('SCRIPT_VERSION = "([^ ]+)"')
+	if output > SCRIPT_VERSION then
+		menu.action(menu.my_root(),"NEW VERSION UPDATE!", {}, "Drück zum updaten", function()
+			auto_updater.run_auto_update(auto_update_config)
+		end)
+	end
+end)
+async_http.dispatch()
 loadtoggleoptionjobs()
 vehicle_spawn_list(antiactionvehicles)
