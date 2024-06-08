@@ -1,5 +1,5 @@
 return {
-    name="Freeze",
+    name="Freeze P",
     help="Freeze/unfreeze this Player",
     applicable_to={"PLAYER"},
     execute=function(target)
