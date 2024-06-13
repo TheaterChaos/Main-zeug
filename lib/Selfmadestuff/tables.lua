@@ -662,4 +662,18 @@ tables.keyLookupTable = {
     ['VK_OEM_CLEAR']	        =  0xFE,	--Clear key
 }
 
+tables.vehlockstatus = {
+	[0]= "NONE",
+	[1]= "UNLOCKED",
+	[2]= "LOCKED",
+	[3]= "LOCKOUT_PLAYER_ONLY",
+	[4]= "LOCKED_PLAYER_INSIDE",
+	[5]= "LOCKED_INITIALLY KA",
+	[6]= "FORCE_SHUT_DOORS KA",
+	[7]= "LOCKED_BUT_CAN_BE_BROKEN_IN_TO",
+	[8]= "LOCKED_BUT_BOOT_UNLOCKED KA",
+	[9]= "LOCKED_NO_PASSENGERS",
+	[10]= "CANNOT_ENTER"
+}
+
 return tables
