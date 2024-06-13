@@ -4,7 +4,7 @@ util.keep_running()
 --local response = false
 
 
-local SCRIPT_VERSION = "0.68"
+local SCRIPT_VERSION = "0.69"
 
 
 local allfiles = {
@@ -20,7 +20,6 @@ local allfiles = {
 	"lib/Selfmadestuff/Contextstuff/kick.lua",
 	"lib/Selfmadestuff/Contextstuff/killped.lua",
 	"lib/Selfmadestuff/Contextstuff/player_menu.lua",
-	"lib/Selfmadestuff/Contextstuff/spawn.lua",
 	"lib/Selfmadestuff/Contextstuff/teleport.lua",
 	"lib/Selfmadestuff/Contextstuff/Friendly/_folder.lua",
 	"lib/Selfmadestuff/Contextstuff/Friendly/Auto heal.lua",
@@ -299,6 +298,7 @@ end
 function savevehicleingarage(vehhandle, input)
 	vehname = getmodelnamebyhash(entities.get_model_hash(vehhandle))
 	freeseat = getfreevehseat(vehhandle)
+	mypos = players.get_position(players.user())
 	if GET_VEHICLE_PED_IS_IN(players.user_ped()) == vehhandle then
 		menu.trigger_commands("savevehicle "..input)
 		util.toast("VEH: ".. vehname.. " Saved as ".. input)
@@ -804,6 +804,135 @@ function playerjoinmassge(pid)
 	end
 end
 
+local timerostime
+
+local state = "getowner"
+local controlevehicleon = false
+local vehcontroledata = {
+	seeownveh = false,
+	stuffdeactivated = false,
+	textline = "",
+		vehicleblacklist = {
+			21,
+			8,
+			13,
+			21,
+			22,
+		},
+}
+
+function controlevehicle()
+	local veh = vehcontroledata.handle
+	util.draw_debug_text(state)
+	if state == "stoppreccess" then
+		util.toast("controle of vehicle is stopping: "..vehcontroledata.textline, TOAST_ALL)
+		if DOES_ENTITY_EXIST(veh) then
+			DETACH_ENTITY(veh, true, true)
+			SET_ENTITY_VISIBLE(veh, true)
+			entities.set_can_migrate(veh, true)
+		end
+		if vehcontroledata.spawnedveh != nil and DOES_ENTITY_EXIST(vehcontroledata.spawnedveh) then
+			entities.delete(vehcontroledata.spawnedveh)
+		end
+		if vehcontroledata.playerpos then
+			SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), vehcontroledata.playerpos.x, vehcontroledata.playerpos.y, vehcontroledata.playerpos.z, 0, 0, 0)
+		end
+		if vehcontroledata.stuffdeactivated then
+			menu.set_value(menu.ref_by_path("Self>Immortality"), vehcontroledata.godmodestate)
+			menu.set_value(menu.ref_by_path("Self>Appearance>Invisibility"), vehcontroledata.invisiblestate)
+			menu.trigger_commands("noblame off")
+		end
+		vehcontroledata.isplayervehicle = false
+		controlevehicleon = false
+		state = "getowner"
+		return false
+	end
+	if not controlevehicleon then
+		vehcontroledata.textline = "Self Deactivated"
+		state = "stoppreccess"
+		return
+	end
+	if not DOES_ENTITY_EXIST(veh) then
+		vehcontroledata.textline = "Car does not exist anymore"
+		state = "stoppreccess"
+		return
+	end
+	if state == "getowner" then
+		vehcontroledata.playerpos = players.get_position(players.user())
+		if table.contains(vehcontroledata.vehicleblacklist, GET_VEHICLE_CLASS(veh)) then
+			vehcontroledata.textline = "Player is driving a unsupported vehicle"
+			state = "stoppreccess"
+			return
+		end
+		if getcontrole(veh) then
+			entities.set_can_migrate(veh, false)
+			state = "activatestuff"
+			return
+		else
+			vehcontroledata.textline = "no controle of vehicles"
+			state = "stoppreccess"
+		end
+	end
+	if state == "activatestuff" then
+		vehcontroledata.godmodestate = menu.get_value(menu.ref_by_path("Self>Immortality"))
+		vehcontroledata.invisiblestate = menu.get_value(menu.ref_by_path("Self>Appearance>Invisibility"))
+		menu.set_value(menu.ref_by_path("Self>Immortality"), true)
+		menu.set_value(menu.ref_by_path("Self>Appearance>Invisibility"), 2)
+		menu.trigger_commands("noblame on")
+		vehcontroledata.stuffdeactivated = true
+		state = "loadveh"
+	end
+	if state == "loadveh" then
+		veh_position = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(veh, 0, 0, 0)
+		veh_rotation = GET_ENTITY_ROTATION(veh, 5)
+		vehcontroledata.spawnedveh = clonevehicle(veh)
+		getcontrole(vehcontroledata.spawnedveh)
+		entities.set_can_migrate(vehcontroledata.spawnedveh, false)
+		SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), veh_position.x, veh_position.y, veh_position.z+50, 0, 0, 0)
+		SET_ENTITY_NO_COLLISION_ENTITY(vehcontroledata.spawnedveh, veh, false)
+		SET_ENTITY_COORDS_NO_OFFSET(vehcontroledata.spawnedveh, veh_position.x, veh_position.y, veh_position.z, 0, 0, 0)
+		SET_PED_INTO_VEHICLE(players.user_ped(), vehcontroledata.spawnedveh, -1)
+		if vehcontroledata.seeownveh then
+			SET_ENTITY_VISIBLE(veh, false)
+		else
+			SET_ENTITY_VISIBLE(vehcontroledata.spawnedveh, false)
+		end
+		SET_VEHICLE_ENGINE_ON(vehcontroledata.spawnedveh, true, true, false)
+		SET_ENTITY_INVINCIBLE(vehcontroledata.spawnedveh, true)
+		SET_VEHICLE_DOORS_LOCKED(vehcontroledata.spawnedveh, 10)
+		SET_VEHICLE_EXCLUSIVE_DRIVER(vehcontroledata.spawnedveh, players.user_ped(), 0)
+		pedsinvehicle = getpedsinvehicle(veh)
+		for _, ped in pairs(pedsinvehicle) do
+			if IS_PED_A_PLAYER(ped) then
+				vehcontroledata.isplayervehicle = true
+				SET_ENTITY_NO_COLLISION_ENTITY(vehcontroledata.spawnedveh, ped, false)
+			end
+		end
+		ATTACH_ENTITY_TO_ENTITY(veh, vehcontroledata.spawnedveh, 0, 0, 0, 0, 0, 0, 0, true, false, true, false, 2, true, 0)
+		SET_VEHICLE_DOORS_LOCKED(veh, 1)
+		state = "readyveh"
+	end
+	if state == "readyveh" then
+		--if vehcontroledata.isplayervehicle then
+		--	if timerostime == nil or (os.time() - timerostime >=1) then
+		--		if getcontrole(veh) then
+					--util.yield(1000)
+		--			ATTACH_ENTITY_TO_ENTITY(veh, vehcontroledata.spawnedveh, 0, 0, 0, 0, 0, 0, 0, false, true, true, false, 2, true, 0)
+		--			timerostime = os.time()
+		--		end
+		--	end
+		--end
+		if GET_VEHICLE_ENGINE_HEALTH(veh) <= 0 then
+			vehcontroledata.textline = "Vehicles destroyed"
+			state = "stoppreccess"
+		end
+		if not IS_PED_IN_VEHICLE(players.user_ped(), vehcontroledata.spawnedveh, false) then
+			vehcontroledata.textline = "not in the car"
+			state = "stoppreccess"
+		end
+	end
+end
+
 function getvehtype(hashveh)
 	if IS_THIS_MODEL_A_BOAT(hashveh) then
 		return "BOAT"
@@ -996,9 +1125,32 @@ local options <const> = {"zu Meinem", "zu Seinem"}
 
 -- player options
 
+
 local function player(pid)
     menu.divider(menu.player_root(pid), "Selfmade")
 	main = menu.list(menu.player_root(pid), "Selfmade", {"PlMein"}, "")
+	local playermenucontroleveh
+	playermenucontroleveh = menu.toggle(menu.player_root(pid), "controle veh", {}, "", function(on_toggle)
+		if on_toggle then
+			pidped = GET_PLAYER_PED(pid)
+			if IS_PED_IN_ANY_VEHICLE(pidped, false) then
+				controlevehicleon = true
+				vehcontroledata.handle = GET_VEHICLE_PED_IS_IN(pidped, false)
+				util.create_tick_handler(controlevehicle)
+				repeat
+					util.yield()
+				until not controlevehicleon
+				if not controlevehicleon then
+					playermenucontroleveh.value = false
+				end
+			else
+				util.toast("player is in any vehicle")
+				playermenucontroleveh.value = false
+			end
+		else
+			controlevehicleon = false
+		end
+	end)
     bozo = menu.list(main, "Notizen", {"Notizen"}, "")
 	anderes = menu.list(main, "anderes zeug", {"anderes"}, "")
 	orgthings = menu.list(main, "org zeug", {"orgthings"}, "wenn du im org bist wird nichts davon auf dich gemacht")
@@ -3554,6 +3706,15 @@ local isinfocusthemenu
 local firstrunveh, firstrunped, firstrunobj, firstrunpickup = true, true, true, true
 local aktivlisthandle
 
+function handlereflist()
+	for _, ref in pairs(veh) do
+		if not menu.is_ref_valid(ref) then
+			util.toast(_.."    "..tostring(ref), TOAST_ALL)
+			table.remove(veh, _)
+		end
+	end
+end
+
 function getnearvehicle()
 	if not enablednearvehicle then
 		for vehicledata as vehhandle do
@@ -3614,6 +3775,7 @@ function getnearvehicle()
 		else
 			infotextline = infotextline.. "\nGOD: false"
 		end
+		infotextline = infotextline..  "\nLock Status: "..tables.vehlockstatus[GET_VEHICLE_DOOR_LOCK_STATUS(vehhandle)]
 		infotextline = infotextline.. "\nOwner: ".. players.get_name(entities.get_owner(vehhandle))
 		infotextline = infotextline.. "\nMission Entity: ".. IS_ENTITY_A_MISSION_ENTITY(vehhandle)
 		local passangersinveh = ""
@@ -3711,6 +3873,21 @@ function getnearvehicle()
 			end)
 			menu.set_temporary(veh[vehhandle])
 			local numbertimercall = 0
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.toggle(veh[vehhandle], "Controle vehicle", {}, infotextline, function(on_toggle)
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				local entitypPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entityhandle, 0, 0, +2)
+				if on_toggle then
+					vehcontroledata.handle = entityhandle
+					controlevehicleon = true
+					util.create_tick_handler(controlevehicle)
+				else
+					controlevehicleon = false
+				end
+			end)
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Teleport to Vehicle", {}, infotextline, function()
 				local entityhandle = vehhandle
@@ -3874,7 +4051,7 @@ function getnearvehicle()
 
 			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Explode", {}, infotextline, function()
-				local timer = 0
+				local timer = os.time()
 				local entityhandle = vehhandle
 				local entitypointer = vehpointer
 				local entityhash = modelhash
@@ -3891,7 +4068,7 @@ function getnearvehicle()
 							vehiclehealth = GET_VEHICLE_ENGINE_HEALTH(entityhandle)
 							vehiclebodyhealth = GET_VEHICLE_BODY_HEALTH(entityhandle)
 							--timer += 1
-						until (vehiclehealth < 0 and vehiclebodyhealth < 1) --or timer > 250
+						until vehiclehealth < 0 or vehiclebodyhealth < 1 or (os.time() - timer >= 5) --or timer > 250
 					end
 				--else
 				--	util.toast("konnte keine kontrolle bekommen")
@@ -3987,6 +4164,18 @@ function getnearvehicle()
 						SET_VEHICLE_TYRE_BURST(entityhandle, i, true, 0)
 						entities.detach_wheel(entityhandle, i)
 					end
+				end
+			end)
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.list_action(veh[vehhandle], "Set Lock Status", {}, "", tables.vehlockstatus, function(index)
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				--local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +4, 0)
+				--local entitypPos = entities.get_position(entitypointer)
+				if getcontrole(entityhandle) then
+					SET_VEHICLE_DOORS_LOCKED(entityhandle, index)
 				end
 			end)
 			numbertimercall += 1
@@ -4252,7 +4441,7 @@ function getnearvehicle()
 			for i = 1, numberfunctioninlist do
 				if menu.is_focused(vehinfotab[vehhandle.. i]) then
 					if menu.is_ref_valid(vehinfotab[vehhandle.. i]) then
-						--[[if menu.is_focused(vehinfotab[vehhandle.. i]) then
+						--[[if menu.is_focused(veh[vehhandle.. i]) then
 							if showarsignalnearentitys then
 								util.draw_ar_beacon(ePos)
 							end
@@ -6757,7 +6946,7 @@ gravitiygundist = 30
 
 menu.divider(Entitymanagergravitygun, "SETTINGS")
 
-Entitymanagergravitygundist = menu.slider(Entitymanagergravitygun, "Range to load", {"setdistnearenittys"}, "", 10, 100, gravitiygundist, 5, function(val)
+Entitymanagergravitygundist = menu.slider(Entitymanagergravitygun, "Range", {"setdistgravitygun"}, "", 10, 100, gravitiygundist, 5, function(val)
 	gravitiygundist = val
 end)
 gravitiygundist = menu.get_value(Entitymanagergravitygundist)
@@ -8232,8 +8421,8 @@ function clearAreaOfEntities(entitie, range)
 	        for _, vehicle in pairs(entities.get_all_vehicles_as_handles()) do
 				local cc = GET_ENTITY_COORDS(vehicle)
 	            if not (currentVehicle == vehicle) and (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) then
-	                local vehData = getTargetVehicleData(vehicle)
-	                if vehData.player == -1 and not (vehicle == currentVehicle) and not (vehicle == persoveh) then
+	                local vehtargetData = getTargetVehicleData(vehicle)
+	                if vehtargetData.player == -1 and not (vehicle == currentVehicle) and not (vehicle == persoveh) then
 	                    entities.delete(vehicle)
 	                end
 	            end
@@ -12311,6 +12500,7 @@ newversionaction = menu.readonly(settingsversiontab, "New Version: ")
 entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
 enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
 settingswaypointobj = menu.list(settings, "Waypoint/objective", {}, "", function(); end)
+vehcontrolesettings = menu.list(settings, "Veh Controle Settings", {}, "", function(); end)
 miscs = menu.list(settings, "Misc", {}, "", function(); end)
 
 menu.toggle(miscs, "host kick freunde", {}, "AN = kickt auch freunde\nAUS = kickt keine freunde", function(on_toggle)
@@ -12484,12 +12674,17 @@ menu.toggle(settingswaypointobj, "take driver with you", {}, "beim wegpunkt tele
 	teltakedriverwith = value
 end, teltakedriverwith)
 
+menu.toggle(vehcontrolesettings, "See own veh", {}, "normal seht man das auto vom anderen aber da bewegt sich halt nicht deswegen kannst du deins anzeigen lassen dadurch wird man deinen charakter sehen im auto", function(value)
+	vehcontroledata.seeownveh = value
+end, vehcontroledata.seeownveh)
+
 async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Selfmade.lua", function(output)
 	output = output:match('SCRIPT_VERSION = "([^ ]+)"')
 	if output > SCRIPT_VERSION then
 		menu.action(menu.my_root(),"NEW VERSION UPDATE!", {}, "Drück zum updaten", function()
 			auto_updater.run_auto_update(auto_update_config)
 		end)
+		util.toast("Es gibt eine neue Version!!!!!!!", TOAST_ALL)
 	end
 end)
 async_http.dispatch()
