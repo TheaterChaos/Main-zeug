@@ -4,7 +4,7 @@ util.keep_running()
 --local response = false
 
 
-local SCRIPT_VERSION = "0.69"
+local SCRIPT_VERSION = "0.70"
 
 
 local allfiles = {
@@ -60,7 +60,7 @@ local auto_update_config = {
 
 util.ensure_package_is_installed('lua/auto-updater')
 local auto_updater = require('auto-updater')
-if auto_updater == true then
+if auto_updater then
     auto_updater.run_auto_update(auto_update_config)
 end
 
@@ -123,9 +123,9 @@ veh = {}
 antivehactiontablelist = {}
 
 vehinfotab = {}
-for i = 0, 300 do
-	vehinfotab[i] = 0
-end
+--for i = 0, 300 do
+--	vehinfotab[i] = 0
+--end
 
 
 vehenterstealnpc = false
@@ -861,6 +861,11 @@ function controlevehicle()
 		vehcontroledata.playerpos = players.get_position(players.user())
 		if table.contains(vehcontroledata.vehicleblacklist, GET_VEHICLE_CLASS(veh)) then
 			vehcontroledata.textline = "Player is driving a unsupported vehicle"
+			state = "stoppreccess"
+			return
+		end
+		if GET_PED_IN_VEHICLE_SEAT(veh, -1) == players.user_ped() then
+			vehcontroledata.textline = "you cant controle the vehicle you driving"
 			state = "stoppreccess"
 			return
 		end
@@ -3007,6 +3012,7 @@ onlymissionnearentitys, showplayersnearentitys, showonlyblibsnearentitys, switch
 showdebugginfosnearentitys, showarsignalnearentitys, 
 infosearchnearentitys, removeattachobjnearentitys, showlinenearentitys, showboxnearentitys = false, true, false, false, true, true, false, false, true, true
 local seattable = {}
+local disableweaponstable = {}
 local seatzaehlerofseats = 0
 local numberfunctioninlist = 0
 local boostvaluetoboostnearentitys = 100
@@ -3706,14 +3712,23 @@ local isinfocusthemenu
 local firstrunveh, firstrunped, firstrunobj, firstrunpickup = true, true, true, true
 local aktivlisthandle
 
+local testdowntable ={}
+local testtable = {}
+
 function handlereflist()
-	for _, ref in pairs(veh) do
-		if not menu.is_ref_valid(ref) then
-			util.toast(_.."    "..tostring(ref), TOAST_ALL)
-			table.remove(veh, _)
+	for _, vehtable in pairs(veh) do
+		--util.toast(_.."     "..tostring(testtable.handle).."    "..tostring(testtable.ref), TOAST_ALL)
+		if not menu.is_ref_valid(vehtable.ref) then
+			--util.toast(_.."     "..tostring(testtable.handle).."    "..tostring(testtable.ref), TOAST_ALL)
+			--util.toast(_.."   "..testding.handle.."   "..tostring(testding.ref), TOAST_ALL)
+			--util.toast(tostring(testtable:find(|item| -> item.handle == testding.handle).ref))
+			table.remove(vehtable, _)
 		end
 	end
 end
+
+--finde sachen in tables
+--testtable:find(|item| -> item.handle == testding.handle).ref
 
 function getnearvehicle()
 	if not enablednearvehicle then
@@ -3874,21 +3889,6 @@ function getnearvehicle()
 			menu.set_temporary(veh[vehhandle])
 			local numbertimercall = 0
 			numbertimercall += 1
-			vehinfotab[vehhandle.. numbertimercall] = menu.toggle(veh[vehhandle], "Controle vehicle", {}, infotextline, function(on_toggle)
-				local entityhandle = vehhandle
-				local entitypointer = vehpointer
-				local entityhash = modelhash
-				local entitiyname = modelname
-				local entitypPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entityhandle, 0, 0, +2)
-				if on_toggle then
-					vehcontroledata.handle = entityhandle
-					controlevehicleon = true
-					util.create_tick_handler(controlevehicle)
-				else
-					controlevehicleon = false
-				end
-			end)
-			numbertimercall += 1
 			vehinfotab[vehhandle.. numbertimercall] = menu.action(veh[vehhandle], "Teleport to Vehicle", {}, infotextline, function()
 				local entityhandle = vehhandle
 				local entitypointer = vehpointer
@@ -3915,6 +3915,9 @@ function getnearvehicle()
 					SET_PED_INTO_VEHICLE(players.user_ped(), entityhandle, -1)
 				else
 					local pedinseat = GET_PED_IN_VEHICLE_SEAT(entityhandle, -1)
+					if pedinseat == players.user_ped() then
+						return
+					end
 					if IS_PED_A_PLAYER(pedinseat) then
 						menu.trigger_commands("vehkick"..players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(pedinseat)))
 						repeat
@@ -3964,6 +3967,7 @@ function getnearvehicle()
 				end
 			end)
 			numbertimercall += 1
+			numberforteleseat = numbertimercall
 			vehinfotab[vehhandle.. numbertimercall] = menu.list(veh[vehhandle], "select seat to Teleport you in", {}, infotextline, function(on_click)
 				local timer = 0
 				local entityhandle = vehhandle
@@ -3985,7 +3989,7 @@ function getnearvehicle()
 						end
 					end
 					seatzaehlerofseats += 1
-					seattable[seatzaehlerofseats] = menu.action(vehinfotab[vehhandle.. 4], seattextline, {"seatsvehicle"..seatzaehlerofseats}, "Sachen hier dirn werden sich nicht aktualisieren wenn du eine aktuelle liste haben willst verlass diese und dann geh wieder ein", function()
+					seattable[seatzaehlerofseats] = menu.action(vehinfotab[vehhandle.. numberforteleseat], seattextline, {"seatsvehicle"..seatzaehlerofseats}, "Sachen hier dirn werden sich nicht aktualisieren wenn du eine aktuelle liste haben willst verlass diese und dann geh wieder ein", function()
 						local entityhandle = entityhandle
 						local entitypointer = entitypointer
 						local pPos = players.get_position(players.user())
@@ -4064,6 +4068,7 @@ function getnearvehicle()
 					if GET_VEHICLE_ENGINE_HEALTH(entityhandle) > 0 and not canbedamaged then
 						repeat
 							util.yield()
+							entitypPos = entities.get_position(entitypointer)
 							ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 5, 1000, true, false, 0.0, false)
 							vehiclehealth = GET_VEHICLE_ENGINE_HEALTH(entityhandle)
 							vehiclebodyhealth = GET_VEHICLE_BODY_HEALTH(entityhandle)
@@ -4176,6 +4181,21 @@ function getnearvehicle()
 				--local entitypPos = entities.get_position(entitypointer)
 				if getcontrole(entityhandle) then
 					SET_VEHICLE_DOORS_LOCKED(entityhandle, index)
+				end
+			end)
+			numbertimercall += 1
+			vehinfotab[vehhandle.. numbertimercall] = menu.toggle(veh[vehhandle], "Controle vehicle", {}, infotextline, function(on_toggle)
+				local entityhandle = vehhandle
+				local entitypointer = vehpointer
+				local entityhash = modelhash
+				local entitiyname = modelname
+				local entitypPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entityhandle, 0, 0, +2)
+				if on_toggle then
+					vehcontroledata.handle = entityhandle
+					controlevehicleon = true
+					util.create_tick_handler(controlevehicle)
+				else
+					controlevehicleon = false
 				end
 			end)
 			numbertimercall += 1
@@ -5710,38 +5730,45 @@ menu.toggle_loop(Self, 'Shoot gods', {}, 'Disables godmode for other players whe
 end)
 
 local ghostplayertable = {}
+local timeforghostgodmodeaimP = os.time()
 --IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) or IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, vehicleped)
 ghostarmedplayers = menu.toggle_loop(Self, "Ghost Armed Players", {}, "macht godmode spieler zum geist für dich wenn sie auf dich ziehlen. \nwird nicht gehen wenn du godmode an hast weil du da ja eh unsterblich bist", function()
 for players.list_except(true) as pid do
 	local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
 	local pedplayer = GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+	local pedplayerveh = GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
 	godmodeon = menu.get_value(menu.ref_by_path("Self>Immortality"))
 	vehiclegodmode = menu.get_value(menu.ref_by_path("Vehicle>Indestructible"))
-	local vehicleped = GET_VEHICLE_PED_IS_IN(players.user_ped())
 	local pc = players.get_position(players.user())
 	local cc = players.get_position(pid)
-		if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PED_FACING_PED(ped, pedplayer, 15) and not players.is_in_interior(pid) then
-			if players.is_godmode(pid) and not godmodeon then
-				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
-				if not table.contains(ghostplayertable, pid) then
-					table.insert(ghostplayertable, pid)
-				end
-			end
-		elseif (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= 15)and IS_PED_ARMED(ped, 7) and not players.is_in_interior(pid) then
-			if players.is_godmode(pid) and not godmodeon then
-				SET_REMOTE_PLAYER_AS_GHOST(pid, true)
-				if not table.contains(ghostplayertable, pid) then
-					table.insert(ghostplayertable, pid)
-				end
-			end
-		else
-			if table.contains(ghostplayertable, pid) then
-				--for ghostplayertable as pid do
-					SET_REMOTE_PLAYER_AS_GHOST(pid, false)
-					tableremove(ghostplayertable, pid)
-				--end
-			end
+	local dist = pc:distance(cc)
+	local activghost = false
+	isgodornot = players.is_godmode(pid) and not godmodeon
+	aimonyouornot =	IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and (IS_PED_FACING_PED(ped, pedplayer, 15) or IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()))
+	nearyouornot = (dist <= 10) and IS_PED_ARMED(ped, 7)
+	aimingonveh = IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PLAYER_FREE_AIMING_AT_ENTITY(ped, pedplayerveh)
+
+	if aimonyouornot or nearyouornot or aimingonveh then
+		activghost = true
+	end
+	if isgodornot and activghost and not players.is_in_interior(pid) then
+		--util.toast(players.get_name(pid).."\nisgodornot: "..tostring(isgodornot).."\naimonyouornot: "..tostring(aimonyouornot).."\nnearyouornot: "..tostring(nearyouornot).."\naimingonveh: "..tostring(aimingonveh))
+		if players.get_bounty(players.user()) != nil and (os.time() - timeforghostgodmodeaimP) >= 5 then
+			menu.trigger_commands("removebounty")
+			timeforghostgodmodeaimP = os.time()
 		end
+			SET_REMOTE_PLAYER_AS_GHOST(pid, true)
+		if not table.contains(ghostplayertable, pid) then
+			table.insert(ghostplayertable, pid)
+		end
+	else
+		if table.contains(ghostplayertable, pid) then
+			--for ghostplayertable as pid do
+				SET_REMOTE_PLAYER_AS_GHOST(pid, false)
+				tableremove(ghostplayertable, pid)
+			--end
+		end
+	end
 end
 end, function(on_stop)
 for players.list_except(true) as pid do
@@ -5818,6 +5845,7 @@ else]]
 local timerforafk = 120
 local timegerade = util.current_time_millis()
 local ghostplayer = false
+local timenowforantiafkkill = os.time()
 menu.toggle_loop(Self, "anti afk kill", {}, "", function()
 	if not util.is_session_transition_active() then
 		local ismovingon = false
@@ -5845,6 +5873,10 @@ menu.toggle_loop(Self, "anti afk kill", {}, "", function()
 				if menu.get_value(ghostarmedplayers) then
 					ghostplayer = true
 					menu.set_value(ghostarmedplayers, false)
+				end
+				if players.get_bounty(players.user()) != nil and (os.time() - timenowforantiafkkill) >= 5 then
+					menu.trigger_commands("removebounty")
+					timenowforantiafkkill = os.time()
 				end
 				for players.list(false, true, true) as pid do
 					SET_REMOTE_PLAYER_AS_GHOST(pid, true)
@@ -7122,6 +7154,7 @@ local config = {
         {name="Foliage", value=256, enabled=true},
     },
     trace_flag_value=0,
+	key_to_player_tp_vehicle="E",
 }
 
 local CONTEXT_MENUS_DIR = filesystem.scripts_dir()..config.menu_options_scripts_dir
@@ -7815,8 +7848,8 @@ cmm.execute_selected_action = function(target)
     if target.selected_option.execute ~= nil and type(target.selected_option.execute) == "function" then
         util.log("Triggering option "..target.selected_option.name)
         --if cmm.is_target_a_player_in_vehicle(target) then
-        --    target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
-        --    cmm.update_target_data(target)
+        --   target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
+        --   cmm.update_target_data(target)
         --end
         target.selected_option.execute(target)
     elseif target.selected_option.items ~= nil and type(target.selected_option.items) == "table" then
@@ -7930,6 +7963,10 @@ end
 
 cmm.is_target_a_player_in_vehicle = function(target)
     return target.type == "PLAYER" and IS_PED_IN_ANY_VEHICLE(target.handle)
+end
+
+cmm.is_target_a_vehicle_with_player = function(target)
+    return target.type == "VEHICLE" and IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(target.handle, -1))
 end
 
 cmm.deep_table_copy = function(obj)
@@ -8143,12 +8180,29 @@ cmm.refresh_screen_pos = function(target)
     end
 end
 
+cmm.check_player_to_vehicle_switch = function(target)
+	if is_key_just_down(config.key_to_player_tp_vehicle) then
+        if cmm.is_target_a_player_in_vehicle(target) then
+			cmm.close_options_menu(target)
+        	target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
+        	cmm.update_target_data(target)
+			cmm.open_options_menu(target)
+		elseif cmm.is_target_a_vehicle_with_player(target) then
+			cmm.close_options_menu(target)
+			target.handle = GET_PED_IN_VEHICLE_SEAT(target.handle, -1)
+        	cmm.update_target_data(target)
+			cmm.open_options_menu(target)
+        end
+	end
+end
+
 cmm.update_menu = function(target)
     cmm.handle_inputs(target)
     cmm.check_option_hotkeys(target)
     cmm.find_selected_option(target)
     cmm.draw_options_menu(target)
     cmm.draw_ped_preview(target)
+	cmm.check_player_to_vehicle_switch(target)
 end
 
 cmm.open_options_menu = function(target)
@@ -8283,6 +8337,10 @@ end, config.target_ignore_player_veh)
 menus.settings:toggle("hold to get wheel", {}, "", function(value)
     config.hold_to_view_wheel = value
 end, config.hold_to_view_wheel)
+menus.settings:text_input("Key_to_Switch", {"key_to_Switch"}, "Key to switch from player to vehicle and vehicle to player", function(value)
+    value = string.upper(value)
+	config.key_to_player_tp_vehicle = value
+end, config.key_to_player_tp_vehicle)
 
 menus.settings_snap_distance = menus.settings:list("Snap Distance", {}, "How close your crosshair needs to be to an entity to snap to it")
 menus.settings_snap_distance:slider_float("Player Snap Distance", {"cmmsnapdistanceplayer"}, "How close your crosshair needs to be to a player to snap to it", 0, 100, math.floor(config.target_snap_distance.player * 100), 1, function(value)
@@ -12082,7 +12140,7 @@ menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 	end
 end)
 
-menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 50]\nDamit wird die stärke eingestellt wie stark es dich boosten soll", 1,50, 1, 1, function(boost)
+menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 100]\nDamit wird die stärke eingestellt wie stark es dich boosten soll", 1,100, 1, 1, function(boost)
 	a = boost
 end)
 
