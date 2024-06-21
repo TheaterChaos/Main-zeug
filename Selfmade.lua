@@ -1,10 +1,9 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
 util.keep_running()
---local response = false
 
 
-local SCRIPT_VERSION = "0.70"
+local SCRIPT_VERSION = "0.71"
 
 
 local allfiles = {
@@ -60,8 +59,10 @@ local auto_update_config = {
 
 util.ensure_package_is_installed('lua/auto-updater')
 local auto_updater = require('auto-updater')
-if auto_updater then
-    auto_updater.run_auto_update(auto_update_config)
+if not filesystem.exists(filesystem.scripts_dir().."lib/selfmadedevfiletrue.txt") then
+	if auto_updater then
+   	auto_updater.run_auto_update(auto_update_config)
+	end
 end
 
 for _, files in pairs(allfiles) do
@@ -7122,6 +7123,7 @@ local config = {
     color = {
         options_circle={r=1, g=1, b=1, a=0.1},
         option_text={r=1, g=1, b=1, a=1},
+		selected_option_text={r=1, g=0, b=1, a=1},
         help_text={r=0.8, g=0.8, b=0.8, a=1},
         option_wedge={r=1, g=1, b=1, a=0.3},
         selected_option_wedge={r=1, g=0, b=1, a=0.3},
@@ -7288,7 +7290,7 @@ end
 
 cmm.is_menu_available = function()
     if not config.context_menu_enabled then return false end
-	if config.disable_in_vehicles then if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then return false end end
+	if config.disable_in_vehicles and IS_PED_IN_ANY_VEHICLE(players.user_ped()) then return false end
 	if menu.is_open() then return false end
 	return true
 end
@@ -7878,6 +7880,18 @@ function get_option_wedge_draw_color(target, option)
     return draw_color
 end
 
+function build_option_text_label(option)
+    local option_text = option.name --.. "["..math.floor(option.option_angle + 90).."]"
+    if option.num_relevant_children and option.num_relevant_children > 0 then
+        option_text = option_text.." ("..option.num_relevant_children..")"
+    end
+    return option_text
+end
+
+function get_option_text_coords(target, option)
+    return get_circle_coords(target.menu_pos, config.menu_radius*config.option_label_distance, option.option_angle)
+end
+
 cmm.draw_options_menu = function(target)
     directx.draw_circle(target.menu_pos.x, target.menu_pos.y, config.menu_radius, config.color.options_circle)
 
@@ -7909,6 +7923,16 @@ cmm.draw_options_menu = function(target)
             end
         end
     end
+
+	    -- Overlay selected text in highlighted color
+		if target.selected_option then
+			local option_text_coords = get_option_text_coords(target, target.selected_option)
+			cmm.draw_text_with_shadow(
+				option_text_coords.x, option_text_coords.y, build_option_text_label(target.selected_option),
+				5, 0.5, config.color.selected_option_text, true
+			)
+		end
+
 end
 
 cmm.draw_target_label = function(target)
@@ -8183,10 +8207,12 @@ end
 cmm.check_player_to_vehicle_switch = function(target)
 	if is_key_just_down(config.key_to_player_tp_vehicle) then
         if cmm.is_target_a_player_in_vehicle(target) then
-			cmm.close_options_menu(target)
-        	target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
-        	cmm.update_target_data(target)
-			cmm.open_options_menu(target)
+			if GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, true), -1) == target.handle then
+				cmm.close_options_menu(target)
+        		target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
+        		cmm.update_target_data(target)
+				cmm.open_options_menu(target)
+			end
 		elseif cmm.is_target_a_vehicle_with_player(target) then
 			cmm.close_options_menu(target)
 			target.handle = GET_PED_IN_VEHICLE_SEAT(target.handle, -1)
@@ -8431,26 +8457,33 @@ menus.settings_player_previews:slider("Player Preview Pos Z", {"cmmplayerpreview
 end)
 
 menus.settings_colors = menus.settings:list("Colors")
-menus.settings_colors:colour("Target Ball Color", {"cmmcolortargetball"}, "The ball cursor when no specific entity is selected", config.color.target_ball, true, function(color)
+menu.inline_rainbow(menus.settings_colors:colour("Target Ball Color", {"cmmcolortargetball"}, "The ball cursor when no specific entity is selected", config.color.target_ball, true, function(color)
     config.color.target_ball = color
     config.color.target_ball_output = cmm.color_menu_output(config.color.target_ball)
-end)
-menus.settings_colors:colour("Target Bounding Box Color", {"cmmcolortargetboundingbox"}, "The bounding box cursor when a specific entity is selected", config.color.target_bounding_box, true, function(color)
+end))
+menu.inline_rainbow(menus.settings_colors:colour("Target Bounding Box Color", {"cmmcolortargetboundingbox"}, "The bounding box cursor when a specific entity is selected", config.color.target_bounding_box, true, function(color)
     config.color.target_bounding_box = color
     config.color.target_bounding_box_output = cmm.color_menu_output(config.color.target_bounding_box)
-end)
-menus.settings_colors:colour("Menu Circle Color", {"cmmcolorcirclecolor"}, "The menu circle color", config.color.options_circle, true, function(color)
+end))
+menu.inline_rainbow(menus.settings_colors:colour("Menu Circle Color", {"cmmcolorcirclecolor"}, "The menu circle color", config.color.options_circle, true, function(color)
     config.color.options_circle = color
-end)
-menus.settings_colors:colour("Option Wedge Color", {"cmmcolorwedgecolor"}, "An individual option wedge color", config.color.option_wedge, true, function(color)
+end))
+menu.inline_rainbow(menus.settings_colors:colour("Option Wedge Color", {"cmmcolorwedgecolor"}, "An individual option wedge color", config.color.option_wedge, true, function(color)
     config.color.option_wedge = color
-end)
-menus.settings_colors:colour("Selected Option Wedge Color", {"cmmcolorselectedwedgecolor"}, "The currently selected option wedge color", config.color.selected_option_wedge, true, function(color)
+end))
+menu.inline_rainbow(menus.settings_colors:colour("Selected Option Wedge Color", {"cmmcolorselectedwedgecolor"}, "The currently selected option wedge color", config.color.selected_option_wedge, true, function(color)
     config.color.selected_option_wedge = color
-end)
-menus.settings_colors:colour("Line to Target Color", {"cmmcolortargetcolor"}, "Line from menu to target color", config.color.line_to_target, true, function(color)
+end))
+
+menu.inline_rainbow(menus.settings_colors:colour("Option Text Color", {"cmmcolortextcolor"}, "The option text color", config.color.option_text, true, function(color)
+    config.color.option_text = color
+end))
+menu.inline_rainbow(menus.settings_colors:colour("Selected Option Text Color", {"cmmcolorselectedtextcolor"}, "The currently selected option text color", config.color.selected_option_text, true, function(color)
+    config.color.selected_option_text = color
+end))
+menu.inline_rainbow(menus.settings_colors:colour("Line to Target Color", {"cmmcolortargetcolor"}, "Line from menu to target color", config.color.line_to_target, true, function(color)
     config.color.line_to_target = color
-end)
+end))
 
 
 
@@ -8598,51 +8631,122 @@ local translator = menu.list(player_zeug, "Translator", {}, "")
 --local selfmadeplayerhistory = menu.list(player_zeug, "Player history", {}, "")
 
 
-local enabled, enableOnAim = false, false
-local xValue, yValue, scaleValue, fovset = 0, 0, 35, 10
-local color = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
-local maxDistance = 400
-local showDistance, showWanted, showRank, showLanguage, showName, showTags, showHealth, showArmor, showKD, showMoney, showWeapon, showInMyVehicle, showVehicle, showSpeed,
-	hideInterior, showBounty, showorgandowner, showorgmembers, showVehicleidname, drawlineespp, drawboxespp = true, false, false, false, true, true, false, false, false, false, true, true, true, false, false, false, false, false, false, true, true
+local ESPConfigtable = {
+	enabled = false,
+	enableOnAim = false,
+
+	xValue = 0,
+	yValue = 0,
+	scaleValue = 35,
+	fovset = 10,
+
+	color = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
+	maxDistance = 400,
+	showDistance = true,
+	showWanted = false,
+	showRank = false,
+	showLanguage = false,
+	showName = true,
+	showTags = true,
+	showHealth = false,
+	showArmor = false,
+	showKD = false,
+	showMoney = false,
+	showWeapon = true,
+	showInMyVehicle = true,
+	showVehicle = true,
+	showSpeed = false,
+	hideInterior = false,
+	showBounty = false,
+	showorgandowner = false,
+	showorgmembers = false,
+	showVehicleidname = false,
+	drawlineespp = true,
+	drawboxespp = true,
+
+	showeverythingelsetoggle = true,
+	is_friend = true,
+
+	is_using_controller = true,
+	is_godmode = true,
+	is_marked_as_modder = true,
+	is_marked_as_modder_or_admin = true,
+	is_marked_as_admin = true,
+	is_marked_as_attacker = true,
+	is_otr = true,
+	is_typing = true,
+	is_using_vpn = true,
+	is_using_rc_vehicle = true,
+}
+
+function isextraoktogo(pid)
+	if ESPConfigtable.showeverythingelsetoggle then
+		if not ESPConfigtable.is_friend then if PlayerisFriend(pid) then return false end end
+		if not ESPConfigtable.is_using_controller then if players.is_using_controller(pid) then return false end end
+		if not ESPConfigtable.is_godmode then if players.is_godmode(pid) then return false end end
+		if not ESPConfigtable.is_marked_as_modder then if players.is_marked_as_modder(pid) then return false end end
+		if not ESPConfigtable.is_marked_as_modder_or_admin then if players.is_marked_as_modder_or_admin(pid) then return false end end
+		if not ESPConfigtable.is_marked_as_admin then if players.is_marked_as_admin(pid) then return false end end
+		if not ESPConfigtable.is_marked_as_attacker then if players.is_marked_as_attacker(pid) then return false end end
+		if not ESPConfigtable.is_otr then if players.is_otr(pid) then return false end end
+		if not ESPConfigtable.is_typing then if players.is_typing(pid) then return false end end 
+		if not ESPConfigtable.is_using_vpn then if players.is_using_vpn(pid) then return false end end 
+		if not ESPConfigtable.is_using_rc_vehicle then if players.is_using_rc_vehicle(pid) then return false end end
+		return true
+	else
+		if ESPConfigtable.is_friend then if PlayerisFriend(pid) then return true end end
+		if ESPConfigtable.is_using_controller then if players.is_using_controller(pid) then return true end end
+		if ESPConfigtable.is_godmode then if players.is_godmode(pid) then return true end end
+		if ESPConfigtable.is_marked_as_modder then if players.is_marked_as_modder(pid) then return true end end
+		if ESPConfigtable.is_marked_as_modder_or_admin then if players.is_marked_as_modder_or_admin(pid) then return true end end
+		if ESPConfigtable.is_marked_as_admin then if players.is_marked_as_admin(pid) then return true end end
+		if ESPConfigtable.is_marked_as_attacker then if players.is_marked_as_attacker(pid) then return true end end
+		if ESPConfigtable.is_otr then if players.is_otr(pid) then return true end end
+		if ESPConfigtable.is_typing then if players.is_typing(pid) then return true end end 
+		if ESPConfigtable.is_using_vpn then if players.is_using_vpn(pid) then return true end end 
+		if ESPConfigtable.is_using_rc_vehicle then if players.is_using_rc_vehicle(pid) then return true end end
+		return false
+	end
+end
 
 	function getName(pid, inVehicle)
 	    local value = ""
-	    if showName or inVehicle then
+	    if ESPConfigtable.showName or inVehicle then
 	        value = players.get_name(pid)
 	    end
 	    local tags = ""
-	    if showTags then
+	    if ESPConfigtable.showTags then
 	        tags = players.get_tags_string(pid)
 	    end
-	    if (showTags or inVehicle) and tags:len() > 0 then
+	    if (ESPConfigtable.showTags or inVehicle) and tags:len() > 0 then
 	        value = value .. " [" .. tags .. "]"
 	    end
 	    local preName = ""
 	    if not inVehicle then
-	        if showWanted then
+	        if ESPConfigtable.showWanted then
 	            local wanted = GET_PLAYER_WANTED_LEVEL(pid)
 	            if wanted > 0 then
 	                preName = wanted .. "* "
 	            end
 	        end
-	        if showRank then
+	        if ESPConfigtable.showRank then
 	            preName = preName .. "(" .. players.get_rank(pid) .. ") "
 	        end
 	    end
-	    if showLanguage then
+	    if ESPConfigtable.showLanguage then
 	        preName = preName .. "[" .. getLanguage(pid) .. "] "
 	    end
 	    return preName .. value
 	end
 
 	function renderESP()
-		if not enabled then
+		if not ESPConfigtable.enabled then
 	        return false
 	    end
 	    if not util.is_session_started() or IS_PAUSE_MENU_ACTIVE() then
 	        return
 	    end
-	    if enableOnAim and not IS_PLAYER_FREE_AIMING(players.user()) then
+	    if ESPConfigtable.enableOnAim and not IS_PLAYER_FREE_AIMING(players.user()) then
 	        return
 	    end
 		local gameX, gameY = memory.alloc(1), memory.alloc(1)
@@ -8652,19 +8756,22 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 			myPos = players.get_position(players.get_spectate_target(players.user()))
 		end
 	    for _, pid in players.list(false) do
+			if not isextraoktogo(pid) then
+				goto continue
+			end
 	        local ped = GET_PLAYER_PED(pid)
 			if deactivateOnAim and IS_PLAYER_FREE_AIMING(players.user()) then
-				if IS_PED_FACING_PED(myPed, ped, fovset) then
+				if IS_PED_FACING_PED(myPed, ped, ESPConfigtable.fovset) then
 					goto continue
 				end
 			end
 	        if IS_PLAYER_DEAD(pid) and not IS_ENTITY_ON_SCREEN(ped) or
-	            (hideInterior and getInterior(pid) and not table.contains({"cayoPerico", "ussLex"}, getInterior(pid))) then
+	            (ESPConfigtable.hideInterior and getInterior(pid) and not table.contains({"cayoPerico", "ussLex"}, getInterior(pid))) then
 	            goto continue
 	        end
 	        local pPos = getPlayerPosition(pid)
 	        local dist = myPos:distance(pPos)
-	        if dist > maxDistance then
+	        if dist > ESPConfigtable.maxDistance then
 	            goto continue
 	        end
 	        local vehicle = getVehicle(ped)
@@ -8674,7 +8781,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	            if driver ~= ped and driver ~= myPed and IS_PED_A_PLAYER(driver) then
 	                goto continue
 	            elseif driver == myPed then
-	                if not showInMyVehicle then
+	                if not ESPConfigtable.showInMyVehicle then
 	                    goto continue
 	                end
 	                isMyVehicle = true
@@ -8700,7 +8807,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	                end
 	            end
 	        end
-	        if showDistance then
+	        if ESPConfigtable.showDistance then
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
 	        local nameLine = getName(pid)
@@ -8711,7 +8818,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	            valuesToDisplay[#valuesToDisplay + 1] = "in Vehicle" .. ": " .. playersInVehicle:gsub(", $", "")
 	        end
 			local orgowner = players.get_boss(pid)
-			if showorgandowner then
+			if ESPConfigtable.showorgandowner then
 				if orgowner != -1 then
 					local orgtype = getorgtype(orgowner)
 					if orgtype != "false" then
@@ -8724,7 +8831,7 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 				end
 			end
 			local orgmembers = ""
-			if showorgmembers then
+			if ESPConfigtable.showorgmembers then
 				if orgowner != -1 then
 					local orgmem = getorganisationplayers(pid)
 					if orgmem != {} then
@@ -8741,54 +8848,54 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 				valuesToDisplay[#valuesToDisplay + 1] = "Orgmembers: ".. orgmembers:gsub(", $", "")
 			end
 	        local hpData = getHealth(ped)
-	        if showHealth or showArmor then
+	        if ESPConfigtable.showHealth or ESPConfigtable.showArmor then
 	            local textline = ""
-	            if showHealth then
+	            if ESPConfigtable.showHealth then
 	                textline = "H: " .. hpData.health .. "/" .. hpData.maxHealth .. " "
 	            end
-	            if showArmor then
+	            if ESPConfigtable.showArmor then
 	                textline = textline .. "A: " .. hpData.armor .. "/50"
 	            end
 	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
-	        if showBounty and players.get_bounty(pid) then
+	        if ESPConfigtable.showBounty and players.get_bounty(pid) then
 	            valuesToDisplay[#valuesToDisplay + 1] = "$$" .. players.get_bounty(pid)
 	        end
-	        if showMoney or showKD then
+	        if ESPConfigtable.showMoney or ESPConfigtable.showKD then
 	            local textline = ""
-	            if showKD then
+	            if ESPConfigtable.showKD then
 	                textline = "KD " .. getKD(pid) .. " "
 	            end
-	            if showMoney then
+	            if ESPConfigtable.showMoney then
 	                textline = textline .. "$" .. getMoney(pid, true)
 	            end
 	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
-	        if showWeapon then
+	        if ESPConfigtable.showWeapon then
 	            local weapon = getWeapon(ped)
 	            if weapon then
 	                valuesToDisplay[#valuesToDisplay + 1] = weapon
 	            end
 	        end
-	        if (showVehicle or showSpeed or showVehicleidname) and vehicle then
+	        if (ESPConfigtable.showVehicle or ESPConfigtable.showSpeed or ESPConfigtable.showVehicleidname) and vehicle then
 	            local textline = ""
-	            if showVehicle then
+	            if ESPConfigtable.showVehicle then
 	                textline = getmodelnamebyhash(players.get_vehicle_model(pid)) .. " "
 	            end
-				if showVehicleidname then
+				if ESPConfigtable.showVehicleidname then
 					textline = textline .. "["..vehidname.."]" .. " "
 				end
-	            if showSpeed and getSpeed(vehicle, true) > 0 then
+	            if ESPConfigtable.showSpeed and getSpeed(vehicle, true) > 0 then
 	                textline = textline .. getSpeed(vehicle)
 	            end
 	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
 	        local text = table.concat(valuesToDisplay, "\n")
-	        directx.draw_text(screenX + xValue, screenY + yValue, text, 5, scaleValue, color, false)
-			if drawlineespp then
+	        directx.draw_text(screenX + ESPConfigtable.xValue, screenY + ESPConfigtable.yValue, text, 5, ESPConfigtable.scaleValue, ESPConfigtable.color, false)
+			if ESPConfigtable.drawlineespp then
 				DRAW_LINE(myPos.x, myPos.y, myPos.z, pPos.x, pPos.y, pPos.z, 255, 0, 0, 255)
 			end
-			if drawboxespp then
+			if ESPConfigtable.drawboxespp then
 				draw_bounding_box(ped)
 			end
 	        ::continue::
@@ -8797,130 +8904,143 @@ local showDistance, showWanted, showRank, showLanguage, showName, showTags, show
 	
 enabledToggle = menu.toggle(ESP, "Enable ESP Player", {"ESP"}, "", function(on_toggle)
 	if on_toggle then
-		enabled = true
+		ESPConfigtable.enabled = true
 		util.create_tick_handler(renderESP)
 	else
-		enabled = false
+		ESPConfigtable.enabled = false
 	end
 end)
 local ESPSettings = menu.list(ESP, "Settings", {}, "")
+local ESPextratoggles = menu.list(ESP, "Extra Settings", {}, "show players with these things or not on ESP")
 
 enableOnAimToggle = menu.toggle(ESPSettings, "enableOnAimOnly", {}, "", function(on)
-	enableOnAim = on
-end, enableOnAim)
-enableOnAim = menu.get_value(enableOnAimToggle)
+	ESPConfigtable.enableOnAim = on
+end, ESPConfigtable.enableOnAim)
 deactivateOnAimToggle = menu.toggle(ESPSettings, "DeactivateOnAim", {}, "", function(on)
 	deactivateOnAim = on
 end, deactivateOnAim)
-deactivateOnAim = menu.get_value(deactivateOnAimToggle)
 drawlineesppToggle = menu.toggle(ESPSettings, "Draw line", {}, "", function(on)
-	drawlineespp = on
-end, drawlineespp)
-drawlineespp = menu.get_value(drawlineesppToggle)
+	ESPConfigtable.drawlineespp = on
+end, ESPConfigtable.drawlineespp)
 drawboxesppToggle = menu.toggle(ESPSettings, "Draw Box", {}, "", function(on)
-	drawboxespp = on
-end, drawboxespp)
-drawboxespp = menu.get_value(drawboxesppToggle)
-fovslider = menu.slider(ESPSettings, "FOV", {}, "", 1, 30, fovset, 1, function(val)
-	fovset = val
+	ESPConfigtable.drawboxespp = on
+end, ESPConfigtable.drawboxespp)
+fovslider = menu.slider(ESPSettings, "FOV", {}, "", 1, 30, ESPConfigtable.fovset, 1, function(val)
+	ESPConfigtable.fovset = val
 end)
 hideInteriorToggle = menu.toggle(ESPSettings, "hideInterior", {}, "", function(on)
-	hideInterior = on
-end, hideInterior)
-hideInterior = menu.get_value(hideInteriorToggle)
+	ESPConfigtable.hideInterior = on
+end, ESPConfigtable.hideInterior)
 local positionSubmenu = menu.list(ESPSettings, "position", {}, "")
-xSlider = menu.slider(positionSubmenu, "XPos", {}, "", -10, 10, xValue, 1, function(val)
-	xValue = val / 200
+xSlider = menu.slider(positionSubmenu, "XPos", {}, "", -10, 10, ESPConfigtable.xValue, 1, function(val)
+	ESPConfigtable.xValue = val / 200
 end)
---xValue = menu.get_value(xSlider) / 100
-ySlider = menu.slider(positionSubmenu, "YPos", {}, "", -10, 10, yValue, 1, function(val)
-	yValue = val / 200
+ySlider = menu.slider(positionSubmenu, "YPos", {}, "", -10, 10, ESPConfigtable.yValue, 1, function(val)
+	ESPConfigtable.yValue = val / 200
 end)
---yValue = menu.get_value(ySlider) / 100
-scaleSlider = menu.slider(positionSubmenu, "scale", {}, "", 1, 200, scaleValue, 1, function(val)
-	scaleValue = val / 100
+scaleSlider = menu.slider(positionSubmenu, "scale", {}, "", 1, 200, ESPConfigtable.scaleValue, 1, function(val)
+	ESPConfigtable.scaleValue = val / 100
 end)
-scaleValue = menu.get_value(scaleSlider) / 100
-colorRef = menu.colour(ESPSettings, "color", {}, "", color, true, function(c)
-	color = c
+colorRef = menu.colour(ESPSettings, "color", {}, "", ESPConfigtable.color, true, function(c)
+	ESPConfigtable.color = c
 end)
-maxDistSlider = menu.slider(ESPSettings, "maxDist", {"setespdist"}, "", 10, 10000, maxDistance, 10, function(val)
-	maxDistance = val
+maxDistSlider = menu.slider(ESPSettings, "maxDist", {"setespdist"}, "", 10, 10000, ESPConfigtable.maxDistance, 10, function(val)
+	ESPConfigtable.maxDistance = val
 end)
-maxDistance = menu.get_value(maxDistSlider)
+
+ESPshowonlyextraToggle = menu.toggle(ESPextratoggles, "show everything else", {}, "", function(on)
+	ESPConfigtable.showeverythingelsetoggle = on
+end, ESPConfigtable.showeverythingelsetoggle)
+ESPfriendToggle = menu.toggle(ESPextratoggles, "show Friends", {}, "", function(on)
+	ESPConfigtable.is_friend = on
+end, ESPConfigtable.is_friend)
+menu.divider(ESPextratoggles, "Extra stand stuff")
+
+ESPusingcontrollerToggle = menu.toggle(ESPextratoggles, "is using controller ", {}, "", function(on)
+	ESPConfigtable.is_using_controller = on
+end, ESPConfigtable.is_using_controller)
+ESPisgomodeToggle = menu.toggle(ESPextratoggles, "is godmode", {}, "", function(on)
+	ESPConfigtable.is_godmode = on
+end, ESPConfigtable.is_godmode)
+ESPmarkedasmodderToggle = menu.toggle(ESPextratoggles, "is marked as modder", {}, "", function(on)
+	ESPConfigtable.is_marked_as_modder = on
+end, ESPConfigtable.is_marked_as_modder)
+ESPmarkedasmodderoradminToggle = menu.toggle(ESPextratoggles, "is marked as modder or admin", {}, "", function(on)
+	ESPConfigtable.is_marked_as_modder_or_admin = on
+end, ESPConfigtable.is_marked_as_modder_or_admin)
+ESPmarkedasadminToggle = menu.toggle(ESPextratoggles, "is marked as admin", {}, "", function(on)
+	ESPConfigtable.is_marked_as_admin = on
+end, ESPConfigtable.is_marked_as_admin)
+ESPmarkedasattackerToggle = menu.toggle(ESPextratoggles, "is marked as attacker", {}, "", function(on)
+	ESPConfigtable.is_marked_as_attacker = on
+end, ESPConfigtable.is_marked_as_attacker)
+ESPisotrToggle = menu.toggle(ESPextratoggles, "is otr", {}, "", function(on)
+	ESPConfigtable.is_otr = on
+end, ESPConfigtable.is_otr)
+ESPistypingToggle = menu.toggle(ESPextratoggles, "is typing", {}, "", function(on)
+	ESPConfigtable.is_typing = on
+end, ESPConfigtable.is_typing)
+ESPusingvpnToggle = menu.toggle(ESPextratoggles, "is using vpn", {}, "", function(on)
+	ESPConfigtable.is_using_vpn = on
+end, ESPConfigtable.is_using_vpn)
+ESPusingrcvehicleToggle = menu.toggle(ESPextratoggles, "is using rc vehicle", {}, "", function(on)
+	ESPConfigtable.is_using_rc_vehicle = on
+end, ESPConfigtable.is_using_rc_vehicle)
 
 distToggle = menu.toggle(ESP, "showDistance", {}, "", function(on)
-	showDistance = on
-end, showDistance)
-showDistance = menu.get_value(distToggle)
+	ESPConfigtable.showDistance = on
+end, ESPConfigtable.showDistance)
 wantedToggle = menu.toggle(ESP, "showWanted", {}, "", function(on)
-	showWanted = on
-end, showWanted)
-showWanted = menu.get_value(wantedToggle)
+	ESPConfigtable.showWanted = on
+end, ESPConfigtable.showWanted)
 rankToggle = menu.toggle(ESP, "showRank", {}, "", function(on)
-	showRank = on
-end, showRank)
-showRank = menu.get_value(rankToggle)
+	ESPConfigtable.showRank = on
+end, ESPConfigtable.showRank)
 langToggle = menu.toggle(ESP, "showLanguage", {}, "", function(on)
-	showLanguage = on
-end, showLanguage)
-showLanguage = menu.get_value(langToggle)
+	ESPConfigtable.showLanguage = on
+end, ESPConfigtable.showLanguage)
 nameToggle = menu.toggle(ESP, "showName", {}, "", function(on)
-	showName = on
-end, showName)
-showName = menu.get_value(nameToggle)
+	ESPConfigtable.showName = on
+end, ESPConfigtable.showName)
 tagsToggle = menu.toggle(ESP, "showTags", {}, "", function(on)
-	showTags = on
-end, showTags)
-showTags = menu.get_value(tagsToggle)
+	ESPConfigtable.showTags = on
+end, ESPConfigtable.showTags)
 organdownerToggle = menu.toggle(ESP, "showorgandorgOwner", {}, "", function(on)
-	showorgandowner = on
-end, showorgandowner)
-showorgandowner = menu.get_value(organdownerToggle)
+	ESPConfigtable.showorgandowner = on
+end, ESPConfigtable.showorgandowner)
 orgmembersToggle = menu.toggle(ESP, "showorgmembers", {}, "", function(on)
-	showorgmembers = on
-end, showorgmembers)
-showorgmembers = menu.get_value(orgmembersToggle)
+	ESPConfigtable.showorgmembers = on
+end, ESPConfigtable.showorgmembers)
 hpToggle = menu.toggle(ESP, "showHealth", {}, "", function(on)
-	showHealth = on
-end, showHealth)
-showHealth = menu.get_value(hpToggle)
+	ESPConfigtable.showHealth = on
+end, ESPConfigtable.showHealth)
 armorToggle = menu.toggle(ESP, "showArmor", {}, "", function(on)
-	showArmor = on
-end, showArmor)
-showArmor = menu.get_value(armorToggle)
+	ESPConfigtable.showArmor = on
+end, ESPConfigtable.showArmor)
 kdToggle = menu.toggle(ESP, "showKD", {}, "", function(on)
-	showKD = on
-end, showKD)
-showKD = menu.get_value(kdToggle)
+	ESPConfigtable.showKD = on
+end, ESPConfigtable.showKD)
 bountyToggle = menu.toggle(ESP, "showBounty", {}, "", function(on)
-	showBounty = on
-end, showBounty)
-showBounty = menu.get_value(bountyToggle)
+	ESPConfigtable.showBounty = on
+end, ESPConfigtable.showBounty)
 moneyToggle = menu.toggle(ESP, "showMoney", {}, "", function(on)
-	showMoney = on
-end, showMoney)
-showMoney = menu.get_value(moneyToggle)
+	ESPConfigtable.showMoney = on
+end, ESPConfigtable.showMoney)
 weaponToggle = menu.toggle(ESP, "showWeapon", {}, "", function(on)
-	showWeapon = on
-end, showWeapon)
-showWeapon = menu.get_value(weaponToggle)
+	ESPConfigtable.showWeapon = on
+end, ESPConfigtable.showWeapon)
 myVehicleToggle = menu.toggle(ESP, "showInMyVehicle", {}, "", function(on)
-		showInMyVehicle = on
-	end, showInMyVehicle)
-showInMyVehicle = menu.get_value(myVehicleToggle)
+	ESPConfigtable.showInMyVehicle = on
+end, ESPConfigtable.showInMyVehicle)
 vehicleToggle = menu.toggle(ESP, "showVehicle", {}, "", function(on)
-	showVehicle = on
-end, showVehicle)
-showVehicle = menu.get_value(vehicleToggle)
+	ESPConfigtable.showVehicle = on
+end, ESPConfigtable.showVehicle)
 vehicleidnameToggle = menu.toggle(ESP, "showVehicle ID name", {}, "", function(on)
-	showVehicleidname = on
-end, showVehicleidname)
-showVehicleidname = menu.get_value(vehicleidnameToggle)
+	ESPConfigtable.showVehicleidname = on
+end, ESPConfigtable.showVehicleidname)
 speedToggle = menu.toggle(ESP, "showSpeed", {}, "", function(on)
-	showSpeed = on
-end, showSpeed)
-showSpeed = menu.get_value(speedToggle)
+	ESPConfigtable.showSpeed = on
+end, ESPConfigtable.showSpeed)
 
 function getplayertokick(pid)
 	if Russian_Federation then
@@ -12181,47 +12301,32 @@ if not util.is_session_transition_active() then
 	local keyCode = getKeyCode("VK_F")
 	playernameself = players.get_name(players.user())
 	myposition = players.get_position(players.user())
-	mypositionvehicle = getClosestVehicle(myposition)
-	if not mypositionvehicle then
-		goto stop
-	else
-		vehhash = entities.get_model_hash(mypositionvehicle)
-		vehiclename = getmodelnamebyhash(vehhash)
-	end
-	ped = GET_PED_IN_VEHICLE_SEAT(mypositionvehicle, -1, true)
-	missionped = IS_ENTITY_A_MISSION_ENTITY(ped)
-	speedofvehicle = GET_ENTITY_SPEED(mypositionvehicle)
 	flyingvehicle = IS_PED_IN_FLYING_VEHICLE(players.user_ped())
-	--doorindex = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_dside_f")
-	--doorindex2 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_dside_r")
-	--doorindex3 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_pside_f")
-	--doorindex4 = GET_ENTITY_BONE_INDEX_BY_NAME(mypositionvehicle, "handle_pside_r")
-	positionoffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(mypositionvehicle, -2, 0, 0)
-	--doorpositionleftfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex)
-	--doorpositionleftback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex2)
-	--doorpositionrightfront = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex3)
-	--doorpositionrightback = GET_ENTITY_BONE_POSTION(mypositionvehicle, doorindex4)
-	local seatofplayer = getseatofplayer(mypositionvehicle)
 	local personalveh = entities.get_user_personal_vehicle_as_handle(players.user())
 	timer1 = 0
 	if not IS_PED_IN_ANY_VEHICLE(players.user_ped(), false) then --and not (GET_IS_TASK_ACTIVE(ped, 160)) then
-		if infoofveh then
+		--[[if infoofveh then
 			util.draw_debug_text(vehiclename)
 			util.draw_debug_text(getvehtype(vehhash))
 			if personalveh == mypositionvehicle then
 				util.draw_debug_text("PERSONALVEHICLE")
 			end
-		end
+		end]]
 	while util.is_key_down(keyCode) do
-		if infoofveh then
-			util.draw_debug_text(vehiclename)
-			util.draw_debug_text(getvehtype(vehhash))
-			if personalveh == mypositionvehicle then
-				util.draw_debug_text("PERSONALVEHICLE")
-			end
-		end
 		timer1 += 1
 		if timer1 == abb and util.is_key_down(keyCode) then
+			mypositionvehicle = getClosestVehicle(myposition)
+			if not mypositionvehicle then
+				goto stop
+			else
+				vehhash = entities.get_model_hash(mypositionvehicle)
+				vehiclename = getmodelnamebyhash(vehhash)
+			end
+			ped = GET_PED_IN_VEHICLE_SEAT(mypositionvehicle, -1, true)
+			missionped = IS_ENTITY_A_MISSION_ENTITY(ped)
+			speedofvehicle = GET_ENTITY_SPEED(mypositionvehicle)
+			positionoffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(mypositionvehicle, -2, 0, 0)
+			local seatofplayer = getseatofplayer(mypositionvehicle)
 			util.toast("enter vehicle")
 			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), true)
 			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
@@ -12374,15 +12479,25 @@ if not util.is_session_transition_active() then
 			timer1 += 1
 			util.yield()
 			if timer1 == bba and util.is_key_down(keyCode) then
+				mypositionvehicle = entities.get_user_vehicle_as_handle(true)
+				if not mypositionvehicle then
+					goto stop
+				else
+					vehhash = entities.get_model_hash(mypositionvehicle)
+					vehiclename = getmodelnamebyhash(vehhash)
+				end
+				local driverplayer = GET_PED_IN_VEHICLE_SEAT(mypositionvehicle, -1) == players.user_ped()
 				menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), true)
 				menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
 				util.toast("exit vehicle")
 				--util.toast(doorindex .."        /     "..doorindex2.. "  /   "..doorindex3.."  /   "..doorindex4.."   /  "..seatofplayer)
-				if not engineoff then
-					SET_VEHICLE_ENGINE_ON(mypositionvehicle, false, true, true)
-				end
-				if stoponexit and not flyingvehicle then
-					BRING_VEHICLE_TO_HALT(mypositionvehicle, 0, 1, false)
+				if driverplayer then
+					if not engineoff then
+						SET_VEHICLE_ENGINE_ON(mypositionvehicle, false, true, true)
+					end
+					if stoponexit and not flyingvehicle then
+						BRING_VEHICLE_TO_HALT(mypositionvehicle, 0, 1, false)
+					end
 				end
 				local seatofplayers = getseatofplayer(mypositionvehicle)
 				local entryposition = GET_ENTRY_POINT_POSITION(mypositionvehicle, 0)
@@ -12544,7 +12659,7 @@ local settingsversiontab = menu.list(settings, "Versions", {}, "", function(on_c
 		end
 		async_http.init("raw.githubusercontent.com", "/TheaterChaos/Mein-zeug/main/Selfmade.lua", function(output)
 			output = output:match('SCRIPT_VERSION = "([^ ]+)"')
-			menu.set_menu_name(newversionaction, "New Version: ".. output)
+			menu.set_value(newversionaction, output)
 		end)
 		async_http.dispatch()
 		util.yield(3000)
@@ -12552,8 +12667,8 @@ local settingsversiontab = menu.list(settings, "Versions", {}, "", function(on_c
 end, function(on_back)
 	loadingnewversion = false
 end)
-menu.readonly(settingsversiontab, "Version: "..SCRIPT_VERSION)
-newversionaction = menu.readonly(settingsversiontab, "New Version: ")
+menu.readonly(settingsversiontab, "Version:",SCRIPT_VERSION)
+newversionaction = menu.readonly(settingsversiontab, "New Version:")
 
 entitymanagersettings = menu.list(settings, "Entity manager settings", {}, "", function(); end)
 enterexitsettings = menu.list(settings, "Fast enter/exit settings", {}, "", function(); end)
@@ -12561,7 +12676,7 @@ settingswaypointobj = menu.list(settings, "Waypoint/objective", {}, "", function
 vehcontrolesettings = menu.list(settings, "Veh Controle Settings", {}, "", function(); end)
 miscs = menu.list(settings, "Misc", {}, "", function(); end)
 
-menu.toggle(miscs, "host kick freunde", {}, "AN = kickt auch freunde\nAUS = kickt keine freunde", function(on_toggle)
+menu.toggle(miscs, "hosttoken auto kick auch freunde freunde", {}, "AN = kickt auch freunde\nAUS = kickt keine freunde", function(on_toggle)
 	if on_toggle then
 		hostkickfriends = true
 	else
@@ -12669,13 +12784,13 @@ end)
 
 menu.divider(enterexitsettings, "Misc")
 
-menu.toggle(enterexitsettings, "Veh info as debug", {}, "AUS = keine infos\nAN = rechts oben infos über das veh", function(on_toggle)
+--[[menu.toggle(enterexitsettings, "Veh info as debug", {}, "AUS = keine infos\nAN = rechts oben infos über das veh", function(on_toggle)
 	if on_toggle then
 		infoofveh = true
 	else
 		infoofveh = false
 	end
-end)
+end)]]
 
 menu.slider(enterexitsettings, "auto einsteigen settings", {"entertimer"}, "[5 - 100]\nwie lang es warten soll bis du einsteigst", 5,100, 10, 5, function(boost1)
 	abb = boost1
