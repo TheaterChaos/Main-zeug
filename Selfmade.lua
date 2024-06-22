@@ -3,7 +3,7 @@ util.require_natives("2944b", "g")
 util.keep_running()
 
 
-local SCRIPT_VERSION = "0.71"
+local SCRIPT_VERSION = "0.72"
 
 
 local allfiles = {
@@ -234,11 +234,11 @@ end
 local menus = {}
 
 
-function getVehicle(ped)
+local function getVehicle(ped)
 	return IS_PED_SITTING_IN_ANY_VEHICLE(ped) and GET_VEHICLE_PED_IS_IN(ped, false)
 end
 
-function IS_PLAYER_PED(ped)
+local function IS_PLAYER_PED(ped)
 	if GET_PED_TYPE(ped) < 4 then
 		return true
 	else
@@ -246,7 +246,7 @@ function IS_PLAYER_PED(ped)
 	end
 end
 
-function getTargetVehicleData(entity)
+local function getTargetVehicleData(entity)
 	local vehicle = GET_VEHICLE_INDEX_FROM_ENTITY_INDEX(entity)
 	local driver = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
 	local driverlast = GET_LAST_PED_IN_VEHICLE_SEAT(vehicle, -1)
@@ -261,13 +261,13 @@ function getTargetVehicleData(entity)
 	return result
 end
 
-function setVehiclePlate(vehicle, text)
+local function setVehiclePlate(vehicle, text)
 	if text and text:len() > 0 then
 		SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, text)
 	end
 end
 
-function isentitiyaenemie(entity)
+local function isentitiyaenemie(entity)
 	if IS_ENTITY_A_PED(entity) then
 		if IS_PED_IN_COMBAT(entity, players.user_ped()) then
 			return true
@@ -296,53 +296,7 @@ function isentitiyaenemie(entity)
 	return false
 end
 
-function savevehicleingarage(vehhandle, input)
-	vehname = getmodelnamebyhash(entities.get_model_hash(vehhandle))
-	freeseat = getfreevehseat(vehhandle)
-	mypos = players.get_position(players.user())
-	if GET_VEHICLE_PED_IS_IN(players.user_ped()) == vehhandle then
-		menu.trigger_commands("savevehicle "..input)
-		util.toast("VEH: ".. vehname.. " Saved as ".. input)
-		goto end
-	end
-	if freeseat then
-		if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
-			local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
-			local seatofplayer = getseatofplayer(vehicleofped)
-			SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
-			util.yield(20)
-			menu.trigger_commands("savevehicle "..input)
-			util.toast("VEH: ".. vehname.. " Saved as ".. input)
-			util.yield(20)
-			if DOES_ENTITY_EXIST(vehicleofped) then
-				if IS_VEHICLE_SEAT_FREE(vehicleofped, seatofplayer, false) then
-					SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, seatofplayer)
-				else
-					getfreesetincar = getfreevehseat(vehicleofped)
-					if getfreesetincar ~= number then
-						SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, getfreesetincar)
-					else
-						SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
-					end
-				end
-			end
-		else
-			SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
-			util.yield(20)
-			menu.trigger_commands("savevehicle "..input)
-			util.toast("VEH: ".. vehname.. " Saved as ".. input)
-			util.yield(10)
-			SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
-		end
-	else
-		util.toast("Es gibt kein sitzplatz für dich")
-		return false
-	end
-	::end::
-	return true
-end
-
-function getcurrentweaponofped(ped)
+local function getcurrentweaponofped(ped)
 	local currentWpMem = memory.alloc()
 	local junk = GET_CURRENT_PED_WEAPON(ped, currentWpMem, 1)
 	local holdingnweapon = memory.read_int(currentWpMem)
@@ -353,7 +307,7 @@ end
 
 local minimumdim = memory.alloc()
 local maximumdim = memory.alloc()
-function getDimensions(entity)
+local function getDimensions(entity)
 	GET_MODEL_DIMENSIONS(GET_ENTITY_MODEL(entity), minimumdim, maximumdim)
 	local minimum_vec = v3.new(minimumdim)
 	local maximum_vec = v3.new(maximumdim)
@@ -366,7 +320,7 @@ function getDimensions(entity)
 end
 
 local colorR, colorG, colorB = memory.alloc(1), memory.alloc(1), memory.alloc(1)
-function copyVehicleData(vehicle, cloneVehicle)
+local function copyVehicleData(vehicle, cloneVehicle)
 	SET_VEHICLE_MOD_KIT(cloneVehicle, 0)
 	for i = 17, 22 do
 		TOGGLE_VEHICLE_MOD(cloneVehicle, i, IS_TOGGLE_MOD_ON(vehicle, i))
@@ -421,7 +375,7 @@ function copyVehicleData(vehicle, cloneVehicle)
 	end
 	SET_VEHICLE_ENGINE_ON(cloneVehicle, GET_IS_VEHICLE_ENGINE_RUNNING(vehicle), true, true)
 end
-function clonevehicle(vehicle)
+local function clonevehicle(vehicle)
 	local vehicleHeading = GET_ENTITY_HEADING(vehicle)
 	local vehicleHash = GET_ENTITY_MODEL(vehicle)
 	local coords = GET_ENTITY_COORDS(vehicle)
@@ -434,7 +388,7 @@ function clonevehicle(vehicle)
 	return cloneVehicle
 end
 
-function reclaimVehicles()
+local function reclaimVehicles()
 	for k, v in menu.get_children(menu.ref_by_path("Vehicle>Personal Vehicles")) do
 			for k1, v1 in v.command_names do
 				if (v1 ~= "findpv")
@@ -445,7 +399,7 @@ function reclaimVehicles()
 		end
 	end
 
-function Streamptfx(lib)
+local function Streamptfx(lib)
     REQUEST_NAMED_PTFX_ASSET(lib)
     while not HAS_NAMED_PTFX_ASSET_LOADED(lib) do
         util.yield()
@@ -471,7 +425,7 @@ function levideaktivate()
 	end
 end
 
-function PlayerisFriend(player)
+local function PlayerisFriend(player)
 	for _, pid in players.list(false, true, false) do
 		if player == pid then
 			return true
@@ -480,14 +434,14 @@ function PlayerisFriend(player)
 	return false
 end
 
-function loadsphereninrangered(range, pos)
+local function loadsphereninrangered(range, pos)
 	if pos == nil or (not pos) then
 		pos = players.get_position(players.user())
 	end
 	DRAW_MARKER_SPHERE(pos.x, pos.y, pos.z, range, 255, 0, 0, 0.3)
 end
 
-function getcontrole(entity)
+local function getcontrole(entity)
 	local time = os.time()
 		repeat
 		--time += 1
@@ -502,7 +456,7 @@ function getcontrole(entity)
 	return true
 end
 
-function getfreevehseat(vehicle)
+local function getfreevehseat(vehicle)
 	if IS_VEHICLE_SEAT_FREE(vehicle, -1, false) then
 		if not DOES_ENTITY_EXIST(GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)) then
 			return -1
@@ -519,16 +473,22 @@ function getfreevehseat(vehicle)
 	return false
 end
 
-function getpedsinvehicle(vehicle)
+local function getpedsinvehicle(vehicle, onlyplayer)
 	local pedstable = {}
-	if not IS_VEHICLE_SEAT_FREE(vehicle, -1, false) then
-		table.insert(pedstable, GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true))
-	end
+	--if not IS_VEHICLE_SEAT_FREE(vehicle, -1, false) then
+	--	table.insert(pedstable, GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true))
+	--end
 	local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehicle)
-	for i = 0, maxPassengers do
+	for i = -1, maxPassengers do
 		if not IS_VEHICLE_SEAT_FREE(vehicle, i, false) then
 			local pedinveh = GET_PED_IN_VEHICLE_SEAT(vehicle, i, true)
-			table.insert(pedstable, pedinveh)
+			if onlyplayer then
+				if IS_PED_A_PLAYER(pedinveh) then
+					table.insert(pedstable, pedinveh)
+				end
+			else
+				table.insert(pedstable, pedinveh)
+			end
 		end
 	end
 	if pedstable == {} then
@@ -538,12 +498,12 @@ function getpedsinvehicle(vehicle)
 	end
 end
 
-function send_script_event(first_arg, receiver, args)
+local function send_script_event(first_arg, receiver, args)
 	table.insert(args, 1, first_arg)
 	util.trigger_script_event(1 << receiver, args)
 end
 
-function roundDecimals(float, decimals)
+local function roundDecimals(float, decimals)
 	decimals = 10 ^ decimals
 	return math.floor(float * decimals) / decimals
 end
@@ -553,17 +513,17 @@ local lastPressMS = {}
 
 local loadthigson = true
 
-function getKeyCode(string_or_int)
+local function getKeyCode(string_or_int)
     local lookup = tables.keyLookupTable[string_or_int]
     return (lookup and lookup or string_or_int)
 end
 
-function is_key_down(string_or_int)
+local function is_key_down(string_or_int)
     local keyCode = getKeyCode(string_or_int)
     return util.is_key_down(keyCode)
 end
 
-function is_key_just_down(string_or_int)
+local function is_key_just_down(string_or_int)
     local keyCode = getKeyCode(string_or_int)
     local isDown = util.is_key_down(keyCode)
 
@@ -576,7 +536,7 @@ function is_key_just_down(string_or_int)
     return false
 end
 
-function get_ground_z(coords)
+local function get_ground_z(coords)
     local start_time = os.time()
     while true do
         local success, est = util.get_ground_z(coords['x'], coords['y'], coords['z'])
@@ -587,7 +547,7 @@ function get_ground_z(coords)
     end
 end
 
-function getpidtoattach(pid)
+local function getpidtoattach(pid)
 	for i = 32,0,-1 do
 		if i < pid then
 			if players.exists(i) then
@@ -598,7 +558,7 @@ function getpidtoattach(pid)
 	return -1
 end
 
-function createparents_in_custom(pid, textline)
+local function createparents_in_custom(pid, textline)
 	local Pname = players.get_name(pid)
 	listgenerel[pid] = menu.action(actionlistcustomselection, Pname, {}, textline, function()
 		local pid = pid
@@ -627,7 +587,7 @@ function createparents_in_custom(pid, textline)
 	end)
 end
 
-function deleteparents_in_custom(pid)
+local function deleteparents_in_custom(pid)
 	if listgenerel[pid] != nil then
 		if menu.is_ref_valid(listgenerel[pid]) then
 			menu.delete(listgenerel[pid])
@@ -655,7 +615,7 @@ function deleteparents_in_custom(pid)
 	end
 end
 
-function get_ms_since_last_press(string_or_int)
+local function get_ms_since_last_press(string_or_int)
     local keyCode = getKeyCode(string_or_int)
     local isDown = util.is_key_down(keyCode)
     if lastPressMS[keyCode] == nil then
@@ -672,7 +632,7 @@ function get_ms_since_last_press(string_or_int)
     return util.current_time_millis() - lastPressMS[keyCode]
 end
 
-function isanykeypressed()
+local function isanykeypressed()
 	for tables.keyLookupTable as key do
 		local keydown = is_key_down(key)
 		if keydown then
@@ -682,7 +642,7 @@ function isanykeypressed()
 	return false
 end
 
-function upgrade_vehicle(vehicle)
+local function upgrade_vehicle(vehicle)
 	if getcontrole(vehicle) then
 		SET_VEHICLE_MOD_KIT(vehicle, 0)
     	for i = 0, 49 do
@@ -692,7 +652,7 @@ function upgrade_vehicle(vehicle)
 	end
 end
 
-function randomupgrade_vehicle(vehicle)
+local function randomupgrade_vehicle(vehicle)
 	if getcontrole(vehicle) then
 		SET_VEHICLE_MOD_KIT(vehicle, 0)
     	for i = 0, 49 do
@@ -706,7 +666,7 @@ function randomupgrade_vehicle(vehicle)
 	end
 end
 
-function downggrade_vehicle(vehicle)
+local function downggrade_vehicle(vehicle)
 	if getcontrole(vehicle) then
     	for i = 0, 49 do
        		--local num = entities.get_upgrade_max_value(vehicle, i)
@@ -716,21 +676,21 @@ function downggrade_vehicle(vehicle)
 	end
 end
 
-function isMoving(ped)
+local function isMoving(ped)
 	if not IS_PED_IN_ANY_VEHICLE(ped, true) and GET_ENTITY_SPEED(ped) > 5 then return true end
 	if GET_ENTITY_SPEED(GET_VEHICLE_PED_IS_IN(ped, false)) > 5 then return true end
 end
 
-function getseatofplayer(vehicle)
+local function getseatofplayer(vehicle, ped)
 	if not IS_VEHICLE_SEAT_FREE(vehicle, -1, false) then
-		if GET_PED_IN_VEHICLE_SEAT(vehicle, -1, false) == players.user_ped() then
+		if GET_PED_IN_VEHICLE_SEAT(vehicle, -1, false) == ped then
 			return -1
 		end
 	end
 	local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehicle)
 	for i = -1, maxPassengers do
 		if not IS_VEHICLE_SEAT_FREE(vehicle, i, false) then
-			if GET_PED_IN_VEHICLE_SEAT(vehicle, i, false) == players.user_ped() then
+			if GET_PED_IN_VEHICLE_SEAT(vehicle, i, false) == ped then
 				return i
 			end
 		end
@@ -738,7 +698,53 @@ function getseatofplayer(vehicle)
 	return -2
 end
 
-function get_ip_data(ip)
+local function savevehicleingarage(vehhandle, input)
+	vehname = getmodelnamebyhash(entities.get_model_hash(vehhandle))
+	freeseat = getfreevehseat(vehhandle)
+	mypos = players.get_position(players.user())
+	if GET_VEHICLE_PED_IS_IN(players.user_ped()) == vehhandle then
+		menu.trigger_commands("savevehicle "..input)
+		util.toast("VEH: ".. vehname.. " Saved as ".. input)
+		goto end
+	end
+	if freeseat then
+		if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
+			local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
+			local seatofplayer = getseatofplayer(vehicleofped, players.user_ped())
+			SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
+			util.yield(20)
+			menu.trigger_commands("savevehicle "..input)
+			util.toast("VEH: ".. vehname.. " Saved as ".. input)
+			util.yield(20)
+			if DOES_ENTITY_EXIST(vehicleofped) then
+				if IS_VEHICLE_SEAT_FREE(vehicleofped, seatofplayer, false) then
+					SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, seatofplayer)
+				else
+					getfreesetincar = getfreevehseat(vehicleofped)
+					if getfreesetincar ~= number then
+						SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, getfreesetincar)
+					else
+						SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
+					end
+				end
+			end
+		else
+			SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
+			util.yield(20)
+			menu.trigger_commands("savevehicle "..input)
+			util.toast("VEH: ".. vehname.. " Saved as ".. input)
+			util.yield(10)
+			SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
+		end
+	else
+		util.toast("Es gibt kein sitzplatz für dich")
+		return false
+	end
+	::end::
+	return true
+end
+
+local function get_ip_data(ip)
     local data = {city = "unknown", state = "unknown", country = "unknown"}
     if util.is_soup_netintel_inited() then
         if (loc := soup.netIntel.getLocationByIp(ip)):isValid() then
@@ -753,7 +759,7 @@ end
 
 timer1 = 0
 
-function getClosestVehicle(myPos)
+local function getClosestVehicle(myPos)
 	local closestDist = 999999999999
 	local closestVeh = nil
 	for _, veh in pairs(entities.get_all_vehicles_as_pointers()) do--use pointers because handles take more time
@@ -769,14 +775,14 @@ function getClosestVehicle(myPos)
     end
 end
 
-function pidlanguage(pid)
+local function pidlanguage(pid)
 	local IP = tostring(soup.IpAddr(players.get_connect_ip(pid)))
 	local ip_data = get_ip_data(tostring(IP))
 	languages = ip_data.country
 	return languages
 end
 
-function playerjoinmassge(pid)
+local function playerjoinmassge(pid)
 	if player_join then
 		playername = players.get_name(pid)
 		rockstarid = players.get_rockstar_id(pid)
@@ -822,7 +828,7 @@ local vehcontroledata = {
 		},
 }
 
-function controlevehicle()
+local function controlevehicle()
 	local veh = vehcontroledata.handle
 	util.draw_debug_text(state)
 	if state == "stoppreccess" then
@@ -939,7 +945,7 @@ function controlevehicle()
 	end
 end
 
-function getvehtype(hashveh)
+local function getvehtype(hashveh)
 	if IS_THIS_MODEL_A_BOAT(hashveh) then
 		return "BOAT"
 	elseif IS_THIS_MODEL_A_PLANE(hashveh) then
@@ -963,7 +969,7 @@ function getvehtype(hashveh)
 	end
 end
 
-function getorganisationplayers(pid)
+local function getorganisationplayers(pid)
 	local orgmembers = {}
 	local bossofpid = players.get_boss(pid)
 	if bossofpid == -1 then
@@ -980,7 +986,7 @@ function getorganisationplayers(pid)
 		return orgmembers
 end
 
-function getorgtype(pid)
+local function getorgtype(pid)
 	local orgtype = players.get_org_type(pid)
 	if orgtype == -1 then
 		return "NONE"
@@ -991,7 +997,7 @@ function getorgtype(pid)
 	end
 end
 
-function tableremove(table, removel)
+local function tableremove(table, removel)
 	for a, msg in ipairs(table) do
 		if msg == removel then
 			table.remove(table, a)
@@ -999,7 +1005,7 @@ function tableremove(table, removel)
 	end
 end
 
-function getHealth(ped)
+local function getHealth(ped)
 	local hp = GET_ENTITY_HEALTH(ped)
 	local maxHp = GET_PED_MAX_HEALTH(ped)
 	local armor = GET_PED_ARMOUR(ped)
@@ -1019,12 +1025,12 @@ function getHealth(ped)
 	}
 end
 
-function getKD(pid)
+local function getKD(pid)
     pid = pid or players.user()
     return math.floor(players.get_kd(pid) * 100) / 100	
 end
 
-function getMoney(pid, shorten)
+local function getMoney(pid, shorten)
 	pid = pid or players.user()
 	local money = players.get_money(pid)
 	if not shorten then
@@ -1044,7 +1050,7 @@ end
 
 local weapons = util.get_weapons()
 local weaponHash = memory.alloc_int()
-function getWeapon(ped)
+local function getWeapon(ped)
 	GET_CURRENT_PED_WEAPON(ped, weaponHash, true)
 	local readWeaponHash = memory.read_int(weaponHash)
 	local weaponName
@@ -1057,7 +1063,7 @@ function getWeapon(ped)
 	return weaponName
 end
 
-function getSpeed(entity, onlyValue)
+local function getSpeed(entity, onlyValue)
 	local speed = GET_ENTITY_SPEED(entity)
 	local localSpeed
 	localSpeed = math.floor(speed * 3.6)
@@ -1067,25 +1073,25 @@ function getSpeed(entity, onlyValue)
 	return localSpeed .. " " .. "kmh"
 end
 
-function getPlayerPosition(pid)
+local function getPlayerPosition(pid)
     pid = pid or players.user()
     return players.get_position(pid)
 end
 
-function getmodelnamebyhash(hash)
+local function getmodelnamebyhash(hash)
 	if util.get_label_text(hash) ~= "NULL" then
 		return util.get_label_text(hash)
 	end
 	return util.reverse_joaat(hash)
 end
 
-function getLanguage(pid)
+local function getLanguage(pid)
 	pid = pid or Player.getUserPlayer()
 	return tables.LANGUAGES[players.get_language(pid)]
 end
 
 
-function getInterior(pid)
+local function getInterior(pid)
 	pid = pid or players.user()
 	local pos = players.get_position(pid)
 	local interior = GET_INTERIOR_FROM_COLLISION(pos.x, pos.y, pos.z)
@@ -1888,15 +1894,33 @@ menu.toggle(Entitymanageresp, "Deaktivieren andere ESP", {}, "deactiviere andere
 	end
 end)
 
-local enabledveh, showonlymissionveh = false, false
-xValueveh, yValueveh, scaleValueveh = 0, 0, 35
-colorveh = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
-local maxDistanceveh = 700
-local showDistanceveh, shownameveh, showmyveh, showspeedveh, showdriverveh, showinvehveh, showmissionveh, showownerveh, showentitygroupveh, 
-showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true, true, true, true, false, false, false, false, true, false, false, true, true
+local ESPvehconfigtable = {
+	enabledveh = false,
+	showonlymissionveh = false,
+
+	xValueveh = 0,
+	yValueveh = 0,
+	scaleValueveh = 35,
+	colorveh = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
+	maxDistanceveh = 700,
+
+	showDistanceveh = true,
+	shownameveh = true,
+	showmyveh = true,
+	showspeedveh = true,
+	showdriverveh = false,
+	showinvehveh = false,
+	showmissionveh = false,
+	showownerveh = false,
+	showentitygroupveh = true,
+	showonlyotherownerveh = false,
+	getonlyvisibleveh = false,
+	showdestroyedveh = true,
+	showidnameveh = true,
+}
 
 	function renderESPveh(givedata)
-		if not enabledveh then
+		if not ESPvehconfigtable.enabledveh then
 	        return false
 	    end
 		if not util.is_session_started() or IS_PAUSE_MENU_ACTIVE() then
@@ -1908,13 +1932,13 @@ showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true
 	    local myPos = players.get_position(players.user())
 	    for _, vehs in pairs(entities.get_all_vehicles_as_pointers()) do
 			local vehshandle = entities.pointer_to_handle(vehs)
-	        if not IS_ENTITY_ON_SCREEN(vehshandle) and getonlyvisibleveh then
+	        if not IS_ENTITY_ON_SCREEN(vehshandle) and ESPvehconfigtable.getonlyvisibleveh then
 	            goto continue
 	        end
 			local modelhash = entities.get_model_hash(vehs)
 	        local pPos = entities.get_position(vehs)
 	        local dist = myPos:distance(pPos)
-	        if (dist > maxDistanceveh) then
+	        if (dist > ESPvehconfigtable.maxDistanceveh) then
 	            goto continue
 	        end
 			local driverplayer = false
@@ -1927,10 +1951,10 @@ showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true
 	            if driver == myPed then
 	                isMyVehicle = true
 	            end
-			if not showmyveh and ispedinveh and vehofped == vehshandle then
+			if not ESPvehconfigtable.showmyveh and ispedinveh and vehofped == vehshandle then
 				goto continue
 			end
-			if (not missionentityveh) and showonlymissionveh then
+			if (not missionentityveh) and ESPvehconfigtable.showonlymissionveh then
 				goto continue
 			end
 			if IS_PED_A_PLAYER(driver) then
@@ -1942,26 +1966,26 @@ showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true
 	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
 	        local valuesToDisplay = {}
 	        local playersInVehicle = ""
-			if showentitygroupveh then
+			if ESPvehconfigtable.showentitygroupveh then
 	            valuesToDisplay[#valuesToDisplay + 1] = "VEHICLE"
 	        end
-			if showDistanceveh then
+			if ESPvehconfigtable.showDistanceveh then
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
-			if (shownameveh or showspeedveh or showidnameveh) then
+			if (ESPvehconfigtable.shownameveh or ESPvehconfigtable.showspeedveh or ESPvehconfigtable.showidnameveh) then
 	            local textline = ""
-	            if shownameveh then
+	            if ESPvehconfigtable.shownameveh then
 	                textline = getmodelnamebyhash(modelhash) .. " "
 	            end
-				if showidnameveh then
+				if ESPvehconfigtable.showidnameveh then
 	                textline = textline .. "["..util.reverse_joaat(modelhash) .. "] "
 	            end
-	            if showspeedveh and getSpeed(vehshandle, true) > 0 then
+	            if ESPvehconfigtable.showspeedveh and getSpeed(vehshandle, true) > 0 then
 	                textline = textline .. getSpeed(vehshandle)
 	            end
 	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
-	        if isMyVehicle and showinvehveh then
+	        if isMyVehicle and ESPvehconfigtable.showinvehveh then
 	            local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehshandle)
 	            for i = 0, maxPassengers do
 	                if not IS_VEHICLE_SEAT_FREE(vehshandle, i, false) then
@@ -1972,7 +1996,7 @@ showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true
 	                end
 	            end
 			end
-			if not isMyVehicle and showinvehveh then
+			if not isMyVehicle and ESPvehconfigtable.showinvehveh then
 				local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehshandle)
 				for i = 0, maxPassengers do
 	                if not IS_VEHICLE_SEAT_FREE(vehshandle, i, false) then
@@ -1983,27 +2007,27 @@ showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true
 	                end
 	            end
 	        end
-			if driverplayer and showdriverveh then
+			if driverplayer and ESPvehconfigtable.showdriverveh then
 	            valuesToDisplay[#valuesToDisplay + 1] = "Driver" .. ": " .. driverplayerindex
 	        end
 	        if playersInVehicle:len() > 0 then
 	            valuesToDisplay[#valuesToDisplay + 1] = "in Vehicle" .. ": " .. playersInVehicle:gsub(", $", "")
 	        end
-			if missionentityveh and showmissionveh then
+			if missionentityveh and ESPvehconfigtable.showmissionveh then
 				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
 			end
-			if showownerveh then
-				if  showonlyotherownerveh and (ownerveh == players.get_name(players.user())) then
+			if ESPvehconfigtable.showownerveh then
+				if  ESPvehconfigtable.showonlyotherownerveh and (ownerveh == players.get_name(players.user())) then
 				else
 					valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerveh
 				end
 			end
-			if (GET_VEHICLE_ENGINE_HEALTH(vehshandle) <= 0) and not showdestroyedveh then
+			if (GET_VEHICLE_ENGINE_HEALTH(vehshandle) <= 0) and not ESPvehconfigtable.showdestroyedveh then
 				goto continue
 			end
 	        local text = table.concat(valuesToDisplay, "\n")
 			if not givedata then
-	       		directx.draw_text(screenX + xValueveh, screenY + yValueveh, text, 5, scaleValueveh, colorveh, false)
+	       		directx.draw_text(screenX + ESPvehconfigtable.xValueveh, screenY + ESPvehconfigtable.yValueveh, text, 5, ESPvehconfigtable.scaleValueveh, ESPvehconfigtable.colorveh, false)
 			end
 			if givedata then
 				table.insert(data, vehshandle)
@@ -2017,7 +2041,7 @@ showonlyotherownerveh, getonlyvisibleveh, showdestroyedveh, showidnameveh = true
 	
 enabledToggleveh = menu.toggle(Entitymanagerespvehicle, "Enable ESP Vehicle", {"ESPveh"}, "", function(on_toggle)
 	if on_toggle then
-		enabledveh = true
+		ESPvehconfigtable.enabledveh = true
 		if deactivateother then
 			if menu.get_value(enabledToggleped) then
 				menu.set_value(enabledToggleped, false)
@@ -2031,15 +2055,15 @@ enabledToggleveh = menu.toggle(Entitymanagerespvehicle, "Enable ESP Vehicle", {"
 		end
 		util.create_tick_handler(renderESPveh)
 	else
-		enabledveh = false
+		ESPvehconfigtable.enabledveh = false
 	end
 end)
 
 
 onlymissionToggleveh = menu.toggle(Entitymanagerespvehicle, "Show Only Mission", {}, "", function(on)
-	showonlymissionveh = on
-end, showonlymissionveh)
-showonlymissionveh = menu.get_value(onlymissionToggleveh)
+	ESPvehconfigtable.showonlymissionveh = on
+end, ESPvehconfigtable.showonlymissionveh)
+ESPvehconfigtable.showonlymissionveh = menu.get_value(onlymissionToggleveh)
 
 actionSubmenuveh = menu.list(Entitymanagerespvehicle, "Action", {}, "action für die auf dennen ESP drauf ist")
 actionsettingsSubmenuveh = menu.list(actionSubmenuveh, "Settings", {}, "")
@@ -2048,9 +2072,9 @@ explosionsettingveh = menu.list_select(actionsettingsSubmenuveh, "Explosion", {}
 	explosiontype = value
 end)
 onlyvisibleToggleveh = menu.toggle(actionSubmenuveh, "get only visible vehs", {}, "", function(on)
-	getonlyvisibleveh = on
-end, getonlyvisibleveh)
-getonlyvisibleveh = menu.get_value(onlyvisibleToggleveh)
+	ESPvehconfigtable.getonlyvisibleveh = on
+end, ESPvehconfigtable.getonlyvisibleveh)
+ESPvehconfigtable.getonlyvisibleveh = menu.get_value(onlyvisibleToggleveh)
 menu.action(actionSubmenuveh, "teleport to me", {}, "Nutzen auf eigene gefahr\nignoriert spieler", function()
 	local data = renderESPveh(true)
 	if data then
@@ -2204,86 +2228,101 @@ menu.toggle_loop(actionSubmenuveh, "UN Freeze", {}, "", function()
 end)
 
 positionSubmenuveh = menu.list(Entitymanagerespvehicle, "position", {}, "")
-xSliderveh = menu.slider(positionSubmenuveh, "XPos", {}, "", -10, 10, xValueveh, 1, function(val)
-	xValueveh = val / 200
+xSliderveh = menu.slider(positionSubmenuveh, "XPos", {}, "", -10, 10, ESPvehconfigtable.xValueveh, 1, function(val)
+	ESPvehconfigtable.xValueveh = val / 200
 end)
 --xValue = menu.get_value(xSlider) / 100
-ySliderveh = menu.slider(positionSubmenuveh, "YPos", {}, "", -10, 10, yValueveh, 1, function(val)
-	yValueveh = val / 200
+ySliderveh = menu.slider(positionSubmenuveh, "YPos", {}, "", -10, 10, ESPvehconfigtable.yValueveh, 1, function(val)
+	ESPvehconfigtable.yValueveh = val / 200
 end)
 --yValue = menu.get_value(ySlider) / 100
-scaleSliderveh = menu.slider(positionSubmenuveh, "scale", {}, "", 1, 200, scaleValueveh, 1, function(val)
-	scaleValueveh = val / 100
+scaleSliderveh = menu.slider(positionSubmenuveh, "scale", {}, "", 1, 200, ESPvehconfigtable.scaleValueveh, 1, function(val)
+	ESPvehconfigtable.scaleValueveh = val / 100
 end)
-scaleValueveh = menu.get_value(scaleSliderveh) / 100
+ESPvehconfigtable.scaleValueveh = menu.get_value(scaleSliderveh) / 100
 
-colorRefveh = menu.colour(Entitymanagerespvehicle, "color", {}, "", colorveh, true, function(c)
-	colorveh = c
+colorRefveh = menu.colour(Entitymanagerespvehicle, "color", {}, "", ESPvehconfigtable.colorveh, true, function(c)
+	ESPvehconfigtable.colorveh = c
 end)
 
-maxDistSliderveh = menu.slider(Entitymanagerespvehicle, "max Dist", {"setdisvehicle"}, "", 10, 10000, maxDistanceveh, 10, function(val)
-	maxDistanceveh = val
+maxDistSliderveh = menu.slider(Entitymanagerespvehicle, "max Dist", {"setdisvehicle"}, "", 10, 10000, ESPvehconfigtable.maxDistanceveh, 10, function(val)
+	ESPvehconfigtable.maxDistanceveh = val
 end)
-maxDistanceveh = menu.get_value(maxDistSliderveh)
+ESPvehconfigtable.maxDistanceveh = menu.get_value(maxDistSliderveh)
 
 entitygroupToggleveh = menu.toggle(Entitymanagerespvehicle, "show Entity Group", {}, "", function(on)
-	showentitygroupveh = on
-end, showentitygroupveh)
-showentitygroupveh = menu.get_value(entitygroupToggleveh)
+	ESPvehconfigtable.showentitygroupveh = on
+end, ESPvehconfigtable.showentitygroupveh)
+ESPvehconfigtable.showentitygroupveh = menu.get_value(entitygroupToggleveh)
 distToggleveh = menu.toggle(Entitymanagerespvehicle, "show Distance", {}, "", function(on)
-	showDistanceveh = on
-end, showDistanceveh)
-showDistanceveh = menu.get_value(distToggleveh)
+	ESPvehconfigtable.showDistanceveh = on
+end, ESPvehconfigtable.showDistanceveh)
+ESPvehconfigtable.showDistanceveh = menu.get_value(distToggleveh)
 nametoggleveh = menu.toggle(Entitymanagerespvehicle, "show Name", {}, "", function(on)
-	shownameveh = on
-end, shownameveh)
-shownameveh = menu.get_value(nametoggleveh)
+	ESPvehconfigtable.shownameveh = on
+end, ESPvehconfigtable.shownameveh)
+ESPvehconfigtable.shownameveh = menu.get_value(nametoggleveh)
 idnametoggleveh = menu.toggle(Entitymanagerespvehicle, "show ID Name", {}, "", function(on)
-	showidnameveh = on
-end, showidnameveh)
-showidnameveh = menu.get_value(idnametoggleveh)
+	ESPvehconfigtable.showidnameveh = on
+end, ESPvehconfigtable.showidnameveh)
+ESPvehconfigtable.showidnameveh = menu.get_value(idnametoggleveh)
 speedtoggleveh = menu.toggle(Entitymanagerespvehicle, "show Speed", {}, "", function(on)
-	showspeedveh = on
-end, showspeedveh)
-showspeedveh = menu.get_value(speedtoggleveh)
+	ESPvehconfigtable.showspeedveh = on
+end, ESPvehconfigtable.showspeedveh)
+ESPvehconfigtable.showspeedveh = menu.get_value(speedtoggleveh)
 showdrivertoggleveh = menu.toggle(Entitymanagerespvehicle, "show Driver", {}, "", function(on)
-	showdriverveh = on
-end, showdriverveh)
-showdriverveh = menu.get_value(showdrivertoggleveh)
+	ESPvehconfigtable.showdriverveh = on
+end, ESPvehconfigtable.showdriverveh)
+ESPvehconfigtable.showdriverveh = menu.get_value(showdrivertoggleveh)
 showinvehtoggleveh = menu.toggle(Entitymanagerespvehicle, "show In vehicle", {}, "", function(on)
-	showinvehveh = on
-end, showinvehveh)
-showinvehveh = menu.get_value(showinvehtoggleveh)
+	ESPvehconfigtable.showinvehveh = on
+end, ESPvehconfigtable.showinvehveh)
+ESPvehconfigtable.showinvehveh = menu.get_value(showinvehtoggleveh)
 myvehtoggleveh = menu.toggle(Entitymanagerespvehicle, "show My Vehicle", {}, "", function(on)
-	showmyveh = on
-end, showmyveh)
-showmyveh = menu.get_value(myvehtoggleveh)
+	ESPvehconfigtable.showmyveh = on
+end, ESPvehconfigtable.showmyveh)
+ESPvehconfigtable.showmyveh = menu.get_value(myvehtoggleveh)
 missiontoggleveh = menu.toggle(Entitymanagerespvehicle, "show Mission Entity", {}, "", function(on)
-	showmissionveh = on
-end, showmissionveh)
-showmissionveh = menu.get_value(missiontoggleveh)
+	ESPvehconfigtable.showmissionveh = on
+end, ESPvehconfigtable.showmissionveh)
+ESPvehconfigtable.showmissionveh = menu.get_value(missiontoggleveh)
 ownertoggleveh = menu.toggle(Entitymanagerespvehicle, "show Owner", {}, "", function(on)
-	showownerveh = on
-end, showownerveh)
-showownerveh = menu.get_value(ownertoggleveh)
+	ESPvehconfigtable.showownerveh = on
+end, ESPvehconfigtable.showownerveh)
+ESPvehconfigtable.showownerveh = menu.get_value(ownertoggleveh)
 onlyotherownertoggleveh = menu.toggle(Entitymanagerespvehicle, "show only other Owners", {}, "", function(on)
-	showonlyotherownerveh = on
-end, showonlyotherownerveh)
-showonlyotherownerveh = menu.get_value(onlyotherownertoggleveh)
+	ESPvehconfigtable.showonlyotherownerveh = on
+end, ESPvehconfigtable.showonlyotherownerveh)
+ESPvehconfigtable.showonlyotherownerveh = menu.get_value(onlyotherownertoggleveh)
 destroyedtoggleveh = menu.toggle(Entitymanagerespvehicle, "show Destroyed vehicle", {}, "", function(on)
-	showdestroyedveh = on
-end, showdestroyedveh)
-showdestroyedveh = menu.get_value(destroyedtoggleveh)
+	ESPvehconfigtable.showdestroyedveh = on
+end, ESPvehconfigtable.showdestroyedveh)
+ESPvehconfigtable.showdestroyedveh = menu.get_value(destroyedtoggleveh)
 
-local enabledped, showonlymissionped = false, false
-local xValueped, yValueped, scaleValueped = 0, 0, 35
-local colorped = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
-local maxDistanceped = 700
-local showDistanceped, shownameped, showmissionped, showvehpedisinped, showownerped, showentitygroupped, showdeadped, 
-getonlyvisibleped, showpedsinvehped, showonlyblibsped = true, true, true, true, false, true, false, false, true, false
+local ESPpedconfigtable = {
+	enabledped = false,
+	showonlymissionped = false,
+
+	xValueped = 0,
+	yValueped = 0,
+	scaleValueped = 35,
+	colorped = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
+	maxDistanceped = 700,
+
+	showDistanceped = true,
+	shownameped = true,
+	showmissionped = true,
+	showvehpedisinped = true,
+	showownerped = false,
+	showentitygroupped = true,
+	showdeadped = false,
+	getonlyvisibleped = false,
+	showpedsinvehped = true,
+	showonlyblibsped = false,
+}
 
 	function renderESPped(givedata)
-		if not enabledped then
+		if not ESPpedconfigtable.enabledped then
 	        return false
 	    end
 		if not util.is_session_started() or IS_PAUSE_MENU_ACTIVE() then
@@ -2295,14 +2334,14 @@ getonlyvisibleped, showpedsinvehped, showonlyblibsped = true, true, true, true, 
 	    local myPos = players.get_position(players.user())
 	    for _, peds in pairs(entities.get_all_peds_as_pointers()) do
 			local pedshandle = entities.pointer_to_handle(peds)
-	        if (not IS_ENTITY_ON_SCREEN(pedshandle)) and getonlyvisibleped then
+	        if (not IS_ENTITY_ON_SCREEN(pedshandle)) and ESPpedconfigtable.getonlyvisibleped then
 	            goto continue
 	        end
 			local modelhash = entities.get_model_hash(peds)
 	        local pPos = entities.get_position(peds)
 	        local dist = myPos:distance(pPos)
 			local ownerped =  players.get_name(entities.get_owner(pedshandle))
-	        if (dist > maxDistanceped) then
+	        if (dist > ESPpedconfigtable.maxDistanceped) then
 	            goto continue
 	        end
 			local ispedinveh = IS_PED_IN_ANY_VEHICLE(pedshandle, false)
@@ -2313,47 +2352,47 @@ getonlyvisibleped, showpedsinvehped, showonlyblibsped = true, true, true, true, 
 			if IS_PED_A_PLAYER(pedshandle) then
 				goto continue
 			end
-			if (not missionentityped) and showonlymissionped then
+			if (not missionentityped) and ESPpedconfigtable.showonlymissionped then
 				goto continue
 			end
-			if not showdeadped and ispeddead then
+			if not ESPpedconfigtable.showdeadped and ispeddead then
 				goto continue
 			end
-			if ispedinveh and not showpedsinvehped then
+			if ispedinveh and not ESPpedconfigtable.showpedsinvehped then
 				goto continue
 			end
-			if showonlyblibsped and (GET_BLIP_FROM_ENTITY(pedshandle) == 0) then
+			if ESPpedconfigtable.showonlyblibsped and (GET_BLIP_FROM_ENTITY(pedshandle) == 0) then
 				goto continue
 			end
 	        local posToUse = pPos
 	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
 	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
 	        local valuesToDisplay = {}
-			if showentitygroupped then
+			if ESPpedconfigtable.showentitygroupped then
 	            valuesToDisplay[#valuesToDisplay + 1] = "PED"
 	        end
-			if showDistanceped then
+			if ESPpedconfigtable.showDistanceped then
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
-			if shownameped then
+			if ESPpedconfigtable.shownameped then
 	            local textline = ""
-	            if shownameped then
+	            if ESPpedconfigtable.shownameped then
 	                textline = getmodelnamebyhash(modelhash) .. " "
 	            end
 	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
-	        if ispedinveh and showvehpedisinped then
+	        if ispedinveh and ESPpedconfigtable.showvehpedisinped then
 				valuesToDisplay[#valuesToDisplay + 1] = "Vehicle: ".. getmodelnamebyhash(vehmodelhash)
 			end
-			if missionentityped and showmissionped then
+			if missionentityped and ESPpedconfigtable.showmissionped then
 				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
 			end
-			if showownerped then
+			if ESPpedconfigtable.showownerped then
 				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerped
 			end
 	        local text = table.concat(valuesToDisplay, "\n")
 			if not givedata then
-	        	directx.draw_text(screenX + xValueped, screenY + yValueped, text, 5, scaleValueped, colorped, false)
+	        	directx.draw_text(screenX + ESPpedconfigtable.xValueped, screenY + ESPpedconfigtable.yValueped, text, 5, ESPpedconfigtable.scaleValueped, ESPpedconfigtable.colorped, false)
 			end
 			if givedata then
 				table.insert(data, pedshandle)
@@ -2367,7 +2406,7 @@ getonlyvisibleped, showpedsinvehped, showonlyblibsped = true, true, true, true, 
 	
 enabledToggleped = menu.toggle(Entitymanageresppeds, "Enable ESP Ped", {"ESPped"}, "", function(on_toggle)
 	if on_toggle then
-		enabledped = true
+		ESPpedconfigtable.enabledped = true
 		if deactivateother then
 			if menu.get_value(enabledToggleveh) then
 				menu.set_value(enabledToggleveh, false)
@@ -2381,18 +2420,18 @@ enabledToggleped = menu.toggle(Entitymanageresppeds, "Enable ESP Ped", {"ESPped"
 		end
 		util.create_tick_handler(renderESPped)
 	else
-		enabledped = false
+		ESPpedconfigtable.enabledped = false
 	end
 end)
 
 onlymissionToggleped = menu.toggle(Entitymanageresppeds, "Show Only Mission", {}, "", function(on)
-	showonlymissionped = on
-end, showonlymissionped)
-showonlymissionped = menu.get_value(onlymissionToggleped)
+	ESPpedconfigtable.showonlymissionped = on
+end, ESPpedconfigtable.showonlymissionped)
+ESPpedconfigtable.showonlymissionped = menu.get_value(onlymissionToggleped)
 onlyblibsToggleped = menu.toggle(Entitymanageresppeds, "Show Only peds with blibs", {}, "", function(on)
-	showonlyblibsped = on
-end, showonlyblibsped)
-showonlyblibsped = menu.get_value(onlyblibsToggleped)
+	ESPpedconfigtable.showonlyblibsped = on
+end, ESPpedconfigtable.showonlyblibsped)
+ESPpedconfigtable.showonlyblibsped = menu.get_value(onlyblibsToggleped)
 
 actionSubmenuped = menu.list(Entitymanageresppeds, "Action", {}, "action für die auf dennen ESP drauf ist")
 actionsettingsSubmenuped = menu.list(actionSubmenuped, "Settings", {}, "")
@@ -2400,9 +2439,9 @@ explosionsettingped = menu.list_select(actionsettingsSubmenuped, "Explosion", {}
 	explosiontype = value
 end)
 onlyvisibleToggleped = menu.toggle(actionSubmenuped, "get only visible peds", {}, "", function(on)
-	getonlyvisibleped = on
-end, getonlyvisibleped)
-getonlyvisibleped = menu.get_value(onlyvisibleToggleped)
+	ESPpedconfigtable.getonlyvisibleped = on
+end, ESPpedconfigtable.getonlyvisibleped)
+ESPpedconfigtable.getonlyvisibleped = menu.get_value(onlyvisibleToggleped)
 menu.action(actionSubmenuped, "teleport to me", {}, "ignoriert spieler", function()
 	local data = renderESPped(true)
 	if data then
@@ -2563,71 +2602,86 @@ menu.action(actionSubmenuped, "Leave all vehicle", {}, "", function()
 end)
 
 positionSubmenuped = menu.list(Entitymanageresppeds, "position", {}, "")
-xSliderped = menu.slider(positionSubmenuped, "XPos", {}, "", -10, 10, xValueped, 1, function(val)
-	xValueped = val / 200
+xSliderped = menu.slider(positionSubmenuped, "XPos", {}, "", -10, 10, ESPpedconfigtable.xValueped, 1, function(val)
+	ESPpedconfigtable.xValueped = val / 200
 end)
 --xValue = menu.get_value(xSlider) / 100
-ySliderped = menu.slider(positionSubmenuped, "YPos", {}, "", -10, 10, yValueped, 1, function(val)
-	yValueped = val / 200
+ySliderped = menu.slider(positionSubmenuped, "YPos", {}, "", -10, 10, ESPpedconfigtable.yValueped, 1, function(val)
+	ESPpedconfigtable.yValueped = val / 200
 end)
 --yValue = menu.get_value(ySlider) / 100
-scaleSliderped = menu.slider(positionSubmenuped, "scale", {}, "", 1, 200, scaleValueped, 1, function(val)
-	scaleValueped = val / 100
+scaleSliderped = menu.slider(positionSubmenuped, "scale", {}, "", 1, 200, ESPpedconfigtable.scaleValueped, 1, function(val)
+	ESPpedconfigtable.scaleValueped = val / 100
 end)
-scaleValueped = menu.get_value(scaleSliderped) / 100
+ESPpedconfigtable.scaleValueped = menu.get_value(scaleSliderped) / 100
 
-colorRefped = menu.colour(Entitymanageresppeds, "color", {}, "", colorped, true, function(c)
-	colorped = c
+colorRefped = menu.colour(Entitymanageresppeds, "color", {}, "", ESPpedconfigtable.colorped, true, function(c)
+	ESPpedconfigtable.colorped = c
 end)
 
-maxDistSliderped = menu.slider(Entitymanageresppeds, "max Dist", {"setdisped"}, "", 10, 10000, maxDistanceped, 10, function(val)
-	maxDistanceped = val
+maxDistSliderped = menu.slider(Entitymanageresppeds, "max Dist", {"setdisped"}, "", 10, 10000, ESPpedconfigtable.maxDistanceped, 10, function(val)
+	ESPpedconfigtable.maxDistanceped = val
 end)
-maxDistanceped = menu.get_value(maxDistSliderped)
+ESPpedconfigtable.maxDistanceped = menu.get_value(maxDistSliderped)
 
 entitygroupToggleped = menu.toggle(Entitymanageresppeds, "show Entity Group", {}, "", function(on)
-	showentitygroupped = on
-end, showentitygroupped)
-showentitygroupped = menu.get_value(entitygroupToggleped)
+	ESPpedconfigtable.showentitygroupped = on
+end, ESPpedconfigtable.showentitygroupped)
+ESPpedconfigtable.showentitygroupped = menu.get_value(entitygroupToggleped)
 distToggleped = menu.toggle(Entitymanageresppeds, "show Distance", {}, "", function(on)
-	showDistanceped = on
-end, showDistanceped)
-showDistanceped = menu.get_value(distToggleped)
+	ESPpedconfigtable.showDistanceped = on
+end, ESPpedconfigtable.showDistanceped)
+ESPpedconfigtable.showDistanceped = menu.get_value(distToggleped)
 nametoggleped = menu.toggle(Entitymanageresppeds, "show Name", {}, "", function(on)
-	shownameped = on
-end, shownameped)
-shownameped = menu.get_value(nametoggleped)
+	ESPpedconfigtable.shownameped = on
+end, ESPpedconfigtable.shownameped)
+ESPpedconfigtable.shownameped = menu.get_value(nametoggleped)
 pedsinvehtoggleped = menu.toggle(Entitymanageresppeds, "show Peds in vehicle", {}, "", function(on)
-	showpedsinvehped = on
-end, showpedsinvehped)
-showpedsinvehped = menu.get_value(pedsinvehtoggleped)
+	ESPpedconfigtable.showpedsinvehped = on
+end, ESPpedconfigtable.showpedsinvehped)
+ESPpedconfigtable.showpedsinvehped = menu.get_value(pedsinvehtoggleped)
 vehpedisintoggleped = menu.toggle(Entitymanageresppeds, "show Vehicle PedIsIn", {}, "", function(on)
-	showvehpedisinped = on
-end, showvehpedisinped)
-showvehpedisinped = menu.get_value(vehpedisintoggleped)
+	ESPpedconfigtable.showvehpedisinped = on
+end, ESPpedconfigtable.showvehpedisinped)
+ESPpedconfigtable.showvehpedisinped = menu.get_value(vehpedisintoggleped)
 missiontoggleped = menu.toggle(Entitymanageresppeds, "show Mission Entity", {}, "", function(on)
-	showmissionped = on
-end, showmissionped)
-showmissionped = menu.get_value(missiontoggleped)
+	ESPpedconfigtable.showmissionped = on
+end, ESPpedconfigtable.showmissionped)
+ESPpedconfigtable.showmissionped = menu.get_value(missiontoggleped)
 deadtoggleped = menu.toggle(Entitymanageresppeds, "show dead peds", {}, "", function(on)
-	showdeadped = on
-end, showdeadped)
-showdeadped = menu.get_value(deadtoggleped)
+	ESPpedconfigtable.showdeadped = on
+end, ESPpedconfigtable.showdeadped)
+ESPpedconfigtable.showdeadped = menu.get_value(deadtoggleped)
 ownertoggleped = menu.toggle(Entitymanageresppeds, "show Owner", {}, "", function(on)
-	showownerped = on
-end, showownerped)
-showownerped = menu.get_value(ownertoggleped)
+	ESPpedconfigtable.showownerped = on
+end, ESPpedconfigtable.showownerped)
+ESPpedconfigtable.showownerped = menu.get_value(ownertoggleped)
 
 
-local enabledobj, showonlymissionobj = false, false
-local xValueobj, yValueobj, scaleValueobj = 0, 0, 35
-local colorobj = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
-local maxDistanceobj = 300
-local showDistanceobj, shownameobj, showmissionobj, showownerobj, showattachtoobjobj, showattachtopedobj, 
-showattachtovehobj, showentitygroupobj, getonlyvisibleobj = true, true, true, true, false, false, false, true, false
+
+local ESPobjectconfigtable = {
+	enabledobj = false,
+	showonlymissionobj = false,
+
+	xValueobj = 0,
+	yValueobj = 0,
+	scaleValueobj = 35,
+	colorobj = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
+	maxDistanceobj = 300,
+
+	showDistanceobj = true,
+	shownameobj = true,
+	showmissionobj = true,
+	showownerobj = true,
+	showattachtoobjobj = false,
+	showattachtopedobj = false,
+	showattachtovehobj = false,
+	showentitygroupobj = true,
+	getonlyvisibleobj = false,
+}
 
 	function renderESPobj(givedata)
-		if not enabledobj then
+		if not ESPobjectconfigtable.enabledobj then
 	        return false
 	    end
 		if not util.is_session_started() or IS_PAUSE_MENU_ACTIVE() then
@@ -2639,7 +2693,7 @@ showattachtovehobj, showentitygroupobj, getonlyvisibleobj = true, true, true, tr
 	    local myPos = players.get_position(players.user())
 	    for _, objs in pairs(entities.get_all_objects_as_pointers()) do
 			local objshandle = entities.pointer_to_handle(objs)
-	        if not IS_ENTITY_ON_SCREEN(objshandle) and getonlyvisibleobj then
+	        if not IS_ENTITY_ON_SCREEN(objshandle) and ESPobjectconfigtable.getonlyvisibleobj then
 	            goto continue
 	        end
 			local modelhash = entities.get_model_hash(objs)
@@ -2650,71 +2704,62 @@ showattachtovehobj, showentitygroupobj, getonlyvisibleobj = true, true, true, tr
 			local attachedobj = IS_ENTITY_ATTACHED_TO_ANY_OBJECT(objshandle)
 			local attachedped = IS_ENTITY_ATTACHED_TO_ANY_PED(objshandle)
 			local attachedveh = IS_ENTITY_ATTACHED_TO_ANY_VEHICLE(objshandle)
-	        if (dist > maxDistanceobj) then
+	        if (dist > ESPobjectconfigtable.maxDistanceobj) then
 	            goto continue
 	        end
-			if (not missionentityobj) and showonlymissionobj then
+			if (not missionentityobj) and ESPobjectconfigtable.showonlymissionobj then
 				goto continue
 			end
-			if showattachtoobjobj or showattachtopedobj or showattachtovehobj then
+			if ESPobjectconfigtable.showattachtoobjobj or ESPobjectconfigtable.showattachtopedobj or ESPobjectconfigtable.showattachtovehobj then
 				if attachedobj or attachedped or attachedveh then
-					if attachedobj and showattachtoobjobj then
+					if attachedobj and ESPobjectconfigtable.showattachtoobjobj then
 						goto checkdone
 					end
-					if attachedped and showattachtopedobj then
+					if attachedped and ESPobjectconfigtable.showattachtopedobj then
 						goto checkdone
 					end
-					if attachedveh and showattachtovehobj then
+					if attachedveh and ESPobjectconfigtable.showattachtovehobj then
 						goto checkdone
 					end
 				end
 				goto continue
 			end
-			--[[if not attachedobj and showattachtoobjobj then
-				goto continue
-			end
-			if not attachedped and showattachtopedobj then
-				goto continue
-			end
-			if not attachedveh and showattachtovehobj then
-				goto continue
-			end]]
 			::checkdone::
 	        local posToUse = pPos
 	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
 	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
 	        local valuesToDisplay = {}
-			if showentitygroupobj then
+			if ESPobjectconfigtable.showentitygroupobj then
 	            valuesToDisplay[#valuesToDisplay + 1] = "OBJECT"
 	        end
-			if attachedobj and showattachtoobjobj then
+			if attachedobj and ESPobjectconfigtable.showattachtoobjobj then
 	            valuesToDisplay[#valuesToDisplay + 1] = "Attached to OBJ"
 	        end
-			if attachedped and showattachtopedobj then
+			if attachedped and ESPobjectconfigtable.showattachtopedobj then
 	            valuesToDisplay[#valuesToDisplay + 1] = "Attached to PED"
 	        end
-			if attachedveh and showattachtovehobj then
+			if attachedveh and ESPobjectconfigtable.showattachtovehobj then
 	            valuesToDisplay[#valuesToDisplay + 1] = "Attached to VEH"
 	        end
-			if showDistanceobj then
+			if ESPobjectconfigtable.showDistanceobj then
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
-			if shownameobj then
+			if ESPobjectconfigtable.shownameobj then
 	            local textline = ""
-	            if shownameobj then
+	            if ESPobjectconfigtable.shownameobj then
 	                textline = getmodelnamebyhash(modelhash) .. " "
 	            end
 	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
-			if missionentityobj and showmissionobj then
+			if missionentityobj and ESPobjectconfigtable.showmissionobj then
 				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
 			end
-			if showownerobj then
+			if ESPobjectconfigtable.showownerobj then
 				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerobj
 			end
 	        local text = table.concat(valuesToDisplay, "\n")
 			if not givedata then
-	        	directx.draw_text(screenX + xValueobj, screenY + yValueobj, text, 5, scaleValueobj, colorobj, false)
+	        	directx.draw_text(screenX + ESPobjectconfigtable.xValueobj, screenY + ESPobjectconfigtable.yValueobj, text, 5, ESPobjectconfigtable.scaleValueobj, ESPobjectconfigtable.colorobj, false)
 			end
 			if givedata then
 				table.insert(data, objshandle)
@@ -2728,7 +2773,7 @@ showattachtovehobj, showentitygroupobj, getonlyvisibleobj = true, true, true, tr
 	
 enabledToggleobj = menu.toggle(Entitymanagerespobjects, "Enable ESP Objects", {"ESPobject"}, "", function(on_toggle)
 	if on_toggle then
-		enabledobj = true
+		ESPobjectconfigtable.enabledobj = true
 		if deactivateother then
 			if menu.get_value(enabledToggleped) then
 				menu.set_value(enabledToggleped, false)
@@ -2742,19 +2787,19 @@ enabledToggleobj = menu.toggle(Entitymanagerespobjects, "Enable ESP Objects", {"
 		end
 		util.create_tick_handler(renderESPobj)
 	else
-		enabledobj = false
+		ESPobjectconfigtable.enabledobj = false
 	end
 end)
 
 onlymissionToggleobj = menu.toggle(Entitymanagerespobjects, "Show Only Mission", {}, "", function(on)
-	showonlymissionobj = on
-end, showonlymissionobj)
-showonlymissionobj = menu.get_value(onlymissionToggleobj)
+	ESPobjectconfigtable.showonlymissionobj = on
+end, ESPobjectconfigtable.showonlymissionobj)
+ESPobjectconfigtable.showonlymissionobj = menu.get_value(onlymissionToggleobj)
 local actionSubmenuobj = menu.list(Entitymanagerespobjects, "Action", {}, "action für die auf dennen ESP drauf ist")
 onlyvisibleToggleobj = menu.toggle(actionSubmenuobj, "get only visible OBJ", {}, "", function(on)
-	getonlyvisibleobj = on
-end, getonlyvisibleobj)
-getonlyvisibleobj = menu.get_value(onlyvisibleToggleobj)
+	ESPobjectconfigtable.getonlyvisibleobj = on
+end, ESPobjectconfigtable.getonlyvisibleobj)
+ESPobjectconfigtable.getonlyvisibleobj = menu.get_value(onlyvisibleToggleobj)
 menu.action(actionSubmenuobj, "teleport to me", {}, "", function()
 	local data = renderESPobj(true)
 	if data then
@@ -2783,67 +2828,80 @@ menu.action(actionSubmenuobj, "Delete", {}, "", function()
 end)
 
 local positionSubmenuobj = menu.list(Entitymanagerespobjects, "position", {}, "")
-xSliderobj = menu.slider(positionSubmenuobj, "XPos", {}, "", -10, 10, xValueobj, 1, function(val)
-	xValueobj = val / 200
+xSliderobj = menu.slider(positionSubmenuobj, "XPos", {}, "", -10, 10, ESPobjectconfigtable.xValueobj, 1, function(val)
+	ESPobjectconfigtable.xValueobj = val / 200
 end)
 --xValue = menu.get_value(xSlider) / 100
-ySliderobj = menu.slider(positionSubmenuobj, "YPos", {}, "", -10, 10, yValueobj, 1, function(val)
-	yValueobj = val / 200
+ySliderobj = menu.slider(positionSubmenuobj, "YPos", {}, "", -10, 10, ESPobjectconfigtable.yValueobj, 1, function(val)
+	ESPobjectconfigtable.yValueobj = val / 200
 end)
 --yValue = menu.get_value(ySlider) / 100
-scaleSliderobj = menu.slider(positionSubmenuobj, "scale", {}, "", 1, 200, scaleValueobj, 1, function(val)
-	scaleValueobj = val / 100
+scaleSliderobj = menu.slider(positionSubmenuobj, "scale", {}, "", 1, 200, ESPobjectconfigtable.scaleValueobj, 1, function(val)
+	ESPobjectconfigtable.scaleValueobj = val / 100
 end)
-scaleValueobj = menu.get_value(scaleSliderobj) / 100
-colorRefobj = menu.colour(Entitymanagerespobjects, "color", {}, "", colorobj, true, function(c)
-	colorobj = c
+ESPobjectconfigtable.scaleValueobj = menu.get_value(scaleSliderobj) / 100
+colorRefobj = menu.colour(Entitymanagerespobjects, "color", {}, "", ESPobjectconfigtable.colorobj, true, function(c)
+	ESPobjectconfigtable.colorobj = c
 end)
-maxDistSliderobj = menu.slider(Entitymanagerespobjects, "max Dist", {"setdisobject"}, "", 10, 10000, maxDistanceobj, 10, function(val)
-	maxDistanceobj = val
+maxDistSliderobj = menu.slider(Entitymanagerespobjects, "max Dist", {"setdisobject"}, "", 10, 10000, ESPobjectconfigtable.maxDistanceobj, 10, function(val)
+	ESPobjectconfigtable.maxDistanceobj = val
 end)
-maxDistanceobj = menu.get_value(maxDistSliderobj)
+ESPobjectconfigtable.maxDistanceobj = menu.get_value(maxDistSliderobj)
 
 entitygroupToggleobj = menu.toggle(Entitymanagerespobjects, "show Entity Group", {}, "", function(on)
-	showentitygroupobj = on
-end, showentitygroupobj)
-showentitygroupobj = menu.get_value(entitygroupToggleobj)
+	ESPobjectconfigtable.showentitygroupobj = on
+end, ESPobjectconfigtable.showentitygroupobj)
+ESPobjectconfigtable.showentitygroupobj = menu.get_value(entitygroupToggleobj)
 distToggleobj = menu.toggle(Entitymanagerespobjects, "show Distance", {}, "", function(on)
-	showDistanceobj = on
-end, showDistanceobj)
-showDistanceobj = menu.get_value(distToggleobj)
+	ESPobjectconfigtable.showDistanceobj = on
+end, ESPobjectconfigtable.showDistanceobj)
+ESPobjectconfigtable.showDistanceobj = menu.get_value(distToggleobj)
 nametoggleobj = menu.toggle(Entitymanagerespobjects, "show Name", {}, "", function(on)
-	shownameobj = on
-end, shownameobj)
-shownameobj = menu.get_value(nametoggleobj)
+	ESPobjectconfigtable.shownameobj = on
+end, ESPobjectconfigtable.shownameobj)
+ESPobjectconfigtable.shownameobj = menu.get_value(nametoggleobj)
 missiontoggleobj = menu.toggle(Entitymanagerespobjects, "show Mission Entity", {}, "", function(on)
-	showmissionobj = on
-end, showmissionobj)
-showmissionobj = menu.get_value(missiontoggleobj)
+	ESPobjectconfigtable.showmissionobj = on
+end, ESPobjectconfigtable.showmissionobj)
+ESPobjectconfigtable.showmissionobj = menu.get_value(missiontoggleobj)
 ownertoggleobj = menu.toggle(Entitymanagerespobjects, "show Owner", {}, "", function(on)
-	showownerobj = on
-end, showownerobj)
-showownerobj = menu.get_value(ownertoggleobj)
+	ESPobjectconfigtable.showownerobj = on
+end, ESPobjectconfigtable.showownerobj)
+ESPobjectconfigtable.showownerobj = menu.get_value(ownertoggleobj)
 attachtoobjtoggleobj = menu.toggle(Entitymanagerespobjects, "show Only Attachted Obj to Obj", {}, "", function(on)
-	showattachtoobjobj = on
-end, showattachtoobjobj)
-showattachtoobjobj = menu.get_value(attachtoobjtoggleobj)
+	ESPobjectconfigtable.showattachtoobjobj = on
+end, ESPobjectconfigtable.showattachtoobjobj)
+ESPobjectconfigtable.showattachtoobjobj = menu.get_value(attachtoobjtoggleobj)
 attachtopedtoggleobj = menu.toggle(Entitymanagerespobjects, "show Only Attachted Obj to Ped", {}, "", function(on)
-	showattachtopedobj = on
-end, showattachtopedobj)
-showattachtopedobj = menu.get_value(attachtopedtoggleobj)
+	ESPobjectconfigtable.showattachtopedobj = on
+end, ESPobjectconfigtable.showattachtopedobj)
+ESPobjectconfigtable.showattachtopedobj = menu.get_value(attachtopedtoggleobj)
 attachtovehtoggleobj = menu.toggle(Entitymanagerespobjects, "show Only Attachted Obj to Veh", {}, "", function(on)
-	showattachtovehobj = on
-end, showattachtovehobj)
-showattachtovehobj = menu.get_value(attachtovehtoggleobj)
+	ESPobjectconfigtable.showattachtovehobj = on
+end, ESPobjectconfigtable.showattachtovehobj)
+ESPobjectconfigtable.showattachtovehobj = menu.get_value(attachtovehtoggleobj)
 
-local enabledpickup, showonlymissionpickup = false, false
-local xValuepickup, yValuepickup, scaleValuepickup = 0, 0, 35
-local colorpickup = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
-local maxDistancepickup = 1000
-local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, showentitiygrouppickup, getonlyvisiblepickups = true, true, true, true, true, false
+
+local ESPpickupconfigtable = {
+	enabledpickup = false,
+	showonlymissionpickup = false,
+
+	xValuepickup = 0,
+	yValuepickup = 0,
+	scaleValuepickup = 35,
+	colorpickup = { r = 1.0, g = 1.0, b = 1.0, a = 1.0 },
+	maxDistancepickup = 1000,
+
+	showDistancepickup = true,
+	shownamepickup = true,
+	showmissionpickup = true,
+	showownerpickup = true,
+	showentitiygrouppickup = true,
+	getonlyvisiblepickups = false,
+}
 
 	function renderESPpickup(givedata)
-		if not enabledpickup then
+		if not ESPpickupconfigtable.enabledpickup then
 	        return false
 	    end
 		if not util.is_session_started() or IS_PAUSE_MENU_ACTIVE() then
@@ -2855,7 +2913,7 @@ local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, sh
 	    local myPos = players.get_position(players.user())
 	    for _, pickups in pairs(entities.get_all_pickups_as_pointers()) do
 			local pickupshandle = entities.pointer_to_handle(pickups)
-	        if not IS_ENTITY_ON_SCREEN(pickupshandle) and getonlyvisiblepickups then
+	        if not IS_ENTITY_ON_SCREEN(pickupshandle) and ESPpickupconfigtable.getonlyvisiblepickups then
 	            goto continue
 	        end
 			local modelhash = entities.get_model_hash(pickups)
@@ -2863,38 +2921,38 @@ local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, sh
 	        local dist = myPos:distance(pPos)
 			local ownerpickup = players.get_name(entities.get_owner(pickupshandle))
 			local missionentitypickup = IS_ENTITY_A_MISSION_ENTITY(pickupshandle)
-	        if (dist > maxDistancepickup) then
+	        if (dist > ESPpickupconfigtable.maxDistancepickup) then
 	            goto continue
 	        end
-			if (not missionentitypickup) and showonlymissionpickup then
+			if (not missionentitypickup) and ESPpickupconfigtable.showonlymissionpickup then
 				goto continue
 			end
 	        local posToUse = pPos
 	        GET_SCREEN_COORD_FROM_WORLD_COORD(posToUse.x, posToUse.y, posToUse.z + 1, gameX, gameY)
 	        local screenX, screenY = memory.read_float(gameX), memory.read_float(gameY)
 	        local valuesToDisplay = {}
-			if showentitiygrouppickup then
+			if ESPpickupconfigtable.showentitiygrouppickup then
 	            valuesToDisplay[#valuesToDisplay + 1] = "PICKUP"
 	        end
-			if showDistancepickup then
+			if ESPpickupconfigtable.showDistancepickup then
 	            valuesToDisplay[#valuesToDisplay + 1] = math.floor(dist)
 	        end
-			if shownamepickup then
+			if ESPpickupconfigtable.shownamepickup then
 	            local textline = ""
-	            if shownamepickup then
+	            if ESPpickupconfigtable.shownamepickup then
 	                textline = getmodelnamebyhash(modelhash) .. " "
 	            end
 	            valuesToDisplay[#valuesToDisplay + 1] = textline
 	        end
-			if missionentitypickup and showmissionpickup then
+			if missionentitypickup and ESPpickupconfigtable.showmissionpickup then
 				valuesToDisplay[#valuesToDisplay + 1] = "Mission Entity"
 			end
-			if showownerpickup then
+			if ESPpickupconfigtable.showownerpickup then
 				valuesToDisplay[#valuesToDisplay + 1] = "Owner: ".. ownerpickup
 			end
 	        local text = table.concat(valuesToDisplay, "\n")
 			if not givedata then
-	       		directx.draw_text(screenX + xValuepickup, screenY + yValuepickup, text, 5, scaleValuepickup, colorpickup, false)
+	       		directx.draw_text(screenX + ESPpickupconfigtable.xValuepickup, screenY + ESPpickupconfigtable.yValuepickup, text, 5, ESPpickupconfigtable.scaleValuepickup, ESPpickupconfigtable.colorpickup, false)
 			end
 			if givedata then
 				table.insert(data, pickupshandle)
@@ -2908,7 +2966,7 @@ local showDistancepickup, shownamepickup, showmissionpickup, showownerpickup, sh
 	
 enabledTogglepickup = menu.toggle(Entitymanageresppickups, "Enable ESP Pickups", {"ESPpickup"}, "", function(on_toggle)
 	if on_toggle then
-		enabledpickup = true
+		ESPpickupconfigtable.enabledpickup = true
 		if deactivateother then
 			if menu.get_value(enabledToggleped) then
 				menu.set_value(enabledToggleped, false)
@@ -2922,20 +2980,20 @@ enabledTogglepickup = menu.toggle(Entitymanageresppickups, "Enable ESP Pickups",
 		end
 		util.create_tick_handler(renderESPpickup)
 	else
-		enabledpickup = false
+		ESPpickupconfigtable.enabledpickup = false
 	end
 end)
 
 onlymissionTogglepickup = menu.toggle(Entitymanageresppickups, "Show Only Mission", {}, "", function(on)
-	showonlymissionpickup = on
-end, showonlymissionpickup)
-showonlymissionpickup = menu.get_value(onlymissionTogglepickup)
+	ESPpickupconfigtable.showonlymissionpickup = on
+end, ESPpickupconfigtable.showonlymissionpickup)
+ESPpickupconfigtable.showonlymissionpickup = menu.get_value(onlymissionTogglepickup)
 
 local actionSubmenupickups = menu.list(Entitymanageresppickups, "Action", {}, "action für die auf dennen ESP drauf ist")
 onlyvisibleTogglepickups = menu.toggle(actionSubmenupickups, "get only visible vehs", {}, "", function(on)
-	getonlyvisiblepickups = on
-end, getonlyvisiblepickups)
-getonlyvisiblepickups = menu.get_value(onlyvisibleTogglepickups)
+	ESPpickupconfigtable.getonlyvisiblepickups = on
+end, ESPpickupconfigtable.getonlyvisiblepickups)
+ESPpickupconfigtable.getonlyvisiblepickups = menu.get_value(onlyvisibleTogglepickups)
 menu.action(actionSubmenupickups, "teleport to me", {}, "", function()
 	local data = renderESPpickup(true)
 	if data then
@@ -2963,48 +3021,48 @@ menu.action(actionSubmenupickups, "Delete", {}, "", function()
 end)
 
 local positionSubmenupickup = menu.list(Entitymanageresppickups, "position", {}, "")
-xSliderpickup = menu.slider(positionSubmenupickup, "XPos", {}, "", -10, 10, xValuepickup, 1, function(val)
-	xValuepickup = val / 200
+xSliderpickup = menu.slider(positionSubmenupickup, "XPos", {}, "", -10, 10, ESPpickupconfigtable.xValuepickup, 1, function(val)
+	ESPpickupconfigtable.xValuepickup = val / 200
 end)
 --xValue = menu.get_value(xSlider) / 100
-ySliderpickup = menu.slider(positionSubmenupickup, "YPos", {}, "", -10, 10, yValuepickup, 1, function(val)
-	yValuepickup = val / 200
+ySliderpickup = menu.slider(positionSubmenupickup, "YPos", {}, "", -10, 10, ESPpickupconfigtable.yValuepickup, 1, function(val)
+	ESPpickupconfigtable.yValuepickup = val / 200
 end)
 --yValue = menu.get_value(ySlider) / 100
-scaleSliderpickup = menu.slider(positionSubmenupickup, "scale", {}, "", 1, 200, scaleValuepickup, 1, function(val)
-	scaleValuepickup = val / 100
+scaleSliderpickup = menu.slider(positionSubmenupickup, "scale", {}, "", 1, 200, ESPpickupconfigtable.scaleValuepickup, 1, function(val)
+	ESPpickupconfigtable.scaleValuepickup = val / 100
 end)
-scaleValuepickup = menu.get_value(scaleSliderpickup) / 100
+ESPpickupconfigtable.scaleValuepickup = menu.get_value(scaleSliderpickup) / 100
 
-colorRefpickup = menu.colour(Entitymanageresppickups, "color", {}, "", colorpickup, true, function(c)
-	colorpickup = c
+colorRefpickup = menu.colour(Entitymanageresppickups, "color", {}, "", ESPpickupconfigtable.colorpickup, true, function(c)
+	ESPpickupconfigtable.colorpickup = c
 end)
 
-maxDistSliderpickup = menu.slider(Entitymanageresppickups, "max Dist", {"setdispickup"}, "", 10, 10000, maxDistancepickup, 10, function(val)
-	maxDistancepickup = val
+maxDistSliderpickup = menu.slider(Entitymanageresppickups, "max Dist", {"setdispickup"}, "", 10, 10000, ESPpickupconfigtable.maxDistancepickup, 10, function(val)
+	ESPpickupconfigtable.maxDistancepickup = val
 end)
-maxDistancepickup = menu.get_value(maxDistSliderpickup)
+ESPpickupconfigtable.maxDistancepickup = menu.get_value(maxDistSliderpickup)
 
 entitygroupTogglepickup = menu.toggle(Entitymanageresppickups, "show Entity Group", {}, "", function(on)
-	showentitiygrouppickup = on
-end, showentitiygrouppickup)
-showentitiygrouppickup = menu.get_value(entitygroupTogglepickup)
+	ESPpickupconfigtable.showentitiygrouppickup = on
+end, ESPpickupconfigtable.showentitiygrouppickup)
+ESPpickupconfigtable.showentitiygrouppickup = menu.get_value(entitygroupTogglepickup)
 distTogglepickup = menu.toggle(Entitymanageresppickups, "show Distance", {}, "", function(on)
-	showDistancepickup = on
-end, showDistancepickup)
-showDistancepickup = menu.get_value(distTogglepickup)
+	ESPpickupconfigtable.showDistancepickup = on
+end, ESPpickupconfigtable.showDistancepickup)
+ESPpickupconfigtable.showDistancepickup = menu.get_value(distTogglepickup)
 nametogglepickup = menu.toggle(Entitymanageresppickups, "show Name", {}, "", function(on)
-	shownamepickup = on
-end, shownamepickup)
-shownamepickup = menu.get_value(nametogglepickup)
+	ESPpickupconfigtable.shownamepickup = on
+end, ESPpickupconfigtable.shownamepickup)
+ESPpickupconfigtable.shownamepickup = menu.get_value(nametogglepickup)
 missiontogglepickup = menu.toggle(Entitymanageresppickups, "show Mission Entity", {}, "", function(on)
-	showmissionpickup = on
-end, showmissionpickup)
-showmissionpickup = menu.get_value(missiontogglepickup)
+	ESPpickupconfigtable.showmissionpickup = on
+end, ESPpickupconfigtable.showmissionpickup)
+ESPpickupconfigtable.showmissionpickup = menu.get_value(missiontogglepickup)
 ownertogglepickup = menu.toggle(Entitymanageresppickups, "show Owner", {}, "", function(on)
-	showownerpickup = on
-end, showownerpickup)
-showownerpickup = menu.get_value(ownertogglepickup)
+	ESPpickupconfigtable.showownerpickup = on
+end, ESPpickupconfigtable.showownerpickup)
+ESPpickupconfigtable.showownerpickup = menu.get_value(ownertogglepickup)
 
 
 
@@ -3324,7 +3382,7 @@ menu.text_input(Entitymanagernearvehicleallveh, "Save vehicle / adds number to i
 	local mypos = players.get_position(players.user())
 	local wasinveh = IS_PED_IN_ANY_VEHICLE(players.user_ped())
 	local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
-	local seatofplayer = getseatofplayer(vehicleofped)
+	local seatofplayer = getseatofplayer(vehicleofped, players.user_ped())
 	for _, vehhandle in pairs(vehicledata) do
 		local modelname = getmodelnamebyhash(entities.get_model_hash(vehhandle))
 		savingvehrunning = true
@@ -8207,11 +8265,40 @@ end
 cmm.check_player_to_vehicle_switch = function(target)
 	if is_key_just_down(config.key_to_player_tp_vehicle) then
         if cmm.is_target_a_player_in_vehicle(target) then
-			if GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, true), -1) == target.handle then
-				cmm.close_options_menu(target)
-        		target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
-        		cmm.update_target_data(target)
-				cmm.open_options_menu(target)
+			playersinveh = getpedsinvehicle(GET_VEHICLE_PED_IS_IN(target.handle, false), true)
+			seatofmainplayer = getseatofplayer(GET_VEHICLE_PED_IS_IN(target.handle, false), target.handle)
+			local tablesize = table.size(playersinveh)
+			if tablesize > 1 then
+				for _ in pairs(playersinveh) do
+					tablesize = _
+				end
+				for _, ped in pairs(playersinveh) do
+					if IS_PED_A_PLAYER(ped) then
+						seatofplayer = getseatofplayer(GET_VEHICLE_PED_IS_IN(target.handle, false), ped)
+						if seatofmainplayer < seatofplayer then
+							cmm.close_options_menu(target)
+							target.handle = GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, false), seatofplayer)
+							cmm.update_target_data(target)
+							cmm.open_options_menu(target)
+							break
+						end
+					end
+					if _ == tablesize then
+						if GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, true), seatofmainplayer) == target.handle then
+							cmm.close_options_menu(target)
+							target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
+							cmm.update_target_data(target)
+							cmm.open_options_menu(target)
+						end
+					end
+				end
+			else
+				if GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, true), -1) == target.handle then
+					cmm.close_options_menu(target)
+        			target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
+        			cmm.update_target_data(target)
+					cmm.open_options_menu(target)
+				end
 			end
 		elseif cmm.is_target_a_vehicle_with_player(target) then
 			cmm.close_options_menu(target)
@@ -12326,7 +12413,7 @@ if not util.is_session_transition_active() then
 			missionped = IS_ENTITY_A_MISSION_ENTITY(ped)
 			speedofvehicle = GET_ENTITY_SPEED(mypositionvehicle)
 			positionoffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(mypositionvehicle, -2, 0, 0)
-			local seatofplayer = getseatofplayer(mypositionvehicle)
+			local seatofplayer = getseatofplayer(mypositionvehicle, players.user_ped())
 			util.toast("enter vehicle")
 			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), true)
 			menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
@@ -12499,7 +12586,7 @@ if not util.is_session_transition_active() then
 						BRING_VEHICLE_TO_HALT(mypositionvehicle, 0, 1, false)
 					end
 				end
-				local seatofplayers = getseatofplayer(mypositionvehicle)
+				local seatofplayers = getseatofplayer(mypositionvehicle, players.user_ped())
 				local entryposition = GET_ENTRY_POINT_POSITION(mypositionvehicle, 0)
 				if seatofplayers != -2 then
 					entryposition = GET_ENTRY_POINT_POSITION(mypositionvehicle, seatofplayers + 1)
