@@ -20,14 +20,14 @@ end
 return {
     name="open entity",
     help="open the entity in near enitiys",
-    applicable_to={"VEHICLE", "PED", "OBJECT"},
+    applicable_to={"VEHICLE", "PED", "OBJECT", "PLAYER"},
     execute=function(target)
         local found = false
         local ref
         if IS_ENTITY_A_PED(target.handle) then
             ref = "Stand>Lua Scripts>"..SCRIPT_NAME..">Entity Manager>Near Entitys>Peds"
         elseif IS_ENTITY_A_VEHICLE(target.handle) then
-            ref = "Stand>Lua Scripts>"..SCRIPT_NAME..">Entity Manager>Near Entitys>vehicles"
+            ref = "Stand>Lua Scripts>"..SCRIPT_NAME..">Entity Manager>Near Entitys>Vehicles"
         elseif IS_ENTITY_AN_OBJECT(target.handle) then
             if IS_OBJECT_A_PICKUP(target.handle) then
                 ref = "Stand>Lua Scripts>"..SCRIPT_NAME..">Entity Manager>Near Entitys>Pickups"
