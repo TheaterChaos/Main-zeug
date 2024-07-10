@@ -676,4 +676,26 @@ tables.vehlockstatus = {
 	[10]= "CANNOT_ENTER"
 }
 
+tables.doorids = {
+	[0]= "Front Left",
+	[1]= "Front Right",
+	[2]= "Back left",
+	[3]= "Back Right",
+	[4]= "Engine Hood",
+	[5]= "Trunk",
+	[6]= "Back",
+	[7]= "Back 2",
+}
+
+tables.allwindows = {
+	[0]= "Front Left Window",
+	[1]= "Front Right Window",
+	[2]= "Back left Window",
+	[3]= "Back Right Window",
+	[4]= "Front Windscreen",
+	[5]= "Rear Windscreen",
+	[6]= "Mid Left",
+	[7]= "Mid Right",
+}
+
 return tables
