@@ -3,7 +3,7 @@ util.require_natives("2944b", "g")
 util.keep_running()
 
 
-local SCRIPT_VERSION = "0.73"
+local SCRIPT_VERSION = "0.74"
 
 
 local allfiles = {
@@ -305,6 +305,7 @@ local function isentitiyaenemie(entity)
 	return false
 end
 
+
 local function getcurrentweaponofped(ped)
 	local currentWpMem = memory.alloc()
 	local junk = GET_CURRENT_PED_WEAPON(ped, currentWpMem, 1)
@@ -463,6 +464,17 @@ local function PlayerisFriend(player)
 		end
 	end
 	return false
+end
+
+deep_table_copy = function(obj)
+    if type(obj) ~= 'table' then
+        return obj
+    end
+    local res = setmetatable({}, getmetatable(obj))
+    for k, v in pairs(obj) do
+        res[deep_table_copy(k)] = deep_table_copy(v)
+    end
+    return res
 end
 
 local function loadsphereninrangered(range, pos)
@@ -3149,6 +3161,7 @@ local nearentitieconfig = {
 	searchvalue = "",
 	isfocusedmenu = false,
 	stoplistloading = false,
+	loadonlypointer = true,
 
 	maxdist = 200,
 	maxtoloadfreeze = false,
@@ -3156,7 +3169,7 @@ local nearentitieconfig = {
 	maxtoloadall = 0,
 	maxtoloadvehicle = 0,
 	maxtoloadped = 0,
-	maxtoloadobject = 100,
+	maxtoloadobject = 0,
 	maxtoloadpickup = 0,
 	boostvalue = 100,
 	switchsearch = false,
@@ -3170,6 +3183,12 @@ local nearentitieconfig = {
 	stoplistwhenmenucloed = true,
 	allentitiemenuopen = false,
 	allentitiemenuref,
+	generalinformation = true,
+	playerinfos = true,
+	vehicleinfos = true,
+	pednpcinfos = true,
+	objectinfos = true,
+	pickupinfos = true,
 
 	showdebuginfos = false,
 	showarsignal = true,
@@ -3249,6 +3268,9 @@ zzm.get_distance_from_entity = function(handle, pointer)
 end
 
 zzm.get_maintextline = function(handle, entitietype)
+	if not entitietype then
+		entitietype = nearentitieconfig.typeoflist
+	end
 	local positions = zzm.get_distance_from_entity(handle)
 	local modelhash = entities.get_model_hash(handle)
 	local modelname = getmodelnamebyhash(modelhash)
@@ -3292,6 +3314,9 @@ zzm.get_maintextline = function(handle, entitietype)
 end
 
 zzm.get_infotextline = function(handle, entitietype)
+	if not entitietype then
+		entitietype = nearentitieconfig.typeoflist
+	end
 	local modelhash = entities.get_model_hash(handle)
 	local modelname = getmodelnamebyhash(modelhash)
 	local positions = zzm.get_distance_from_entity(handle)
@@ -3309,29 +3334,30 @@ zzm.get_infotextline = function(handle, entitietype)
 					infotextline = pidnameofp.."\nHandle: "..handle.."\nDist: ".. positions.dist
 				end
 			end
-		if not IS_ENTITY_VISIBLE(handle) then
-			infotextline = infotextline..  "\nInVisible: true"
-		else
-			infotextline = infotextline.. "\nInVisible: false"
+		if nearentitieconfig.generalinformation then
+			if not IS_ENTITY_VISIBLE(handle) then
+				infotextline = infotextline..  "\nInVisible: true"
+			else
+				infotextline = infotextline.. "\nInVisible: false"
+			end
+			if entities.is_invulnerable(handle) then
+				infotextline = infotextline..  "\nGOD: true"
+			else
+				infotextline = infotextline.. "\nGOD: false"
+			end
+			infotextline = infotextline.. "\nOwner: ".. players.get_name(entities.get_owner(handle))
+			infotextline = infotextline.. "\nMission Entity: ".. IS_ENTITY_A_MISSION_ENTITY(handle)
 		end
-		if entities.is_invulnerable(handle) then
-			infotextline = infotextline..  "\nGOD: true"
-		else
-			infotextline = infotextline.. "\nGOD: false"
-		end
-		infotextline = infotextline.. "\nOwner: ".. players.get_name(entities.get_owner(handle))
-		infotextline = infotextline.. "\nMission Entity: ".. IS_ENTITY_A_MISSION_ENTITY(handle)
 		if nearentitieconfig.showdebuginfos then
 			infotextline = infotextline.. "\nModelhash: ".. modelhash.. "\nWorldPosition: " .. "X:" ..math.floor(positions.ePos.x) .. " Y:" ..math.floor(positions.ePos.y) .. " Z:" ..math.floor(positions.ePos.z)
 		end
 		infotextline = infotextline.."\n"
 	if entitietype == "VEHICLES" or entitietype == "PEDS" then
-		infotextline = infotextline.. "\nEnemie = "..isentitiyaenemie(handle)
-		if entitietype == "VEHICLES" then
+		if entitietype == "VEHICLES" and nearentitieconfig.vehicleinfos then
+			infotextline = infotextline.. "\nEnemie = "..isentitiyaenemie(handle)
 			infotextline = infotextline.. "\nEngineHealth: ".. math.floor(GET_VEHICLE_ENGINE_HEALTH(handle))
-			if tables.vehlockstatus[GET_VEHICLE_DOOR_LOCK_STATUS(handle)] != nil then
-				infotextline = infotextline..  "\nLock Status: "..tables.vehlockstatus[GET_VEHICLE_DOOR_LOCK_STATUS(handle)]
-			end
+			infotextline = infotextline.. "\nBodyHealth: ".. math.floor(GET_VEHICLE_BODY_HEALTH(handle))
+			infotextline = infotextline..  "\nLock Status: "..tostring(tables.vehlockstatus[GET_VEHICLE_DOOR_LOCK_STATUS(handle)])
 			if nearentitieconfig.showplayers then
 				local passangersinveh = ""
 				local pedsinveh = getpedsinvehicle(handle)
@@ -3360,17 +3386,55 @@ zzm.get_infotextline = function(handle, entitietype)
 				end
 			end
 		elseif entitietype == "PEDS" then
-			infotextline = infotextline.. "\nHealth: ".. GET_ENTITY_HEALTH(handle)
-			infotextline = infotextline.. "\nArmour: ".. GET_PED_ARMOUR(handle)
-			infotextline = infotextline.. "\nWeapon out: "..IS_PED_ARMED(handle ,7)
-			if IS_PED_IN_ANY_VEHICLE(handle, false) then
-				infotextline = infotextline.. "\nVehicle: ".. getmodelnamebyhash(entities.get_model_hash(GET_VEHICLE_PED_IS_IN(handle)))
+			if IS_PED_A_PLAYER(handle) and nearentitieconfig.playerinfos then
+				pid = NETWORK_GET_PLAYER_INDEX_FROM_PED(handle)
+				local orgmemberstext = ""
+				local ipdata = get_ip_data(tostring(soup.IpAddr(players.get_connect_ip(pid))))
+				infotextline = infotextline.. "\nTags: "..players.get_tags_string(pid)
+				infotextline = infotextline.. "\nID: "..pid
+				infotextline = infotextline.. "\nHost queue pos: ".. players.get_host_queue_position(pid)
+				if players.get_boss(pid) != -1 then
+					infotextline = infotextline.. "\nORG Type: ".. getorgtype(players.get_boss(pid))
+					infotextline = infotextline.. "\nOwner: ".. players.get_name(players.get_boss(pid))
+					local orgmemberstable = getorganisationplayers(pid)
+					for orgmemberstable as pidorgs do
+						if players.get_boss(pid) != pidorgs then
+							orgmemberstext = orgmemberstext ..", ".. players.get_name(pidorgs)
+						end
+					end
+					orgmemberstext = string.replace(orgmemberstext, ", ", "" , 1)
+					if orgmemberstext:len() > 0 then
+						infotextline = infotextline.. "\nmembers: ".. orgmemberstext
+					end
+				end
+				if players.get_bounty(pid) != nil then
+					infotextline = infotextline.. "\nBounty: ".. players.get_bounty(pid)
+				end
+				infotextline = infotextline.. "\nRank: ".. players.get_rank(pid)
+				infotextline = infotextline.. "\nMoney: ".. comma_value(players.get_money(pid))
+				--infotextline = infotextline.. "\nWallet: ".. comma_value(players.get_wallet(pid))
+				--infotextline = infotextline.. "\nBank: ".. comma_value(players.get_bank(pid))
+				infotextline = infotextline.. "\nKD: ".. roundDecimals(players.get_kd(pid), 2)
+				infotextline = infotextline.. "\nIP: ".. tostring(soup.IpAddr(players.get_connect_ip(pid)))
+				infotextline = infotextline.. "\nLand: ".. ipdata.country
+				--infotextline = infotextline.. "\nRegion: ".. ipdata.state
+				--infotextline = infotextline.. "\nStadt: ".. ipdata.city
+				infotextline = infotextline.. "\n"
 			end
-			if tables.PedType[GET_PED_TYPE(handle)] != nil then
-				infotextline = infotextline.. "\nPedType: ".. tables.PedType[GET_PED_TYPE(handle)]
+			if nearentitieconfig.pednpcinfos then
+				infotextline = infotextline.. "\nEnemie = "..isentitiyaenemie(handle)
+				infotextline = infotextline.. "\nHealth: ".. GET_ENTITY_HEALTH(handle)
+				infotextline = infotextline.. "\nArmour: ".. GET_PED_ARMOUR(handle)
+				infotextline = infotextline.. "\nWeapon out: "..IS_PED_ARMED(handle ,7)
+				if IS_PED_IN_ANY_VEHICLE(handle, false) then
+					infotextline = infotextline.. "\nVehicle: ".. getmodelnamebyhash(entities.get_model_hash(GET_VEHICLE_PED_IS_IN(handle)))
+				end
+				if tables.PedType[GET_PED_TYPE(handle)] != nil then
+					infotextline = infotextline.. "\nPedType: ".. tables.PedType[GET_PED_TYPE(handle)]
+				end
 			end
 		end
-	elseif entitietype == "OBJECTS" or entitietype == "PICKUPS" then
+	elseif (entitietype == "OBJECTS" and nearentitieconfig.objectinfos) or (entitietype == "PICKUPS" and nearentitieconfig.pickupinfos) then
 		if GET_ENTITY_ATTACHED_TO(handle) != 0 then
 			attachedto = GET_ENTITY_ATTACHED_TO(handle)
 			if IS_PED_A_PLAYER(attachedto) then
@@ -3408,6 +3472,16 @@ zzm.get_max_to_load_entities = function(allpointer)
 	return results
 end
 
+zzm.sort_entitie_pointer_list = function(allpointer)
+	local results = {}
+	for _, pointer in pairs(allpointer) do
+		local positions = zzm.get_distance_from_entity(false,pointer)
+		table.insert(results, { pointer = pointer, dist = positions.dist })
+	end
+	table.sort(results, function(a, b) return a.dist < b.dist end)
+	return results
+end
+
 zzm.check_max_to_load = function()
 	if nearentitieconfig.maxtoloadfreeze then
 		if nearentitieconfig.maxtoload != 0 then
@@ -3424,9 +3498,9 @@ end
 zzm.check_search = function(handle)
 	if nearentitieconfig.searchvalue != " " and nearentitieconfig.searchvalue != "" then
 		if nearentitieconfig.switchsearch then
-			textline = zzm.get_infotextline(handle, nearentitieconfig.typeoflist)
+			textline = zzm.get_infotextline(handle)
 		else
-			textline = zzm.get_maintextline(handle, nearentitieconfig.typeoflist)
+			textline = zzm.get_maintextline(handle)
 		end
 		local positions = zzm.get_distance_from_entity(handle)
 		textline = textline:lower()
@@ -3443,8 +3517,11 @@ zzm.check_search = function(handle)
 	return true
 end
 
-zzm.is_valid_entity = function(handle, checksearch)
+zzm.is_valid_entity = function(handle, checksearch, entitietype)
 	local textline
+	if not entitietype then
+		entitietype = nearentitieconfig.typeoflist
+	end
 		local modelhash = entities.get_model_hash(handle)
 		local modelname = getmodelnamebyhash(modelhash)
 		local positions = zzm.get_distance_from_entity(handle)
@@ -3457,8 +3534,8 @@ zzm.is_valid_entity = function(handle, checksearch)
 	if nearentitieconfig.showonlywithblib and (GET_BLIP_FROM_ENTITY(handle) == 0) then
 		return false
 	end
-	if nearentitieconfig.typeoflist == "OBJECTS" or nearentitieconfig.typeoflist == "PICKUPS" then
-		if nearentitieconfig.typeoflist == "OBJECTS" then
+	if entitietype == "OBJECTS" or entitietype == "PICKUPS" then
+		if entitietype == "OBJECTS" then
 			if modelname == "" then
 				return false
 			end
@@ -3466,7 +3543,7 @@ zzm.is_valid_entity = function(handle, checksearch)
 		if nearentitieconfig.removeattached and IS_ENTITY_ATTACHED(handle) then
 			return false
 		end
-	elseif nearentitieconfig.typeoflist == "VEHICLES" then
+	elseif entitietype == "VEHICLES" then
 		if not nearentitieconfig.showplayers then
 			if not IS_VEHICLE_SEAT_FREE(handle, -1, false) then
 				pedinveh = GET_PED_IN_VEHICLE_SEAT(handle, -1, true)
@@ -3475,7 +3552,7 @@ zzm.is_valid_entity = function(handle, checksearch)
 				end
 			end
 		end
-	elseif nearentitieconfig.typeoflist == "PEDS" then
+	elseif entitietype == "PEDS" then
 		if handle == players.user_ped() then
 			return false
 		end
@@ -3533,6 +3610,9 @@ end
 
 zzm.create_downaction_of_entity = function(datatable, entitietype)
 	local reflist = {}
+	if not entitietype then
+		entitietype = nearentitieconfig.typeoflist
+	end
 	reflist.extrastuffdivider = menu.divider(datatable.ref, "Extra Stuff")
 	reflist.teleport = menu.list(datatable.ref, "Teleport", {}, datatable.infotextline)
 	reflist.friendly = menu.list(datatable.ref, "Friendly", {}, datatable.infotextline)
@@ -3835,9 +3915,71 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				util.toast("Not found: "..zzm.get_maintextline(vehicleofped, "VEHICLES"))
 			end
 		end)
+
+		reflist.ORGmembersref = menu.list(datatable.ref, "Org Members", {}, datatable.infotextline, function(on_click)
+			local reflist = reflist
+			local target = datatable
+			if players.get_boss(target.pid) == -1 then
+				util.toast("No Organization Found")
+				menu.focus(reflist.ORGmembersref)
+				return
+			end
+			if table.size(menu.get_children(reflist.ORGmembersref)) != 0 then
+				for _, ref in pairs(menu.get_children(reflist.ORGmembersref)) do
+					menu.delete(ref)
+				end
+			end
+			local ORGmembers = getorganisationplayers(target.pid)
+			for _, pid in pairs(ORGmembers) do
+				if pid != target.pid then
+					local maintextline = zzm.get_maintextline(GET_PLAYER_PED_SCRIPT_INDEX(pid))
+					if pid == players.get_boss(pid) then
+						maintextline = maintextline.."  [BOSS]"
+					end
+					local extrahandle = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+					target.extraref = menu.action(reflist.ORGmembersref, maintextline, {}, "Extra info: click to open in list ", function()
+						local target = target
+						target.extrahandle = extrahandle
+						if target.extrahandle == players.user_ped() then
+							util.toast("you cant find your self")
+							return
+						end
+						if not DOES_ENTITY_EXIST(target.extrahandle) then
+							util.toast("Entitie not exist anymore")
+							menu.delete(target.extraref)
+							return
+						end
+						if not zzm.is_valid_entity(target.extrahandle, true, "PEDS") then
+							if not zzm.check_search(target.extrahandle) then
+								menu.trigger_commands("ESearchnearpeds ")
+							end
+							if zzm.get_distance_from_entity(target.extrahandle).dist >  nearentitieconfig.maxdist then
+								menu.set_value(Enearmenu.maxDistnearentitys, zzm.get_distance_from_entity(target.extrahandle).dist + 100)
+							end
+							if IS_PED_A_PLAYER(target.extrahandle) and not nearentitieconfig.showplayers then
+								Enearmenu.showplayerstoggleentitys = true
+							end
+						end
+						local entitiefound = false
+						menu.trigger_command(Enearmenu.MainRefPeds)
+						util.yield(300)
+						for _, handle in pairs(nearentitieconfig.handels) do
+							if handle == target.extrahandle then
+								entitiefound = true
+								menu.trigger_command(nearentitieconfig.mainrefs[handle])
+								break
+							end
+						end
+						if not entitiefound then
+							util.toast("Not found: "..zzm.get_maintextline(target.extrahandle, "PEDS"))
+						end
+					end)
+				end
+			end
+		end)
 		return
 	end
-	menu.attach_before(reflist.extrastuffdivider, menu.action(menu.shadow_root(), "Delete", {}, datatable.infotextline, function()
+	menu.attach_before(reflist.extrastuffdivider, menu.action(menu.shadow_root(), "Delete", {}, "Extra info: Deletes the entitie from the world", function()
 		local target = datatable
 		entities.delete(target.handle)
 	end))
@@ -3879,6 +4021,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			util.toast("konnte keine kontrolle bekommen")
 		end
 	end)
+	menu.divider(reflist.friendly, "-----------")
 
 	menu.action(reflist.misc, "Set Mission Entitiy", {}, datatable.infotextline, function()
 		local target = datatable
@@ -3898,23 +4041,315 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			util.toast("konnte keine kontrolle bekommen")
 		end
 	end)
-	menu.action(reflist.misc, "Set Visible", {}, datatable.infotextline, function()
+	menu.textslider_stateful(reflist.misc, "Set visibility", {}, datatable.infotextline, {"Visible","Invisible"}, function(index)
 		local target = datatable
 		if getcontrole(target.handle) then
-			SET_ENTITY_VISIBLE(target.handle, true, 0)
+			if index == 1 then
+				SET_ENTITY_VISIBLE(target.handle, true, 0)
+			else
+				SET_ENTITY_VISIBLE(target.handle, false, 0)
+			end
 		else
 			util.toast("konnte keine kontrolle bekommen")
 		end
 	end)
-	menu.action(reflist.misc, "Set Invisible", {}, datatable.infotextline, function()
-		local target = datatable
-		if getcontrole(target.handle) then
-			SET_ENTITY_VISIBLE(target.handle, false, 0)
-		else
-			util.toast("konnte keine kontrolle bekommen")
-		end
-	end)
+	menu.divider(reflist.misc, "-----------")
 	if entitietype == "VEHICLES" then
+		reflist.doorcontrole = menu.list(datatable.ref, "Door Controle", {}, "Extra info: If the door is not on the vehicle anymore you cant do something with it", function(on_click)
+			local reflist = reflist
+			local target = datatable
+			if table.size(menu.get_children(reflist.doorcontrole)) > 3 then
+				for _, ref in pairs(menu.get_children(reflist.doorcontrole)) do
+					if _ > 3 then
+						menu.delete(ref)
+					end
+				end
+			end
+			for doorid, doorname in pairs(tables.doorids) do
+				local doorratio = roundDecimals((GET_VEHICLE_DOOR_ANGLE_RATIO(target.handle, doorid) * 100), 0)
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				local dooridref
+				dooridref = menu.list(reflist.doorcontrole, doorname, {}, "", function(on_click)
+					if IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+						util.toast("door not exist anymore")
+						menu.delete(dooridref)
+						return
+					end
+				end)
+				menu.action(dooridref, "Open door", {}, "", function()
+					if getcontrole(target.handle) then
+						SET_VEHICLE_DOOR_OPEN(target.handle, doorid, false, false)
+					end
+				end)
+				menu.action(dooridref, "Close door", {}, "", function()
+					if getcontrole(target.handle) then
+						SET_VEHICLE_DOOR_SHUT(target.handle, doorid, false)
+					end
+				end)
+				menu.action(dooridref, "Delete door", {}, "", function()
+					if getcontrole(target.handle) then
+						SET_VEHICLE_DOOR_BROKEN(target.handle, doorid, true)
+						menu.trigger_command(reflist.doorcontrole)
+					end
+				end)
+				menu.action(dooridref, "Brake door", {}, "Extra info: you will moved back a tab bc you cant interact with this door anymore", function()
+					if getcontrole(target.handle) then
+						SET_VEHICLE_DOOR_BROKEN(target.handle, doorid, false)
+						menu.trigger_command(reflist.doorcontrole)
+					end
+				end)
+				menu.list_action(dooridref, "Set Lock Status", {}, datatable.infotextline, tables.vehlockstatus, function(index)
+					local target = datatable
+					if getcontrole(target.handle) then
+						SET_VEHICLE_INDIVIDUAL_DOORS_LOCKED(target.handle, doorid, index)
+					end
+				end)
+				menu.action(dooridref, "Make door unbreakable", {}, "", function()
+					if getcontrole(target.handle) then
+						SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(target.handle, doorid, false)
+					end
+				end)
+				menu.action(dooridref, "Make door breakable", {}, "", function()
+					if getcontrole(target.handle) then
+						SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(target.handle, doorid, true)
+					end
+				end)
+				menu.slider(dooridref, "Set Door Angle", {target.allmaininfo.modelname.."doorangle"..doorname}, "Extra info: if door is breakable then == Door can brake above 125 and will 100% brake at 163", 0, 500, doorratio, 1, function(value)
+					value = value / 100
+					if getcontrole(target.handle) then
+						SET_VEHICLE_DOOR_CONTROL(target.handle, doorid, 100, value)
+					end
+				end)
+			end
+		end)
+		reflist.doorcontroleall = menu.list(reflist.doorcontrole, "ALL Doors", {}, "", function()
+		end, function(on_back)
+			menu.trigger_command(reflist.doorcontrole)
+		end)
+		menu.action(reflist.doorcontroleall, "Open Doors", {}, "", function()
+			local target = datatable
+			for doorid, doorname in pairs(tables.doorids) do
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				if getcontrole(target.handle) then
+					SET_VEHICLE_DOOR_OPEN(target.handle, doorid, false, false)
+				end
+			end
+		end)
+		menu.action(reflist.doorcontroleall, "Close Doors", {}, "", function()
+			local target = datatable
+			for doorid, doorname in pairs(tables.doorids) do
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				if getcontrole(target.handle) then
+					SET_VEHICLE_DOOR_SHUT(target.handle, doorid, false)
+				end
+			end
+		end)
+		menu.action(reflist.doorcontroleall, "Delete Doors", {}, "", function()
+			local target = datatable
+			for doorid, doorname in pairs(tables.doorids) do
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				if getcontrole(target.handle) then
+					SET_VEHICLE_DOOR_BROKEN(target.handle, doorid, true)
+				end
+			end
+		end)
+		menu.action(reflist.doorcontroleall, "Brake Doors", {}, "", function()
+			local target = datatable
+			for doorid, doorname in pairs(tables.doorids) do
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				if getcontrole(target.handle) then
+					SET_VEHICLE_DOOR_BROKEN(target.handle, doorid, false)
+				end
+			end
+		end)
+		menu.list_action(reflist.doorcontroleall, "Set Lock Status", {}, datatable.infotextline, tables.vehlockstatus, function(index)
+			local target = datatable
+			for doorid, doorname in pairs(tables.doorids) do
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				if getcontrole(target.handle) then
+					SET_VEHICLE_DOORS_LOCKED(target.handle, index)
+				end
+			end
+		end)
+		menu.action(reflist.doorcontroleall, "Make Doors unbreakable", {}, "", function()
+			local target = datatable
+			for doorid, doorname in pairs(tables.doorids) do
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				if getcontrole(target.handle) then
+					SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(target.handle, doorid, false)
+				end
+			end
+		end)
+		menu.action(reflist.doorcontroleall, "Make Doors breakable", {}, "", function()
+			local target = datatable
+			for doorid, doorname in pairs(tables.doorids) do
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				if getcontrole(target.handle) then
+					SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(target.handle, doorid, true)
+				end
+			end
+		end)
+		menu.slider(reflist.doorcontroleall, "Set Door Angle", {datatable.allmaininfo.modelname.."doorangleall"}, "Extra info: if door is breakable then == Door can brake above 125 and will 100% brake at 163", 0, 500, 0, 1, function(value)
+			local target = datatable
+			value = value / 100
+			for doorid, doorname in pairs(tables.doorids) do
+				if not GET_IS_DOOR_VALID(target.handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(target.handle, doorid) then
+					continue
+				end
+				if getcontrole(target.handle) then
+					SET_VEHICLE_DOOR_CONTROL(target.handle, doorid, 100, value)
+				end
+			end
+		end)
+		menu.action(reflist.doorcontrole, "Repair vehicle", {}, "", function()
+			local target = datatable
+			if getcontrole(target.handle) then
+				STOP_ENTITY_FIRE(target.handle)
+				SET_VEHICLE_FIXED(target.handle)
+				SET_VEHICLE_DIRT_LEVEL(target.handle, 0)
+				menu.trigger_command(reflist.doorcontrole)
+			end
+		end)
+		menu.divider(reflist.doorcontrole, "DOORS:")
+
+
+		reflist.windowcontrole = menu.list(datatable.ref, "Window Controle", {}, "", function(on_click)
+			local target = datatable
+			local reflist = reflist
+			if table.size(menu.get_children(reflist.windowcontrole)) != 2 then
+				for _, ref in pairs(menu.get_children(reflist.windowcontrole)) do
+					if _ > 2 then
+						menu.delete(ref)
+					end
+				end
+			end
+			for windowid, windowname in pairs(tables.allwindows) do
+				local windowref
+				local textline = ""
+				if not IS_VEHICLE_WINDOW_INTACT(target.handle, windowid) then
+					textline = "  [Broken or Not Valid]"
+				end
+				windowref = menu.list(reflist.windowcontrole, windowname..textline, {}, "")
+				menu.action(windowref, "Roll up", {}, "", function()
+					if getcontrole(target.handle) then
+						ROLL_UP_WINDOW(target.handle, windowid)
+					end
+				end)
+				menu.action(windowref, "Roll down", {}, "", function()
+					if getcontrole(target.handle) then
+						ROLL_DOWN_WINDOW(target.handle, windowid)
+					end
+				end)
+				menu.action(windowref, "Remove Window", {}, "Extra info: the window can only get back after a full car repair", function()
+					if getcontrole(target.handle) then
+						REMOVE_VEHICLE_WINDOW(target.handle, windowid)
+					end
+				end)
+				menu.action(windowref, "Smash Window", {}, "", function()
+					if getcontrole(target.handle) then
+						SMASH_VEHICLE_WINDOW(target.handle, windowid)
+					end
+				end)
+				menu.action(windowref, "Fix Window", {}, "", function()
+					if getcontrole(target.handle) then
+						FIX_VEHICLE_WINDOW(target.handle, windowid)
+					end
+				end)
+			end
+		end)
+		reflist.windowcontroleall = menu.list(reflist.windowcontrole, "ALL windows", {}, "")
+		menu.action(reflist.windowcontroleall, "Roll up", {}, "", function()
+			local target = datatable
+			if getcontrole(target.handle) then
+				for windowid, windowname in pairs(tables.allwindows) do
+					ROLL_UP_WINDOW(target.handle, windowid)
+				end
+			end
+		end)
+		menu.action(reflist.windowcontroleall, "Roll down", {}, "", function()
+			local target = datatable
+			if getcontrole(target.handle) then
+				for windowid, windowname in pairs(tables.allwindows) do
+					ROLL_DOWN_WINDOW(target.handle, windowid)
+				end
+			end
+		end)
+		menu.action(reflist.windowcontroleall, "Remove Windows", {}, "Extra info: the window can only get back after a full car repair", function()
+			local target = datatable
+			if getcontrole(target.handle) then
+				for windowid, windowname in pairs(tables.allwindows) do
+					REMOVE_VEHICLE_WINDOW(target.handle, windowid)
+				end
+			end
+		end)
+		menu.action(reflist.windowcontroleall, "Smash Windows", {}, "", function()
+			local target = datatable
+			if getcontrole(target.handle) then
+				for windowid, windowname in pairs(tables.allwindows) do
+					SMASH_VEHICLE_WINDOW(target.handle, windowid)
+				end
+			end
+		end)
+		menu.action(reflist.windowcontroleall, "Fix Windows", {}, "", function()
+			local target = datatable
+			if getcontrole(target.handle) then
+				for windowid, windowname in pairs(tables.allwindows) do
+					FIX_VEHICLE_WINDOW(target.handle, windowid)
+				end
+			end
+		end)
+		menu.divider(reflist.windowcontrole, "Windows:")
+
+		reflist.setsomestats = menu.list(datatable.ref, "Set Some Stats", {}, "", function(on_click)
+			local target = datatable
+			local reflist = reflist
+			if table.size(menu.get_children(reflist.setsomestats)) != 0 then
+				for _, ref in pairs(menu.get_children(reflist.setsomestats)) do
+					menu.delete(ref)
+				end
+			end
+			engineheal = roundDecimals(GET_VEHICLE_ENGINE_HEALTH(target.handle), 0)
+			bodyhealth = roundDecimals(GET_VEHICLE_BODY_HEALTH(target.handle), 0)
+			numberplatetext = GET_VEHICLE_NUMBER_PLATE_TEXT(target.handle)
+			menu.slider(reflist.setsomestats, "Set Engine Health", {"setenginehealth"..datatable.allmaininfo.modelname}, "",-4000, 1000, engineheal, 10, function(value)
+				if getcontrole(target.handle) then
+					SET_VEHICLE_ENGINE_HEALTH(target.handle, value)
+				end
+			end)
+			menu.slider(reflist.setsomestats, "Set Body Health", {"setbodyhealth"..datatable.allmaininfo.modelname}, "", 0, 1000, bodyhealth, 10, function(value)
+				if getcontrole(target.handle) then
+					SET_VEHICLE_BODY_HEALTH(target.handle, value)
+				end
+			end)
+			target.setnumberplateref = menu.text_input(reflist.setsomestats, "Set Number Plate", {"setnumberplate"..datatable.allmaininfo.modelname}, "Extra info: MAX 8 letters", function(text)
+				if string.len(text) > 8 then
+					util.toast("too much letter text got trimmed")
+					text = string.sub(text, 1,8)
+					menu.set_value(target.setnumberplateref, text)
+				end
+				if getcontrole(target.handle) then
+					SET_VEHICLE_NUMBER_PLATE_TEXT(target.handle, text)
+				end
+			end)
+			menu.set_value(target.setnumberplateref, numberplatetext)
+		end)
+
 		menu.divider(datatable.ref, "-----------")
 		reflist.pedsinveh = menu.list(datatable.ref, "Peds in vehicle", {}, datatable.infotextline, function(on_click)
 			local reflist = reflist
@@ -3926,14 +4361,20 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			local target = datatable
 			local pedsinveh = getpedsinvehicle(target.handle)
 			for _, ped in pairs(pedsinveh) do
-				if ped == players.user_ped() then
-					continue
-				end
 				target.extramainnametextline = zzm.get_maintextline(ped, "PEDS")
 				target.extrahandle = ped
-				target.extraref = menu.action(reflist.pedsinveh, target.extramainnametextline.."  Open ped in list", {}, "", function()
+				target.extraref = menu.action(reflist.pedsinveh, target.extramainnametextline, {}, "Extra info: Open ped in list", function()
 					local target = target
-					if not zzm.is_valid_entity(target.extrahandle, true) then
+					if target.extrahandle == players.user_ped() then
+						util.toast("you cant find your self")
+						return
+					end
+					if not DOES_ENTITY_EXIST(target.extrahandle) then
+						util.toast("Entitie not exist anymore")
+						menu.delete(target.extraref)
+						return
+					end
+					if not zzm.is_valid_entity(target.extrahandle, true, "PEDS") then
 						if not zzm.check_search(target.extrahandle) then
 							menu.trigger_commands("ESearchnearpeds ")
 						end
@@ -3955,7 +4396,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 						end
 					end
 					if not entitiefound then
-						util.toast("Not found: "..zzm.get_maintextline(target.extrahandle, "VEHICLES"))
+						util.toast("Not found: "..zzm.get_maintextline(target.extrahandle, "PEDS"))
 					end
 				end)
 			end
@@ -4128,12 +4569,6 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				end
 			end
 		end)
-		menu.list_action(reflist.trolling, "Set Lock Status", {}, datatable.infotextline, tables.vehlockstatus, function(index)
-			local target = datatable
-			if getcontrole(target.handle) then
-				SET_VEHICLE_DOORS_LOCKED(target.handle, index)
-			end
-		end)
 		--[[ menu.toggle(reflist.trolling, "Controle vehicle", {}, datatable.infotextline, function(on_toggle)
 			local target = datatable
 			local entitypPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(target.handle, 0, 0, +2)
@@ -4206,6 +4641,18 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		end)
 
 		--Misc
+		menu.textslider_stateful(reflist.misc, "Toggle engine", {}, datatable.infotextline, {"Engine ON", "Engine OFF"}, function(index)
+			local target = datatable
+			if getcontrole(target.handle) then
+				if index == 1 then
+					SET_VEHICLE_ENGINE_ON(target.handle, true, true, true)
+				else
+					SET_VEHICLE_ENGINE_ON(target.handle, false, true, true)
+				end
+			else
+
+			end
+		end)
 		menu.action(reflist.misc, "Copy vehicle", {}, datatable.infotextline, function()
 			local target = datatable
 			local mypos = players.get_position(players.user())
@@ -4219,6 +4666,17 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			menu.set_value(menu.ref_by_command_name("Esave"..target.allmaininfo.modelname), "")
 		end)
 	elseif entitietype == "PEDS" then
+		reflist.taskthings = menu.list(datatable.ref, "Let the ped do stuff", {}, "")
+		menu.action(reflist.taskthings, "Clear Tasks", {}, datatable.infotextline, function()
+			local target = datatable
+			if getcontrole(target.handle) then
+				CLEAR_PED_TASKS_IMMEDIATELY(target.handle)
+			else
+				util.toast("konnte keine kontrolle bekommen")
+			end
+		end)
+		menu.divider(reflist.taskthings, "-----------")
+
 		menu.divider(datatable.ref, "-----------")
 		menu.action(datatable.ref, "Vehicle of ped", {}, datatable.infotextline, function()
 			local reflist = reflist
@@ -4228,7 +4686,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				return
 			end
 			local vehicleofped = GET_VEHICLE_PED_IS_IN(target.handle)
-			if not zzm.is_valid_entity(vehicleofped, true) then
+			if not zzm.is_valid_entity(vehicleofped, true, "VEHICLES") then
 				if not zzm.check_search(vehicleofped) then
 					menu.trigger_commands("ESearchnearveh ")
 				end
@@ -4264,10 +4722,11 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end)
-		menu.action(reflist.trolling, "Explode", {}, datatable.infotextline, function()
+		menu.action(reflist.trolling, "Explode", {}, "Extra info: if a player get killed by the explosion it says you killed him", function()
 			local target = datatable
 			local entitypPos = GET_ENTITY_COORDS(target.handle)
-			ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 2, 100, true, false, 0.0, false)
+			--ADD_EXPLOSION(entitypPos.x, entitypPos.y, entitypPos.z, 2, 1000, true, false, 0.0, false)
+			ADD_OWNED_EXPLOSION(target.handle, entitypPos.x, entitypPos.y, entitypPos.z, 2, 1000, true, false, 0.0)
 		end)
 		menu.action(reflist.trolling, "Kill", {}, datatable.infotextline, function()
 			local target = datatable
@@ -4340,13 +4799,12 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		end)
 
 		--Misc
-		menu.action(reflist.misc, "Clear Tasks", {}, datatable.infotextline, function()
+		menu.action(reflist.misc, "Clone ped", {}, "Extra info: The ped will not do anything like walking arround", function()
 			local target = datatable
-			if getcontrole(target.handle) then
-				CLEAR_PED_TASKS_IMMEDIATELY(target.handle)
-			else
-				util.toast("konnte keine kontrolle bekommen")
-			end
+			local positon = GET_ENTITY_COORDS(target.handle)
+			SET_ENTITY_AS_MISSION_ENTITY(target.handle)
+			local clonedped = CLONE_PED(target.handle, true, false, true)
+			CLEAR_PED_TASKS_IMMEDIATELY(target.handle)
 		end)
 		menu.action(reflist.misc, "Geld menge dabei", {}, datatable.infotextline, function()
 			local target = datatable
@@ -4486,6 +4944,255 @@ zzm.create_all_entities_actions = function(ref)
 	if nearentitieconfig.typeoflist == "VEHICLES" or nearentitieconfig.typeoflist == "PEDS" then
 	
 		if nearentitieconfig.typeoflist == "VEHICLES" then
+			reflist.doorcontrole = menu.list(ref, "Door Controle", {}, "")
+			reflist.doorcontroleall = menu.list(reflist.doorcontrole, "ALL Doors", {}, "")
+			menu.action(reflist.doorcontroleall, "Open Doors", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					for doorid, doorname in pairs(tables.doorids) do
+						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+							continue
+						end
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_OPEN(handle, doorid, false, false)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.doorcontroleall, "Close Doors", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					for doorid, doorname in pairs(tables.doorids) do
+						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+							continue
+						end
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_SHUT(handle, doorid, false)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.doorcontroleall, "Delete Doors", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					for doorid, doorname in pairs(tables.doorids) do
+						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+							continue
+						end
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_BROKEN(handle, doorid, true)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.doorcontroleall, "Brake Doors", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					for doorid, doorname in pairs(tables.doorids) do
+						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+							continue
+						end
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_BROKEN(handle, doorid, false)
+						end
+					end
+				end
+			end)
+			menu.list_action(reflist.doorcontroleall, "Set Lock Status", {}, "", tables.vehlockstatus, function(index)
+				for _, handle in pairs(nearentitieconfig.handels) do
+					for doorid, doorname in pairs(tables.doorids) do
+						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+							continue
+						end
+						if getcontrole(handle) then
+							SET_VEHICLE_DOORS_LOCKED(handle, index)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.doorcontroleall, "Make Doors unbreakable", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					for doorid, doorname in pairs(tables.doorids) do
+						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+							continue
+						end
+						if getcontrole(handle) then
+							SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(handle, doorid, false)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.doorcontroleall, "Make Doors breakable", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					for doorid, doorname in pairs(tables.doorids) do
+						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+							continue
+						end
+						if getcontrole(handle) then
+							SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(handle, doorid, true)
+						end
+					end
+				end
+			end)
+			menu.slider(reflist.doorcontroleall, "Set Door Angle", {"allentitiesdoorangleall"}, "Extra info: if door is breakable then == Door can brake above 125 and will 100% brake at 163", 0, 500, 0, 1, function(value)
+				value = value / 100
+				for _, handle in pairs(nearentitieconfig.handels) do
+					for doorid, doorname in pairs(tables.doorids) do
+						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+							continue
+						end
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_CONTROL(handle, doorid, 100, value)
+						end
+					end
+				end
+			end)
+			menu.divider(reflist.doorcontrole, "DOORS:")
+			for doorid, doorname in pairs(tables.doorids) do
+				local dooridref
+				dooridref = menu.list(reflist.doorcontrole, doorname, {}, "")
+				menu.action(dooridref, "Open door", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_OPEN(handle, doorid, false, false)
+						end
+					end
+				end)
+				menu.action(dooridref, "Close door", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_SHUT(handle, doorid, false)
+						end
+					end
+				end)
+				menu.action(dooridref, "Delete door", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_BROKEN(handle, doorid, true)
+						end
+					end
+				end)
+				menu.action(dooridref, "Brake door", {}, "Extra info: you will moved back a tab bc you cant interact with this door anymore", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_BROKEN(handle, doorid, false)
+						end
+					end
+				end)
+				menu.list_action(dooridref, "Set Lock Status", {}, "", tables.vehlockstatus, function(index)
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SET_VEHICLE_INDIVIDUAL_DOORS_LOCKED(handle, doorid, index)
+						end
+					end
+				end)
+				menu.action(dooridref, "Make door unbreakable", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(handle, doorid, false)
+						end
+					end
+				end)
+				menu.action(dooridref, "Make door breakable", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(handle, doorid, true)
+						end
+					end
+				end)
+				menu.slider(dooridref, "Set Door Angle", {"doorangleallentities"..doorname}, "Extra info: if door is breakable then == Door can brake above 125 and will 100% brake at 163", 0, 500, 0, 1, function(value)
+					value = value / 100
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SET_VEHICLE_DOOR_CONTROL(handle, doorid, 100, value)
+						end
+					end
+				end)
+			end
+			reflist.windowcontrole = menu.list(ref, "Window Controle", {}, "")
+			reflist.windowcontroleall = menu.list(reflist.windowcontrole, "All Windows", {}, "")
+			menu.action(reflist.windowcontroleall, "Roll up", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					if getcontrole(handle) then
+						for windowid, windowname in pairs(tables.allwindows) do
+							ROLL_UP_WINDOW(handle, windowid)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.windowcontroleall, "Roll down", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					if getcontrole(handle) then
+						for windowid, windowname in pairs(tables.allwindows) do
+							ROLL_DOWN_WINDOW(handle, windowid)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.windowcontroleall, "Remove Windows", {}, "Extra info: the window can only get back after a full car repair", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					if getcontrole(handle) then
+						for windowid, windowname in pairs(tables.allwindows) do
+							REMOVE_VEHICLE_WINDOW(handle, windowid)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.windowcontroleall, "Smash Windows", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					if getcontrole(handle) then
+						for windowid, windowname in pairs(tables.allwindows) do
+							SMASH_VEHICLE_WINDOW(handle, windowid)
+						end
+					end
+				end
+			end)
+			menu.action(reflist.windowcontroleall, "Fix Windows", {}, "", function()
+				for _, handle in pairs(nearentitieconfig.handels) do
+					if getcontrole(handle) then
+						for windowid, windowname in pairs(tables.allwindows) do
+							FIX_VEHICLE_WINDOW(handle, windowid)
+						end
+					end
+				end
+			end)
+
+			menu.divider(reflist.windowcontrole, "WINDOWS:")
+			for windowid, windowname in pairs(tables.allwindows) do
+				local windowref
+				windowref = menu.list(reflist.windowcontrole, windowname, {}, "")
+				menu.action(windowref, "Roll up", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							ROLL_UP_WINDOW(handle, windowid)
+						end
+					end
+				end)
+				menu.action(windowref, "Roll down", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							ROLL_DOWN_WINDOW(handle, windowid)
+						end
+					end
+				end)
+				menu.action(windowref, "Remove Window", {}, "Extra info: the window can only get back after a full car repair", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							REMOVE_VEHICLE_WINDOW(handle, windowid)
+						end
+					end
+				end)
+				menu.action(windowref, "Smash Window", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							SMASH_VEHICLE_WINDOW(handle, windowid)
+						end
+					end
+				end)
+				menu.action(windowref, "Fix Window", {}, "", function()
+					for _, handle in pairs(nearentitieconfig.handels) do
+						if getcontrole(handle) then
+							FIX_VEHICLE_WINDOW(handle, windowid)
+						end
+					end
+				end)
+			end
 			--vehicle teleport
 			menu.action(reflist.teleport, "Teleport to me", {}, "", function()
 				for _, handle in pairs(nearentitieconfig.handels) do
@@ -4655,7 +5362,7 @@ zzm.create_all_entities_actions = function(ref)
 					local ePos = GET_ENTITY_COORDS(handle)
 					if IS_PED_IN_ANY_VEHICLE(handle) then CLEAR_PED_TASKS_IMMEDIATELY(handle) end
 						ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 100, true, false, 0.0, false)
-						if entities.request_control(handle) then
+						if not IS_PED_A_PLAYER(handle) and entities.request_control(handle) then
 							SET_ENTITY_HEALTH(handle, 0, 0)
 							FORCE_PED_MOTION_STATE(handle, 0x0DBB071C, 0,0,0)
 						end
@@ -4863,6 +5570,7 @@ function aktivenearentitys()
 	if not entitystoload then
 		return
 	end
+	entitystoload = zzm.sort_entitie_pointer_list(entitystoload)
 	if nearentitieconfig.maxtoloadall != 0 then
 		nearentitieconfig.maxtoload = nearentitieconfig.maxtoloadall
 	end
@@ -4892,8 +5600,8 @@ function aktivenearentitys()
 			end
 		end
 		target.pointer = entitiepointer
-		target.infotextline = zzm.get_infotextline(target.handle, nearentitieconfig.typeoflist)
-		target.mainnametextline = zzm.get_maintextline(target.handle, nearentitieconfig.typeoflist)
+		target.infotextline = zzm.get_infotextline(target.handle)
+		target.mainnametextline = zzm.get_maintextline(target.handle)
 		target.positions = zzm.get_distance_from_entity(target.handle)
 		target.allmaininfo = zzm.get_info_about_entity(target.handle)
 		target.ref = nearentitieconfig.mainrefs[target.handle]
@@ -4907,7 +5615,7 @@ function aktivenearentitys()
 					if target.isplayer then
 						zzm.create_downaction_of_entity(target, "PLAYER")
 					else
-						zzm.create_downaction_of_entity(target, nearentitieconfig.typeoflist)
+						zzm.create_downaction_of_entity(target)
 					end
 				end
 				if nearentitieconfig.allentitiemenuopen then nearentitieconfig.allentitiemenuopen = false end
@@ -4917,8 +5625,21 @@ function aktivenearentitys()
 				end
 					nearentitieconfig.isfocusedmenu = true
 					nearentitieconfig.stoplistloading = true
+
 				util.create_tick_handler(function()
 					local newtarget = target
+					if not menu.is_ref_valid(newtarget.ref) or not nearentitieconfig.isfocusedmenu then
+						return false
+					end
+					local positions = zzm.get_distance_from_entity(newtarget.handle)
+					zzm.load_visibles_on_screen(newtarget.handle, positions)
+				end)
+				util.create_tick_handler(function()
+					util.yield()
+					local newtarget = target
+					if not menu.is_ref_valid(newtarget.ref) or not nearentitieconfig.isfocusedmenu then
+						return false
+					end
 					if nearentitieconfig.stoplistloadingsetting then
 						if not DOES_ENTITY_EXIST(newtarget.handle) then
 							util.toast("Entitie not exist anymore")
@@ -4926,20 +5647,28 @@ function aktivenearentitys()
 							nearentitieconfig.stoplistloading = false
 							tableremove(nearentitieconfig.handels, newtarget.handle)
 							menu.delete(newtarget.ref)
+							return
 						end
 					end
-					local positions = zzm.get_distance_from_entity(newtarget.handle)
-					zzm.load_visibles_on_screen(newtarget.handle, positions)
+					if (nearentitieconfig.stoplistwhenmenucloed and not menu.is_open()) or (nearentitieconfig.stoplistwhenpausemenuopen and IS_PAUSE_MENU_ACTIVE()) then
+						return
+					end
+					menu.set_menu_name(newtarget.ref, zzm.get_maintextline(newtarget.handle))
 					for _, ref in pairs(getallrefsinlist(newtarget.ref)) do
 						--util.toast(tostring(menu.get_type(ref)))
 						if menu.get_type(ref) != COMMAND_DIVIDER then
 							if menu.is_focused(ref) then
-								menu.set_help_text(ref, zzm.get_infotextline(newtarget.handle, nearentitieconfig.typeoflist))
+								local textlineinfo = zzm.get_infotextline(newtarget.handle, nearentitieconfig.typeoflist)
+								local refinfotexline = menu.get_help_text(ref)
+								local i, j = string.find(refinfotexline, "Extra info:")
+								if i != nil then
+									local extrainfotext = string.sub(refinfotexline, i)
+									textlineinfo = textlineinfo.. "\n\n"..extrainfotext
+								end
+								menu.set_help_text(ref, textlineinfo)
+								break
 							end
 						end
-					end
-					if not menu.is_ref_valid(newtarget.ref) or not nearentitieconfig.isfocusedmenu then
-						return false
 					end
 				end)
 			end, function(on_back)
@@ -4981,6 +5710,7 @@ end
 menu.divider(Entitymanagernearentitys, "SETTINGS")
 Enearmenu.extrasettings = menu.list(Entitymanagernearentitys, "Extra Settings", {}, "")
 Enearmenu.maxtoloadlist = menu.list(Enearmenu.extrasettings, "Max entities to Load", {}, "")
+Enearmenu.infosettings = menu.list(Enearmenu.extrasettings, "Help Text settings", {}, "")
 
 Enearmenu.stoplmainlistwhenpausemenuopen = menu.toggle(Enearmenu.extrasettings, "Stop list when pause menu open", {}, "ON = stops loading the main list if the pause menu is open", function(value)
 	nearentitieconfig.stoplistwhenpausemenuopen = value
@@ -5013,6 +5743,24 @@ Enearmenu.maxtoloadentitiespickup = menu.slider(Enearmenu.maxtoloadlist, "Pickup
 	nearentitieconfig.maxtoloadpickup = value
 end)
 
+Enearmenu.generalinfossetting = menu.toggle(Enearmenu.infosettings, "General information", {}, "", function(value)
+	nearentitieconfig.generalinformation = value
+end,nearentitieconfig.generalinformation)
+Enearmenu.playerinfossetting = menu.toggle(Enearmenu.infosettings, "Player information", {}, "", function(value)
+	nearentitieconfig.playerinfos = value
+end,nearentitieconfig.playerinfos)
+Enearmenu.vehicleinfossetting = menu.toggle(Enearmenu.infosettings, "Vehicle information", {}, "", function(value)
+	nearentitieconfig.vehicleinfos = value
+end,nearentitieconfig.vehicleinfos)
+Enearmenu.pednpcinfossetting = menu.toggle(Enearmenu.infosettings, "Ped/Npc information", {}, "", function(value)
+	nearentitieconfig.pednpcinfos = value
+end,nearentitieconfig.pednpcinfos)
+Enearmenu.objectinfossetting = menu.toggle(Enearmenu.infosettings, "Object information", {}, "", function(value)
+	nearentitieconfig.objectinfos = value
+end,nearentitieconfig.objectinfos)
+Enearmenu.pickupinfossetting = menu.toggle(Enearmenu.infosettings, "Pickup information", {}, "", function(value)
+	nearentitieconfig.pickupinfos = value
+end,nearentitieconfig.pickupinfos)
 
 
 
@@ -5147,6 +5895,13 @@ for players.list_except(true) as pid do
 	SET_REMOTE_PLAYER_AS_GHOST(pid, false)
 end
 end)
+
+--[[ menu.toggle_loop(Self, "Test zeug on", {}, "", function()
+	SET_LOCAL_PLAYER_AS_GHOST(true, true)
+end)
+menu.toggle_loop(Self, "Test zeug off", {}, "", function()
+	SET_LOCAL_PLAYER_AS_GHOST(false, false)
+end) ]]
 local levispeed = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Movement Speed"))
 local levisprintspeed = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Sprint Multiplier"))
 local levimindistground = menu.get_state(menu.ref_by_path("Self>Movement>Levitation>Min Distance From Ground"))
@@ -7575,10 +8330,20 @@ cmm.refresh_screen_pos = function(target)
     end
 end
 
+
+cmm.is_target_a_ped_in_vehicle = function(target)
+    return (target.type == "PLAYER" or target.type == "PED") and IS_PED_IN_ANY_VEHICLE(target.handle)
+end
+
+cmm.is_target_a_vehicle_with_ped = function(target)
+    return target.type == "VEHICLE" and DOES_ENTITY_EXIST((GET_PED_IN_VEHICLE_SEAT(target.handle, -1)))
+end
+
+
 cmm.check_player_to_vehicle_switch = function(target)
 	if is_key_just_down(config.key_to_player_tp_vehicle) then
-        if cmm.is_target_a_player_in_vehicle(target) then
-			playersinveh = getpedsinvehicle(GET_VEHICLE_PED_IS_IN(target.handle, false), true)
+        if cmm.is_target_a_ped_in_vehicle(target) then
+			playersinveh = getpedsinvehicle(GET_VEHICLE_PED_IS_IN(target.handle, false), false)
 			seatofmainplayer = getseatofplayer(GET_VEHICLE_PED_IS_IN(target.handle, false), target.handle)
 			local tablesize = table.size(playersinveh)
 			if tablesize > 1 then
@@ -7586,7 +8351,7 @@ cmm.check_player_to_vehicle_switch = function(target)
 					tablesize = _
 				end
 				for _, ped in pairs(playersinveh) do
-					if IS_PED_A_PLAYER(ped) then
+					--if IS_PED_A_PLAYER(ped) then
 						seatofplayer = getseatofplayer(GET_VEHICLE_PED_IS_IN(target.handle, false), ped)
 						if seatofmainplayer < seatofplayer then
 							cmm.close_options_menu(target)
@@ -7595,7 +8360,7 @@ cmm.check_player_to_vehicle_switch = function(target)
 							cmm.open_options_menu(target)
 							break
 						end
-					end
+					--end
 					if _ == tablesize then
 						if GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, true), seatofmainplayer) == target.handle then
 							cmm.close_options_menu(target)
@@ -7613,7 +8378,7 @@ cmm.check_player_to_vehicle_switch = function(target)
 					cmm.open_options_menu(target)
 				end
 			end
-		elseif cmm.is_target_a_vehicle_with_player(target) then
+		elseif cmm.is_target_a_vehicle_with_ped(target) then
 			cmm.close_options_menu(target)
 			target.handle = GET_PED_IN_VEHICLE_SEAT(target.handle, -1)
         	cmm.update_target_data(target)
@@ -8002,7 +8767,7 @@ end)
 menu.toggle(player_zeug, "Kick leute mit host token spoof", {}, "geht nur auf leute die nach dir in eine sitzung joinen und nicht auf leute wo du gerade rein joinst", function(on_toggle)
 	if on_toggle then
 		kickhosttokenspoof = true
-	else 
+	else
 		kickhosttokenspoof = false
 	end
 end)
