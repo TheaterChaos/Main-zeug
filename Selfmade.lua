@@ -1,9 +1,10 @@
 util.require_natives("natives-1681379138", "g-uno")
 util.require_natives("2944b", "g")
+native_invoker.accept_bools_as_ints(true)
 util.keep_running()
 
 
-local SCRIPT_VERSION = "0.74"
+local SCRIPT_VERSION = "0.75"
 
 
 local allfiles = {
@@ -36,6 +37,7 @@ local allfiles = {
 	"lib/Selfmadestuff/Contextstuff/Misc/Visible.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/open in near entitys.lua",
 	"lib/Selfmadestuff/Contextstuff/Spawn/garage.lua",
+	"lib/Selfmadestuff/Contextstuff/Spawn/GTA garage.lua",
 	"lib/Selfmadestuff/Contextstuff/Spawn/spawn.lua",
 	"lib/Selfmadestuff/Contextstuff/Spawn/vehicle_class.lua",
 	"lib/Selfmadestuff/Contextstuff/Trolling/_folder.lua",
@@ -87,9 +89,9 @@ local item_browser = require("Selfmadestuff/item_browser")
 
 -- Functions and infos
 
-local a = 1
-local bba = 10
-local abb = 10
+local boostvehiclepower = 1
+local exittime = 10
+local entertime = 10
 local playertable = {}
 
 
@@ -127,6 +129,64 @@ vehinfotab = {}
 --for i = 0, 300 do
 --	vehinfotab[i] = 0
 --end
+
+--nearentitieconfig
+local zzm = {}
+local seattable = {}
+local seatzaehlerofseats = 0
+
+local Enearmenu = {}
+
+local nearentitieconfig = {
+	handels = {},
+	mainrefs = {},
+	downrefs = {},
+	enabled = false,
+	currentmainref,
+	typeoflist,
+	searchofvehicles = "",
+	searchofpeds = "",
+	searchofobjects = "",
+	searchofpickups = "",
+	searchvalue = "",
+	isfocusedmenu = false,
+	stoplistloading = false,
+	loadonlypointer = true,
+	listhavetostoploading = false,
+
+	maxdist = 200,
+	maxtoloadfreeze = false,
+	maxtoload = 0,
+	maxtoloadall = 0,
+	maxtoloadvehicle = 0,
+	maxtoloadped = 0,
+	maxtoloadobject = 0,
+	maxtoloadpickup = 0,
+	boostvalue = 100,
+	switchsearch = false,
+	searchininfo = false,
+	onlymission = false,
+	showplayers = true,
+	showonlywithblib = false,
+	removeattached = false,
+	stoplistloadingsetting = true,
+	stoplistwhenpausemenuopen = true,
+	stoplistwhenmenucloed = true,
+	allentitiemenuopen = false,
+	allentitiemenuref,
+	generalinformation = true,
+	playerinfos = true,
+	vehicleinfos = true,
+	pednpcinfos = true,
+	objectinfos = true,
+	pickupinfos = true,
+	blipsprite = 58,
+
+	showdebuginfos = false,
+	showarsignal = true,
+	showline = true,
+	showbox = true,
+}
 
 
 vehenterstealnpc = false
@@ -246,6 +306,12 @@ local function IS_PLAYER_PED(ped)
 	end
 end
 
+local function SET_ENTITY_AS_NO_LONGER_NEED(ped)
+	local ent_ptr = memory.alloc_int()
+	memory.write_int(ent_ptr, ped)
+	SET_ENTITY_AS_NO_LONGER_NEEDED(ent_ptr)
+end
+
 function RELEASE_SCRIPT_HANDLE(handle)
 	if IS_ENTITY_A_PED(handle) then
 		if IS_PED_A_PLAYER(handle) then
@@ -303,6 +369,31 @@ local function isentitiyaenemie(entity)
 		end
 	end
 	return false
+end
+
+function interpolate(y0, y1, perc)
+	perc = perc > 1.0 and 1.0 or perc
+	return (1 - perc) * y0 + perc * y1
+end
+
+function get_blended_colour(perc)
+	local colour = {a = 255}
+	local r, g, b
+
+	if perc <= 0.5 then
+		r = 1.0
+		g = interpolate(0.0, 1.0, perc/0.5)
+		b = 0.0
+	else
+		r = interpolate(1.0, 0, (perc - 0.5)/0.5)
+		g = 1.0
+		b = 0.0
+	end
+
+	colour.r = math.ceil(r * 255)
+	colour.g = math.ceil(g * 255)
+	colour.b = math.ceil(b * 255)
+	return colour
 end
 
 
@@ -398,10 +489,30 @@ local function clonevehicle(vehicle)
 	return cloneVehicle
 end
 
+function table.random(t)
+	if rawget(t, 1) ~= nil then
+		return t[ math.random(#t) ]
+	end
+	local list = {}
+	for _, value in pairs(t) do
+		table.insert(list, value)
+	end
+	local result = list[math.random(#list)]
+	return type(result) ~= "table" and result or table.random(result)
+end
+
+local testnumber = 0
+local allweapons = util.get_weapons()
+local allweaponhashes = {}
+local posnumber = 1
+for _, wep in pairs(allweapons) do
+	table.insert( allweaponhashes,wep.hash)
+end
+
 local function reclaimVehicles()
 	for k, v in menu.get_children(menu.ref_by_path("Vehicle>Personal Vehicles")) do
 			for k1, v1 in v.command_names do
-				if (v1 ~= "findpv")
+				if (v1 ~= "findpv") and (v1 ~= "saveallpvs")
 				then
 					menu.trigger_commands(v1.."request")
 				end
@@ -415,6 +526,18 @@ local function Streamptfx(lib)
         util.yield()
     end
     USE_PARTICLE_FX_ASSET(lib)
+end
+
+local function give_random_weapon_ped(ped)
+	weaponhash = table.random(allweaponhashes)
+	if weaponhash then
+		GIVE_WEAPON_TO_PED(ped, weaponhash, 9999, false, true)
+	end
+	for _, wep in pairs(allweapons) do
+		if wep.hash == weaponhash then
+			return util.get_label_text(wep.label_key)
+		end
+	end
 end
 
 --[[local function is_user_a_stand_user(pid)
@@ -518,22 +641,43 @@ end
 
 local function getpedsinvehicle(vehicle, onlyplayer)
 	local pedstable = {}
-	--if not IS_VEHICLE_SEAT_FREE(vehicle, -1, false) then
-	--	table.insert(pedstable, GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true))
-	--end
 	local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehicle)
 	for i = -1, maxPassengers do
 		if not IS_VEHICLE_SEAT_FREE(vehicle, i, false) then
 			local pedinveh = GET_PED_IN_VEHICLE_SEAT(vehicle, i, true)
+			if not DOES_ENTITY_EXIST(pedinveh) then
+				continue
+			end
 			if onlyplayer then
 				if IS_PED_A_PLAYER(pedinveh) then
 					table.insert(pedstable, pedinveh)
 				end
 			else
-				if DOES_ENTITY_EXIST(pedinveh) then
-					table.insert(pedstable, pedinveh)
-				end
+				table.insert(pedstable, pedinveh)
 			end
+		end
+	end
+	if pedstable == {} then
+		return 0
+	else
+		return pedstable
+	end
+end
+
+local function getlastpedsinvehicle(vehicle, onlyplayer)
+	local pedstable = {}
+	local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehicle)
+	for i = -1, maxPassengers do
+		local pedinveh = GET_LAST_PED_IN_VEHICLE_SEAT(vehicle, i, true)
+		if not DOES_ENTITY_EXIST(pedinveh) then
+			continue
+		end
+		if onlyplayer then
+			if IS_PED_A_PLAYER(pedinveh) then
+				table.insert(pedstable, {ped = pedinveh, seat = i})
+			end
+		else
+			table.insert(pedstable, {ped = pedinveh, seat = i})
 		end
 	end
 	if pedstable == {} then
@@ -743,18 +887,45 @@ local function getseatofplayer(vehicle, ped)
 	return -2
 end
 
-local function getmodelnamebyhash(hash)
+function newTimer()
+	local self = {
+		start = util.current_time_millis(),
+		m_enabled = false,
+	}
+
+	local function reset()
+		self.start = util.current_time_millis()
+		self.m_enabled = true
+	end
+
+	local function elapsed()
+		return util.current_time_millis() - self.start
+	end
+
+	local function disable() self.m_enabled = false end
+	local function isEnabled() return self.m_enabled end
+
+	return
+	{
+		isEnabled = isEnabled,
+		reset = reset,
+		elapsed = elapsed,
+		disable = disable,
+	}
+end
+
+function getmodelnamebyhash(hash)
 	if util.get_label_text(hash) ~= "NULL" then
 		return util.get_label_text(hash)
 	end
 	return util.reverse_joaat(hash)
 end
 
-local function savevehicleingarage(vehhandle, input)
-	vehname = getmodelnamebyhash(entities.get_model_hash(vehhandle))
-	freeseat = getfreevehseat(vehhandle)
+local function savevehicleingarage(handle, input)
+	vehname = getmodelnamebyhash(entities.get_model_hash(handle))
+	freeseat = getfreevehseat(handle)
 	mypos = players.get_position(players.user())
-	if GET_VEHICLE_PED_IS_IN(players.user_ped()) == vehhandle then
+	if GET_VEHICLE_PED_IS_IN(players.user_ped()) == handle then
 		menu.trigger_commands("savevehicle "..input)
 		util.toast("VEH: ".. vehname.. " Saved as ".. input)
 		goto end
@@ -763,7 +934,7 @@ local function savevehicleingarage(vehhandle, input)
 		if IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
 			local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
 			local seatofplayer = getseatofplayer(vehicleofped, players.user_ped())
-			SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
+			SET_PED_INTO_VEHICLE(players.user_ped(), handle, freeseat)
 			util.yield(20)
 			menu.trigger_commands("savevehicle "..input)
 			util.toast("VEH: ".. vehname.. " Saved as ".. input)
@@ -781,7 +952,7 @@ local function savevehicleingarage(vehhandle, input)
 				end
 			end
 		else
-			SET_PED_INTO_VEHICLE(players.user_ped(), vehhandle, freeseat)
+			SET_PED_INTO_VEHICLE(players.user_ped(), handle, freeseat)
 			util.yield(20)
 			menu.trigger_commands("savevehicle "..input)
 			util.toast("VEH: ".. vehname.. " Saved as ".. input)
@@ -821,7 +992,7 @@ end
 
 timer1 = 0
 
-local function getClosestVehicle(myPos)
+local function getClosestVehicle(myPos, getpointer)
 	local closestDist = 999999999999
 	local closestVeh = nil
 	for _, veh in pairs(entities.get_all_vehicles_as_pointers()) do--use pointers because handles take more time
@@ -833,7 +1004,11 @@ local function getClosestVehicle(myPos)
 	      end
     end
     if closestVeh ~= nil then
-        return entities.pointer_to_handle(closestVeh)
+		if getpointer then
+			return closestVeh
+		else
+        	return entities.pointer_to_handle(closestVeh)
+		end
     end
 end
 
@@ -859,10 +1034,10 @@ local function playerjoinmassge(pid)
 		textline = textline.. "Spieler Gejoint\n"
 		textline = textline.. playername.."   {"..rockstarid.."} / Land: "..languagesname
 		if ranklevel != 0 then
-			textline = textline.."\nLevel: "..ranklevel.."   "
+			textline = textline.."\nLevel: "..ranklevel
 		end
 		if money != 0 then
-			textline = textline.. "Geld: "..comma_value(money)
+			textline = textline.. "  Geld: "..comma_value(money)
 		end
 		if util.is_session_started() then
 			util.toast(textline, TOAST_ALL)
@@ -1087,6 +1262,78 @@ local function getHealth(ped)
 	}
 end
 
+function open_in_near_entitie(handle)
+	local ref
+	local entitietype
+	local searchcommand
+	local defaultdist
+	local isplayer = false
+	if IS_ENTITY_A_PED(handle) then
+		ref = Enearmenu.MainRefPeds
+		entitietype = "PEDS"
+		searchcommand = "ESearchnearpeds"
+		if handle == players.user_ped() then
+			util.toast("you cant find your self")
+			return
+		end
+		if IS_PED_A_PLAYER(handle) then
+			isplayer = true
+		end
+	elseif IS_ENTITY_A_VEHICLE(handle) then
+		ref = Enearmenu.MainRefVehicles
+		entitietype = "VEHICLES"
+		searchcommand = "ESearchnearveh"
+	elseif IS_ENTITY_AN_OBJECT(handle) then
+		if IS_OBJECT_A_PICKUP(handle) then
+			ref = Enearmenu.MainRefPickups
+			entitietype = "PICKUPS"
+			searchcommand = "ESearchnearpickups"
+		else
+			ref = Enearmenu.MainRefObjects
+			entitietype = "OBJECTS"
+			searchcommand = "ESearchnearobjects"
+		end
+	end
+	if not DOES_ENTITY_EXIST(handle) then
+		util.toast("Entitie not exist anymore")
+		return
+	end
+	defaultdist = menu.get_value(Enearmenu.maxDistnearentitys)
+	if not zzm.is_valid_entity(handle, true, entitietype) then
+		if not zzm.check_search(handle) then
+			menu.trigger_commands(searchcommand.." ")
+		end
+		if zzm.get_distance_from_entity(handle).dist >  nearentitieconfig.maxdist then
+			menu.set_value(Enearmenu.maxDistnearentitys, zzm.get_distance_from_entity(handle).dist + 100)
+		end
+		if isplayer and not nearentitieconfig.showplayers then
+			Enearmenu.showplayerstoggleentitys = true
+		end
+		if not IS_ENTITY_A_MISSION_ENTITY(handle) and Enearmenu.onlymissiontoggleentitys then
+			Enearmenu.onlymissiontoggleentitys = false
+		end
+		if GET_BLIP_FROM_ENTITY(handle) == 0 and Enearmenu.onlyblibstoggleentitys then
+			Enearmenu.onlyblibstoggleentitys = false
+		end
+	end
+	local entitiefound = false
+	menu.trigger_command(ref)
+	util.yield(300)
+	for _, handle1 in pairs(nearentitieconfig.handels) do
+		if handle1 == handle then
+			entitiefound = true
+			menu.trigger_command(nearentitieconfig.mainrefs[handle1])
+			break
+		end
+	end
+	if not entitiefound then
+		util.toast("Not found: "..zzm.get_maintextline(handle, entitietype))
+	end
+	if defaultdist != menu.get_value(Enearmenu.maxDistnearentitys) then
+		menu.set_value(Enearmenu.maxDistnearentitys, defaultdist)
+	end
+end
+
 local function getKD(pid)
     pid = pid or players.user()
     return math.floor(players.get_kd(pid) * 100) / 100	
@@ -1110,19 +1357,19 @@ local function getMoney(pid, shorten)
 end
 
 
-local weapons = util.get_weapons()
 local weaponHash = memory.alloc_int()
 local function getWeapon(ped)
 	GET_CURRENT_PED_WEAPON(ped, weaponHash, true)
 	local readWeaponHash = memory.read_int(weaponHash)
-	local weaponName
-	for _, wep in weapons do
+	local weapon = {}
+	for _, wep in allweapons do
 		if wep.hash == readWeaponHash then
-			weaponName = util.get_label_text(wep.label_key)
+			weapon.hash = wep.hash
+			weapon.name = util.get_label_text(wep.label_key)
 			break
 		end
 	end
-	return weaponName
+	return weapon
 end
 
 local function getSpeed(entity, onlyValue)
@@ -1239,6 +1486,23 @@ local function player(pid)
 			controlevehicleon = false
 		end
 	end)
+	menu.action(main, "Open Player ped", {}, "", function()
+		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+		if ped == players.user_ped() then
+			util.toast("you cant find your self")
+			return
+		end
+		open_in_near_entitie(ped)
+ 	end)
+	menu.action(main, "open player Vehicle", {}, "", function()
+		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
+		if not IS_PED_IN_ANY_VEHICLE(ped) then
+			util.toast("not in a vehicle")
+			return
+		end
+		local vehicleofped = GET_VEHICLE_PED_IS_IN(ped)
+		open_in_near_entitie(vehicleofped)
+ 	end)
     bozo = menu.list(main, "Notizen", {"Notizen"}, "")
 	anderes = menu.list(main, "anderes zeug", {"anderes"}, "")
 	orgthings = menu.list(main, "org zeug", {"orgthings"}, "wenn du im org bist wird nichts davon auf dich gemacht")
@@ -1923,14 +2187,12 @@ local function player(pid)
 	end]]
 end
 
---nearentitieconfig
-local zzm = {}
-
 players.on_join(player)
 players.dispatch_on_join()
 
 --local parents
 Self = menu.list(menu.my_root(), "Self zeug", {}, "")
+weapons = menu.list(menu.my_root(), "Weapons", {}, "")
 vehicle = menu.list(menu.my_root(), "Vehicle zeug", {}, "")
 Entitymanager = menu.list(menu.my_root(), "Entity Manager", {}, "")
 Entitymanagercleararea = menu.list(Entitymanager, "Clear Area", {}, "")
@@ -1945,7 +2207,19 @@ Entitymanagercontextmenu = menu.list(Entitymanager, "Context menu", {}, "")
 player_zeug = menu.list(menu.my_root(), "Lobby zeug", {}, "")
 --streamer = menu.list(player_zeug, "Streamer zeug", {}, "")
 Zeugforjob = menu.list(menu.my_root(), "Zeug für jobs/missions", {}, "")
-customselection = menu.list(menu.my_root(), "Custom Selection", {}, "")
+customselection = menu.list(menu.my_root(), "Custom Selection", {}, "", function()
+	local loadspheretoshow = true
+	util.create_tick_handler(function()
+		if not loadspheretoshow then
+			return false
+		end
+		if menu.is_focused(customselectionloadnearplayers) then
+			loadsphereninrangered(menu.get_value(customselectionloadnearplayers))
+		end
+	end)
+end, function(on_stop)
+	loadspheretoshow = false
+end)
 misc = menu.list(menu.my_root(), "Misc", {}, "")
 Menyoveh = menu.list(menu.my_root(), "Menyoo vehicle/maps spawn", {}, "only xml,ini files")
 
@@ -3142,60 +3416,7 @@ end, ESPpickupconfigtable.showownerpickup)
 ESPpickupconfigtable.showownerpickup = menu.get_value(ownertogglepickup)
 
 
-local seattable = {}
-local seatzaehlerofseats = 0
-
-local Enearmenu = {}
-
-local nearentitieconfig = {
-	handels = {},
-	mainrefs = {},
-	downrefs = {},
-	enabled = false,
-	currentmainref,
-	typeoflist,
-	searchofvehicles = "",
-	searchofpeds = "",
-	searchofobjects = "",
-	searchofpickups = "",
-	searchvalue = "",
-	isfocusedmenu = false,
-	stoplistloading = false,
-	loadonlypointer = true,
-
-	maxdist = 200,
-	maxtoloadfreeze = false,
-	maxtoload = 0,
-	maxtoloadall = 0,
-	maxtoloadvehicle = 0,
-	maxtoloadped = 0,
-	maxtoloadobject = 0,
-	maxtoloadpickup = 0,
-	boostvalue = 100,
-	switchsearch = false,
-	searchininfo = false,
-	onlymission = false,
-	showplayers = true,
-	showonlywithblib = false,
-	removeattached = false,
-	stoplistloadingsetting = true,
-	stoplistwhenpausemenuopen = true,
-	stoplistwhenmenucloed = true,
-	allentitiemenuopen = false,
-	allentitiemenuref,
-	generalinformation = true,
-	playerinfos = true,
-	vehicleinfos = true,
-	pednpcinfos = true,
-	objectinfos = true,
-	pickupinfos = true,
-
-	showdebuginfos = false,
-	showarsignal = true,
-	showline = true,
-	showbox = true,
-}
-
+--nearentitieconfig
 Enearmenu.MainRefVehicles = menu.list(Entitymanagernearentitys, "Vehicles", {}, "", function(on_click)
 	zzm.reset_nearentitie_settings()
 	nearentitieconfig.enabled = true
@@ -3313,6 +3534,22 @@ zzm.get_maintextline = function(handle, entitietype)
 	return mainnametextline
 end
 
+zzm.is_ped_in_range_and_ready = function(ped)
+	if ped == nil then
+		return false
+	end
+	if IS_PED_A_PLAYER(ped) then
+		return true
+	end
+	if not IS_ENTITY_ON_SCREEN(ped) then
+		return false
+	end
+	if zzm.get_distance_from_entity(ped).dist > 200 then
+		return false
+	end
+	return true
+end
+
 zzm.get_infotextline = function(handle, entitietype)
 	if not entitietype then
 		entitietype = nearentitieconfig.typeoflist
@@ -3358,31 +3595,54 @@ zzm.get_infotextline = function(handle, entitietype)
 			infotextline = infotextline.. "\nEngineHealth: ".. math.floor(GET_VEHICLE_ENGINE_HEALTH(handle))
 			infotextline = infotextline.. "\nBodyHealth: ".. math.floor(GET_VEHICLE_BODY_HEALTH(handle))
 			infotextline = infotextline..  "\nLock Status: "..tostring(tables.vehlockstatus[GET_VEHICLE_DOOR_LOCK_STATUS(handle)])
-			if nearentitieconfig.showplayers then
-				local passangersinveh = ""
-				local pedsinveh = getpedsinvehicle(handle)
-				if not IS_VEHICLE_SEAT_FREE(handle, -1, false) then
-					pedinveh = GET_PED_IN_VEHICLE_SEAT(handle, -1, true)
-					if IS_PED_A_PLAYER(pedinveh) then
-						local pidnameofp = players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(pedinveh))
-						infotextline = infotextline.. "\nDriver: ".. pidnameofp
+			local passangersinveh = ""
+			local pedsinveh = getpedsinvehicle(handle)
+			local lastpedsinveh = getlastpedsinvehicle(handle)
+			if table.size(pedsinveh) != 0 then
+				for _, ped in pairs(pedsinveh) do
+					if not zzm.is_ped_in_range_and_ready(ped) then continue end
+					if GET_PED_IN_VEHICLE_SEAT(handle, -1) == ped then
+						local drivername = ""
+						if IS_PED_A_PLAYER(ped) then
+							drivername = players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(ped))
+						else
+							drivername = "PED: "..getmodelnamebyhash(entities.get_model_hash(ped))
+						end
+						infotextline = infotextline.. "\nDriver: ".. drivername
+					else
+						if IS_PED_A_PLAYER(ped) then
+							passangersinveh = passangersinveh.. "\n"..players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(ped)) .. ", "
+						else
+							passangersinveh = passangersinveh.. "\nPED: "..getmodelnamebyhash(entities.get_model_hash(ped)) .. ", "
+						end
 					end
 				end
-				if not IS_VEHICLE_SEAT_FREE(handle, -1, false) or not IS_VEHICLE_SEAT_FREE(handle, 0, false) or not IS_VEHICLE_SEAT_FREE(handle, 1, false) then
-					if IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(handle, -1)) or IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(handle, 0)) or IS_PED_A_PLAYER(GET_PED_IN_VEHICLE_SEAT(handle, 1)) then
-						local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(handle)
-						for i = 0, maxPassengers do
-							 if not IS_VEHICLE_SEAT_FREE(handle, i, false) then
-								local vehPed = GET_PED_IN_VEHICLE_SEAT(handle, i)
-								if IS_PED_A_PLAYER(vehPed) then
-									passangersinveh = passangersinveh.. players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(vehPed)) .. ", "
-								end
-							end
-						 end
+			elseif table.size(lastpedsinveh) != 0 then
+				for _, pedtable in pairs(lastpedsinveh) do
+					local ped = pedtable.ped
+					if not zzm.is_ped_in_range_and_ready(ped) then continue end
+					if pedtable.seat == -1 then
+						local drivername = ""
+						if IS_PED_A_PLAYER(ped) then
+							drivername = players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(ped))
+						else
+							drivername = "PED: "..getmodelnamebyhash(entities.get_model_hash(ped))
+						end
+						infotextline = infotextline.. "\nLastDriver: ".. drivername
+					else
+						if IS_PED_A_PLAYER(ped) then
+							passangersinveh = passangersinveh.. "\nSeat: "..pedtable.seat.." "..players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(ped)) .. ", "
+						else
+							passangersinveh = passangersinveh.."\nSeat: "..pedtable.seat.." PED: "..getmodelnamebyhash(entities.get_model_hash(ped)) .. ", "
+						end
 					end
 				end
-				if string.len(passangersinveh) > 0 then
+			end
+			if string.len(passangersinveh) > 0 then
+				if table.size(pedsinveh) != 0 then
 					infotextline = infotextline.. "\nPassangers: ".. passangersinveh
+				else
+					infotextline = infotextline.. "\nLastPassangers: ".. passangersinveh
 				end
 			end
 		elseif entitietype == "PEDS" then
@@ -3425,7 +3685,12 @@ zzm.get_infotextline = function(handle, entitietype)
 				infotextline = infotextline.. "\nEnemie = "..isentitiyaenemie(handle)
 				infotextline = infotextline.. "\nHealth: ".. GET_ENTITY_HEALTH(handle)
 				infotextline = infotextline.. "\nArmour: ".. GET_PED_ARMOUR(handle)
-				infotextline = infotextline.. "\nWeapon out: "..IS_PED_ARMED(handle ,7)
+				weapon = getWeapon(handle)
+				if weapon.name then
+					infotextline = infotextline.. "\nWeapon: ".. weapon.name
+				else
+					infotextline = infotextline.. "\nWeapon: NONE"
+				end
 				if IS_PED_IN_ANY_VEHICLE(handle, false) then
 					infotextline = infotextline.. "\nVehicle: ".. getmodelnamebyhash(entities.get_model_hash(GET_VEHICLE_PED_IS_IN(handle)))
 				end
@@ -3593,8 +3858,8 @@ zzm.check_stop_loading_main_list = function()
 	if util.is_session_transition_active() then
 		return false
 	end
-	if nearentitieconfig.allentitiemenuopen then
-		return true
+	if nearentitieconfig.listhavetostoploading then
+		return false
 	end
 	if nearentitieconfig.stoplistloadingsetting and nearentitieconfig.stoplistloading then
 		return false
@@ -3617,6 +3882,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 	reflist.teleport = menu.list(datatable.ref, "Teleport", {}, datatable.infotextline)
 	reflist.friendly = menu.list(datatable.ref, "Friendly", {}, datatable.infotextline)
 	reflist.trolling = menu.list(datatable.ref, "Trolling", {}, datatable.infotextline)
+	reflist.position = menu.list(datatable.ref, "Position", {}, datatable.infotextline)
 	reflist.misc = menu.list(datatable.ref, "Misc", {}, datatable.infotextline)
 	if entitietype == "PLAYER" then
 		reflist.weapons = menu.attach_after(reflist.friendly, menu.list(menu.shadow_root(), "Weapons", {}, datatable.infotextline))
@@ -3890,30 +4156,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				return
 			end
 			local vehicleofped = GET_VEHICLE_PED_IS_IN(target.handle)
-			if not zzm.is_valid_entity(vehicleofped, true) then
-				if not zzm.check_search(vehicleofped) then
-					menu.trigger_commands("ESearchnearveh ")
-				end
-				if zzm.get_distance_from_entity(vehicleofped).dist >  nearentitieconfig.maxdist then
-					menu.set_value(Enearmenu.maxDistnearentitys, zzm.get_distance_from_entity(vehicleofped).dist + 100)
-				end
-				if IS_PED_A_PLAYER(target.handle) and not nearentitieconfig.showplayers then
-					Enearmenu.showplayerstoggleentitys = true
-				end
-			end
-			local entitiefound = false
-			menu.trigger_command(Enearmenu.MainRefVehicles)
-			util.yield(300)
-			for _, handle in pairs(nearentitieconfig.handels) do
-				if handle == vehicleofped then
-					entitiefound = true
-					menu.trigger_command(nearentitieconfig.mainrefs[handle])
-					break
-				end
-			end
-			if not entitiefound then
-				util.toast("Not found: "..zzm.get_maintextline(vehicleofped, "VEHICLES"))
-			end
+			open_in_near_entitie(vehicleofped)
 		end)
 
 		reflist.ORGmembersref = menu.list(datatable.ref, "Org Members", {}, datatable.infotextline, function(on_click)
@@ -3949,30 +4192,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 							menu.delete(target.extraref)
 							return
 						end
-						if not zzm.is_valid_entity(target.extrahandle, true, "PEDS") then
-							if not zzm.check_search(target.extrahandle) then
-								menu.trigger_commands("ESearchnearpeds ")
-							end
-							if zzm.get_distance_from_entity(target.extrahandle).dist >  nearentitieconfig.maxdist then
-								menu.set_value(Enearmenu.maxDistnearentitys, zzm.get_distance_from_entity(target.extrahandle).dist + 100)
-							end
-							if IS_PED_A_PLAYER(target.extrahandle) and not nearentitieconfig.showplayers then
-								Enearmenu.showplayerstoggleentitys = true
-							end
-						end
-						local entitiefound = false
-						menu.trigger_command(Enearmenu.MainRefPeds)
-						util.yield(300)
-						for _, handle in pairs(nearentitieconfig.handels) do
-							if handle == target.extrahandle then
-								entitiefound = true
-								menu.trigger_command(nearentitieconfig.mainrefs[handle])
-								break
-							end
-						end
-						if not entitiefound then
-							util.toast("Not found: "..zzm.get_maintextline(target.extrahandle, "PEDS"))
-						end
+						open_in_near_entitie(target.extrahandle)
 					end)
 				end
 			end
@@ -3984,6 +4204,12 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		entities.delete(target.handle)
 	end))
 	menu.action(reflist.teleport, "Teleport to Entitie", {}, datatable.infotextline, function()
+		local target = datatable
+		local entitypPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(target.handle, 0, 0, +2)
+		SET_ENTITY_AS_MISSION_ENTITY(target.handle)
+		SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entitypPos.x, entitypPos.y, entitypPos.z, false, false, false)
+	end)
+	menu.action(reflist.teleport, "Teleport to Entitie   (With Vehicle)", {}, datatable.infotextline, function()
 		local target = datatable
 		local entitypPos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(target.handle, 0, 0, +2)
 		local vehofpedm = GET_VEHICLE_PED_IS_IN(players.user_ped())
@@ -4021,7 +4247,121 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			util.toast("konnte keine kontrolle bekommen")
 		end
 	end)
+	menu.action(reflist.friendly, "Remove Sticky Bombs", {}, datatable.infotextline, function()
+		local target = datatable
+		if getcontrole(target.handle) then
+			REMOVE_ALL_STICKY_BOMBS_FROM_ENTITY(target.handle, 0)
+		else
+			util.toast("konnte keine kontrolle bekommen")
+		end
+	end)
 	menu.divider(reflist.friendly, "-----------")
+
+	menu.action(reflist.position, "Freeze ON", {}, datatable.infotextline, function()
+		local target = datatable
+		if getcontrole(target.handle) then
+			FREEZE_ENTITY_POSITION(target.handle, true)
+		else
+			util.toast("konnte keine kontrolle bekommen")
+		end
+	end)
+	menu.action(reflist.position, "Freeze OFF", {}, datatable.infotextline, function()
+		local target = datatable
+		if getcontrole(target.handle) then
+			FREEZE_ENTITY_POSITION(target.handle, false)
+		else
+			util.toast("konnte keine kontrolle bekommen")
+		end
+	end)
+
+	reflist.position_dividercoords = menu.divider(reflist.position, "COORDS")
+	reflist.position_x = menu.slider(reflist.position, "Set X", {"setcoordsX"..datatable.allmaininfo.modelname}, "", -10000, 10000, 0, 1, function(value)
+	end)
+	reflist.position_y = menu.slider(reflist.position, "Set Y", {"setcoordsY"..datatable.allmaininfo.modelname}, "", -10000, 10000, 0, 1, function(value)
+	end)
+	reflist.position_z = menu.slider(reflist.position, "Set Z", {"setcoordsZ"..datatable.allmaininfo.modelname}, "", -10000, 10000, 0, 1, function(value)
+	end)
+
+	menu.textslider_stateful(reflist.position, "Apply", {}, "", {"ALL", "X", "Y", "Z"}, function(index)
+		local target = datatable
+		target.position = GET_ENTITY_COORDS(target.handle)
+		target.setposition = v3.new(menu.get_value(reflist.position_x), menu.get_value(reflist.position_y), menu.get_value(reflist.position_z))
+		if not getcontrole(target.handle) then
+			return
+		end
+		if index == 1 then
+			SET_ENTITY_COORDS_NO_OFFSET(target.handle, target.setposition.x, target.setposition.y, target.setposition.z, false, false, false)
+		elseif index == 2 then
+			SET_ENTITY_COORDS_NO_OFFSET(target.handle, target.setposition.x, target.position.y, target.position.z, false, false, false)
+		elseif index == 3 then
+			SET_ENTITY_COORDS_NO_OFFSET(target.handle, target.position.x, target.setposition.y, target.position.z, false, false, false)
+		elseif index == 4 then
+			SET_ENTITY_COORDS_NO_OFFSET(target.handle, target.position.x, target.position.y, target.setposition.z, false, false, false)
+		end
+	end)
+
+	menu.divider(reflist.position, "OFFSET")
+	menu.click_slider(reflist.position, "X: Left / Right", {"setoffsetcoordsX"..datatable.allmaininfo.modelname}, "Extra info: press to apply", -100, 100, 0, 1, function(value)
+		local target = datatable
+		if getcontrole(target.handle) then
+			target.position = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(target.handle, value, 0, 0)
+			SET_ENTITY_COORDS_NO_OFFSET(target.handle, target.position.x, target.position.y, target.position.z, false, false, false)
+		end
+	end)
+	menu.click_slider(reflist.position, "Y: Foward / Back", {"setoffsetcoordsY"..datatable.allmaininfo.modelname}, "Extra info: press to apply", -100, 100, 0, 1, function(value)
+		local target = datatable
+		if getcontrole(target.handle) then
+			target.position = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(target.handle, 0, value, 0)
+			SET_ENTITY_COORDS_NO_OFFSET(target.handle, target.position.x, target.position.y, target.position.z, false, false, false)
+		end
+	end)
+	menu.click_slider(reflist.position, "Z: Up / Down", {"setoffsetcoordsZ"..datatable.allmaininfo.modelname}, "Extra info: press to apply", -100, 100, 0, 1, function(value)
+		local target = datatable
+		if getcontrole(target.handle) then
+			target.position = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(target.handle, 0, 0, value)
+			SET_ENTITY_COORDS_NO_OFFSET(target.handle, target.position.x, target.position.y, target.position.z, false, false, false)
+		end
+	end)
+
+	menu.divider(reflist.position, "ROTATION")
+	menu.slider(reflist.position, "Set pitch", {"setrotationX"..datatable.allmaininfo.modelname}, "", -180, 180, 0, 1, function(value)
+		local target = datatable
+		if getcontrole(target.handle) then
+			target.rotation =  GET_ENTITY_ROTATION(target.handle, 2)
+			SET_ENTITY_ROTATION(target.handle, value, target.rotation.y, target.rotation.z, 2, true)
+		end
+	end)
+	menu.slider(reflist.position, "Set roll", {"setrotationY"..datatable.allmaininfo.modelname}, "", -180, 180, 0, 1, function(value)
+		local target = datatable
+		if getcontrole(target.handle) then
+			target.rotation =  GET_ENTITY_ROTATION(target.handle, 2)
+			SET_ENTITY_ROTATION(target.handle, target.rotation.x, value, target.rotation.z, 2, true)
+		end
+	end)
+	menu.slider(reflist.position, "Set yaw", {"setrotationZ"..datatable.allmaininfo.modelname}, "", -180, 180, 0, 1, function(value)
+		local target = datatable
+		if getcontrole(target.handle) then
+			target.rotation =  GET_ENTITY_ROTATION(target.handle, 2)
+			SET_ENTITY_ROTATION(target.handle, target.rotation.y, target.rotation.z, value, 2, true)
+		end
+	end)
+
+	menu.divider(reflist.position, "------------")
+
+	menu.attach_before(reflist.position_dividercoords, menu.action(menu.shadow_root(), "Pre load my coords", {}, "", function()
+		local target = datatable
+		target.myposition = players.get_position(players.user())
+		menu.set_value(reflist.position_x, roundDecimals(target.myposition.x, 0))
+		menu.set_value(reflist.position_y, roundDecimals(target.myposition.y, 0))
+		menu.set_value(reflist.position_z, roundDecimals(target.myposition.z, 0))
+	end))
+	menu.attach_before(reflist.position_dividercoords, menu.action(menu.shadow_root(), "Pre load entitie coords", {}, "", function()
+		local target = datatable
+		target.position = GET_ENTITY_COORDS(target.handle)
+		menu.set_value(reflist.position_x, roundDecimals(target.position.x, 0))
+		menu.set_value(reflist.position_y, roundDecimals(target.position.y, 0))
+		menu.set_value(reflist.position_z, roundDecimals(target.position.z, 0))
+	end))
 
 	menu.action(reflist.misc, "Set Mission Entitiy", {}, datatable.infotextline, function()
 		local target = datatable
@@ -4033,10 +4373,8 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 	end)
 	menu.action(reflist.misc, "Set Entity as no longer needed", {}, datatable.infotextline, function()
 		local target = datatable
-		local ent_ptr = memory.alloc_int()
-		memory.write_int(ent_ptr, target.handle)
 		if getcontrole(target.handle) then
-			SET_ENTITY_AS_NO_LONGER_NEEDED(ent_ptr)
+			SET_ENTITY_AS_NO_LONGER_NEED(target.handle)
 		else
 			util.toast("konnte keine kontrolle bekommen")
 		end
@@ -4054,6 +4392,25 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		end
 	end)
 	menu.divider(reflist.misc, "-----------")
+	menu.action(reflist.misc, "Set Blip for entitie", {}, datatable.infotextline, function()
+		local target = datatable
+		if GET_BLIP_FROM_ENTITY(target.handle) != 0 then
+			util.toast("entitie already has a BLIP")
+			return
+		end
+		blip = ADD_BLIP_FOR_ENTITY(target.handle)
+		SET_BLIP_AS_FRIENDLY(blip, true)
+		SET_BLIP_SPRITE(blip, nearentitieconfig.blipsprite)
+	end)
+	menu.action(reflist.misc, "Remove Blip from entitie", {}, datatable.infotextline, function()
+		local target = datatable
+		blip = GET_BLIP_FROM_ENTITY(target.handle)
+		if blip == 0 then
+			util.toast("No Blip found")
+			return
+		end
+		util.remove_blip(blip)
+	end)
 	if entitietype == "VEHICLES" then
 		reflist.doorcontrole = menu.list(datatable.ref, "Door Controle", {}, "Extra info: If the door is not on the vehicle anymore you cant do something with it", function(on_click)
 			local reflist = reflist
@@ -4122,6 +4479,14 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 						SET_VEHICLE_DOOR_CONTROL(target.handle, doorid, 100, value)
 					end
 				end)
+			end
+		end, function(on_back)
+			if table.size(menu.get_children(reflist.doorcontrole)) > 3 then
+				for _, ref in pairs(menu.get_children(reflist.doorcontrole)) do
+					if _ > 3 then
+						menu.delete(ref)
+					end
+				end
 			end
 		end)
 		reflist.doorcontroleall = menu.list(reflist.doorcontrole, "ALL Doors", {}, "", function()
@@ -4272,8 +4637,20 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 					end
 				end)
 			end
+		end,	function(on_back)
+			if table.size(menu.get_children(reflist.windowcontrole)) != 2 then
+				for _, ref in pairs(menu.get_children(reflist.windowcontrole)) do
+					if _ > 2 then
+						menu.delete(ref)
+					end
+				end
+			end
 		end)
-		reflist.windowcontroleall = menu.list(reflist.windowcontrole, "ALL windows", {}, "")
+		reflist.windowcontroleall = menu.list(reflist.windowcontrole, "ALL windows", {}, "", function()
+		end,	function(on_back)
+			menu.trigger_command(reflist.windowcontrole)
+		end)
+
 		menu.action(reflist.windowcontroleall, "Roll up", {}, "", function()
 			local target = datatable
 			if getcontrole(target.handle) then
@@ -4316,28 +4693,28 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		end)
 		menu.divider(reflist.windowcontrole, "Windows:")
 
-		reflist.setsomestats = menu.list(datatable.ref, "Set Some Stats", {}, "", function(on_click)
+		reflist.setsomestatsveh = menu.list(datatable.ref, "Set Some Stats", {}, "", function(on_click)
 			local target = datatable
 			local reflist = reflist
-			if table.size(menu.get_children(reflist.setsomestats)) != 0 then
-				for _, ref in pairs(menu.get_children(reflist.setsomestats)) do
+			if table.size(menu.get_children(reflist.setsomestatsveh)) != 0 then
+				for _, ref in pairs(menu.get_children(reflist.setsomestatsveh)) do
 					menu.delete(ref)
 				end
 			end
 			engineheal = roundDecimals(GET_VEHICLE_ENGINE_HEALTH(target.handle), 0)
 			bodyhealth = roundDecimals(GET_VEHICLE_BODY_HEALTH(target.handle), 0)
 			numberplatetext = GET_VEHICLE_NUMBER_PLATE_TEXT(target.handle)
-			menu.slider(reflist.setsomestats, "Set Engine Health", {"setenginehealth"..datatable.allmaininfo.modelname}, "",-4000, 1000, engineheal, 10, function(value)
+			menu.slider(reflist.setsomestatsveh, "Set Engine Health", {"setenginehealth"..datatable.allmaininfo.modelname}, "",-4000, 1000, engineheal, 10, function(value)
 				if getcontrole(target.handle) then
 					SET_VEHICLE_ENGINE_HEALTH(target.handle, value)
 				end
 			end)
-			menu.slider(reflist.setsomestats, "Set Body Health", {"setbodyhealth"..datatable.allmaininfo.modelname}, "", 0, 1000, bodyhealth, 10, function(value)
+			menu.slider(reflist.setsomestatsveh, "Set Body Health", {"setbodyhealth"..datatable.allmaininfo.modelname}, "", 0, 1000, bodyhealth, 10, function(value)
 				if getcontrole(target.handle) then
 					SET_VEHICLE_BODY_HEALTH(target.handle, value)
 				end
 			end)
-			target.setnumberplateref = menu.text_input(reflist.setsomestats, "Set Number Plate", {"setnumberplate"..datatable.allmaininfo.modelname}, "Extra info: MAX 8 letters", function(text)
+			target.setnumberplateref = menu.text_input(reflist.setsomestatsveh, "Set Number Plate", {"setnumberplate"..datatable.allmaininfo.modelname}, "Extra info: MAX 8 letters", function(text)
 				if string.len(text) > 8 then
 					util.toast("too much letter text got trimmed")
 					text = string.sub(text, 1,8)
@@ -4348,6 +4725,15 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				end
 			end)
 			menu.set_value(target.setnumberplateref, numberplatetext)
+			menu.textslider_stateful(reflist.setsomestatsveh, "Set engine state", {}, datatable.infotextline, {"Engine ON", "Engine OFF"}, function(index)
+				if getcontrole(target.handle) then
+					if index == 1 then
+						SET_VEHICLE_ENGINE_ON(target.handle, true, true, true)
+					else
+						SET_VEHICLE_ENGINE_ON(target.handle, false, true, true)
+					end
+				end
+			end)
 		end)
 
 		menu.divider(datatable.ref, "-----------")
@@ -4365,39 +4751,16 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				target.extrahandle = ped
 				target.extraref = menu.action(reflist.pedsinveh, target.extramainnametextline, {}, "Extra info: Open ped in list", function()
 					local target = target
-					if target.extrahandle == players.user_ped() then
-						util.toast("you cant find your self")
-						return
-					end
 					if not DOES_ENTITY_EXIST(target.extrahandle) then
 						util.toast("Entitie not exist anymore")
 						menu.delete(target.extraref)
 						return
 					end
-					if not zzm.is_valid_entity(target.extrahandle, true, "PEDS") then
-						if not zzm.check_search(target.extrahandle) then
-							menu.trigger_commands("ESearchnearpeds ")
-						end
-						if zzm.get_distance_from_entity(target.extrahandle).dist >  nearentitieconfig.maxdist then
-							menu.set_value(Enearmenu.maxDistnearentitys, zzm.get_distance_from_entity(target.extrahandle).dist + 100)
-						end
-						if IS_PED_A_PLAYER(target.extrahandle) and not nearentitieconfig.showplayers then
-							Enearmenu.showplayerstoggleentitys = true
-						end
+					if target.extrahandle == players.user_ped() then
+						util.toast("you cant find your self")
+						return
 					end
-					local entitiefound = false
-					menu.trigger_command(Enearmenu.MainRefPeds)
-					util.yield(300)
-					for _, handle in pairs(nearentitieconfig.handels) do
-						if handle == target.extrahandle then
-							entitiefound = true
-							menu.trigger_command(nearentitieconfig.mainrefs[handle])
-							break
-						end
-					end
-					if not entitiefound then
-						util.toast("Not found: "..zzm.get_maintextline(target.extrahandle, "PEDS"))
-					end
+					open_in_near_entitie(target.extrahandle)
 				end)
 			end
 		end)
@@ -4641,18 +5004,6 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		end)
 
 		--Misc
-		menu.textslider_stateful(reflist.misc, "Toggle engine", {}, datatable.infotextline, {"Engine ON", "Engine OFF"}, function(index)
-			local target = datatable
-			if getcontrole(target.handle) then
-				if index == 1 then
-					SET_VEHICLE_ENGINE_ON(target.handle, true, true, true)
-				else
-					SET_VEHICLE_ENGINE_ON(target.handle, false, true, true)
-				end
-			else
-
-			end
-		end)
 		menu.action(reflist.misc, "Copy vehicle", {}, datatable.infotextline, function()
 			local target = datatable
 			local mypos = players.get_position(players.user())
@@ -4677,6 +5028,110 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		end)
 		menu.divider(reflist.taskthings, "-----------")
 
+		reflist.setsomestatsped = menu.list(datatable.ref, "Set Some Stats", {}, "", function(on_click)
+			local target = datatable
+			local reflist = reflist
+			if table.size(menu.get_children(reflist.setsomestatsped)) != 0 then
+				for _, ref in pairs(menu.get_children(reflist.setsomestatsped)) do
+					menu.delete(ref)
+				end
+			end
+			pedhealth = GET_ENTITY_HEALTH(target.handle)
+			pedarmor = GET_PED_ARMOUR(target.handle)
+			maxhealth = GET_PED_MAX_HEALTH(target.handle)
+			accuracy = GET_PED_ACCURACY(target.handle)
+			pedcombatrange = GET_PED_COMBAT_RANGE(target.handle)
+			menu.slider(reflist.setsomestatsped, "Set Health", {"setpedhealth"..datatable.allmaininfo.modelname}, "", 0, 10000, pedhealth, 5, function(value)
+				if getcontrole(target.handle) then
+					SET_ENTITY_HEALTH(target.handle, value, 0)
+				end
+			end)
+			menu.slider(reflist.setsomestatsped, "Set Armor", {"setarmor"..datatable.allmaininfo.modelname}, "", 0, 100, pedarmor, 1, function(value)
+				if getcontrole(target.handle) then
+					SET_PED_ARMOUR(target.handle, value)
+				end
+			end)
+			menu.slider(reflist.setsomestatsped, "Set Max health", {"setmaxhealth"..datatable.allmaininfo.modelname}, "", 0, 10000, maxhealth, 5, function(value)
+				if getcontrole(target.handle) then
+					SET_PED_MAX_HEALTH(target.handle, value)
+				end
+			end)
+			menu.slider(reflist.setsomestatsped, "Set Accuracy", {"setaccuracy"..datatable.allmaininfo.modelname}, "", 0, 100, accuracy, 1, function(value)
+				if getcontrole(target.handle) then
+					SET_PED_ACCURACY(target.handle, value)
+				end
+			end)
+			menu.slider(reflist.setsomestatsped, "Set Shoot Rate", {"setshootrate"..datatable.allmaininfo.modelname}, "", 0, 1000, 100, 10, function(value)
+				if getcontrole(target.handle) then
+					SET_PED_SHOOT_RATE(target.handle, value)
+				end
+			end)
+			menu.list_select(reflist.setsomestatsped, "Set ped combat range", {}, "", tables.pedcombatrange, pedcombatrange, function(value)
+				if getcontrole(target.handle) then
+					SET_PED_COMBAT_RANGE(target.handle, value)
+				end
+			end)
+			menu.action(reflist.setsomestatsped, "Give Random weapon", {}, "", function()
+				if getcontrole(target.handle) then
+					REMOVE_ALL_PED_WEAPONS(target.handle, false)
+				 	weaponname = give_random_weapon_ped(target.handle)
+					util.toast(weaponname)
+				end
+			end)
+			reflist.givewepallselect = menu.list(reflist.setsomestatsped, "Give Selected weapon", {}, "", function()
+				local target = datatable
+				local reflist = reflist
+				if table.size(menu.get_children(reflist.givewepallselect)) != 0 then
+					for _, ref in pairs(menu.get_children(reflist.givewepallselect)) do
+						menu.delete(ref)
+					end
+				end
+				local cur_category
+				local cur_list
+				local a = {}
+				for allweapons as weapon do
+					if cur_category ~= weapon.category then
+						cur_category = weapon.category
+						cur_list = reflist.givewepallselect:list(cur_category)
+					end
+					local weapcat = util.get_label_text(weapon.label_key)
+					cur_list:action(weapcat, {}, "", function()
+						GIVE_WEAPON_TO_PED(target.handle, weapon.hash, 9999, false, true)
+					end)
+				end
+			end, function(on_back)
+				if table.size(menu.get_children(reflist.givewepallselect)) != 0 then
+					for _, ref in pairs(menu.get_children(reflist.givewepallselect)) do
+						menu.delete(ref)
+					end
+				end
+			end)
+			reflist.setcombatattributes = menu.list(reflist.setsomestatsped, "Set Combat Attributes", {}, "", function()
+				local target = datatable
+				local reflist = reflist
+				if table.size(menu.get_children(reflist.setcombatattributes)) != 0 then
+					for _, ref in pairs(menu.get_children(reflist.setcombatattributes)) do
+						menu.delete(ref)
+					end
+				end
+				for attributesid, attributesname in pairs(tables.attributes) do
+					menu.textslider_stateful(reflist.setcombatattributes, attributesname, {}, "", {"TRUE", "FALSE"}, function(index)
+						if index == 1 then
+							SET_PED_COMBAT_ATTRIBUTES(target.handle, attributesid, true)
+						else
+							SET_PED_COMBAT_ATTRIBUTES(target.handle, attributesid, false)
+						end
+					end)
+				end
+			end, function(on_back)
+				if table.size(menu.get_children(reflist.setcombatattributes)) != 0 then
+					for _, ref in pairs(menu.get_children(reflist.setcombatattributes)) do
+						menu.delete(ref)
+					end
+				end
+			end)
+		end)
+
 		menu.divider(datatable.ref, "-----------")
 		menu.action(datatable.ref, "Vehicle of ped", {}, datatable.infotextline, function()
 			local reflist = reflist
@@ -4686,27 +5141,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				return
 			end
 			local vehicleofped = GET_VEHICLE_PED_IS_IN(target.handle)
-			if not zzm.is_valid_entity(vehicleofped, true, "VEHICLES") then
-				if not zzm.check_search(vehicleofped) then
-					menu.trigger_commands("ESearchnearveh ")
-				end
-				if zzm.get_distance_from_entity(vehicleofped).dist >  nearentitieconfig.maxdist then
-					menu.set_value(Enearmenu.maxDistnearentitys, zzm.get_distance_from_entity(vehicleofped).dist + 100)
-				end
-			end
-			local entitiefound = false
-			menu.trigger_command(Enearmenu.MainRefVehicles)
-			util.yield(300)
-			for _, handle in pairs(nearentitieconfig.handels) do
-				if handle == vehicleofped then
-					entitiefound = true
-					menu.trigger_command(nearentitieconfig.mainrefs[handle])
-					break
-				end
-			end
-			if not entitiefound then
-				util.toast("Not found: "..zzm.get_maintextline(vehicleofped, "VEHICLES"))
-			end
+			open_in_near_entitie(vehicleofped)
 		end)
 
 		--Trolling
@@ -4801,10 +5236,19 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		--Misc
 		menu.action(reflist.misc, "Clone ped", {}, "Extra info: The ped will not do anything like walking arround", function()
 			local target = datatable
+			target.ismission = IS_ENTITY_A_MISSION_ENTITY(target.handle)
 			local positon = GET_ENTITY_COORDS(target.handle)
-			SET_ENTITY_AS_MISSION_ENTITY(target.handle)
+			if not target.ismission then
+				getcontrole(target.handle)
+				SET_ENTITY_AS_MISSION_ENTITY(target.handle)
+			end
 			local clonedped = CLONE_PED(target.handle, true, false, true)
-			CLEAR_PED_TASKS_IMMEDIATELY(target.handle)
+			SET_ENTITY_AS_NO_LONGER_NEED(clonedped)
+			SET_ENTITY_AS_NO_LONGER_NEED(target.handle)
+			if target.ismission then
+				SET_ENTITY_AS_MISSION_ENTITY(target.handle)
+				SET_ENTITY_AS_MISSION_ENTITY(clonedped)
+			end
 		end)
 		menu.action(reflist.misc, "Geld menge dabei", {}, datatable.infotextline, function()
 			local target = datatable
@@ -4817,22 +5261,6 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 	elseif entitietype == "OBJECTS" or entitietype == "PICKUPS" then
 
 	end
-	menu.action(reflist.trolling, "Freeze ON", {}, datatable.infotextline, function()
-		local target = datatable
-		if getcontrole(target.handle) then
-			FREEZE_ENTITY_POSITION(target.handle, true)
-		else
-			util.toast("konnte keine kontrolle bekommen")
-		end
-	end)
-	menu.action(reflist.trolling, "Freeze OFF", {}, datatable.infotextline, function()
-		local target = datatable
-		if getcontrole(target.handle) then
-			FREEZE_ENTITY_POSITION(target.handle, false)
-		else
-			util.toast("konnte keine kontrolle bekommen")
-		end
-	end)
 end
 
 zzm.create_all_entities_actions = function(ref)
@@ -4852,6 +5280,7 @@ zzm.create_all_entities_actions = function(ref)
 	if nearentitieconfig.typeoflist != "VEHICLES" then
 		menu.action(reflist.teleport, "Teleport to me", {}, "", function()
 			for _, handle in pairs(nearentitieconfig.handels) do
+				util.yield(20)
 				local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +2, 0)
 				if getcontrole(handle) then
 					SET_ENTITY_COORDS_NO_OFFSET(handle, mypos.x, mypos.y, mypos.z, false, false, false)
@@ -4914,10 +5343,8 @@ zzm.create_all_entities_actions = function(ref)
 	end)
 	menu.action(reflist.misc, "Set Entitie as no longer needed", {}, "setzt das Object einfach auf ein normal enitity das despawned wenn du weg gehst", function()
 		for _, handle in pairs(nearentitieconfig.handels) do
-			local ent_ptr = memory.alloc_int()
-			memory.write_int(ent_ptr, handle)
 			if getcontrole(handle) then
-				SET_ENTITY_AS_NO_LONGER_NEEDED(ent_ptr)
+				SET_ENTITY_AS_NO_LONGER_NEED(handle)
 			else
 				util.toast("konnte keine kontrolle bekommen")
 			end
@@ -5196,6 +5623,7 @@ zzm.create_all_entities_actions = function(ref)
 			--vehicle teleport
 			menu.action(reflist.teleport, "Teleport to me", {}, "", function()
 				for _, handle in pairs(nearentitieconfig.handels) do
+					util.yield(20)
 					local ent_ptr = memory.alloc_int()
 					memory.write_int(ent_ptr, handle)
 					local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +6, 0)
@@ -5212,6 +5640,7 @@ zzm.create_all_entities_actions = function(ref)
 			--vehicle trolling
 			menu.action(reflist.trolling, "Explode", {}, "", function()
 				for _, handle in pairs(nearentitieconfig.handels) do
+					util.yield(30)
 					local ePos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(handle, 0, 0, 0)
 					if ePos.x == 0 or ePos.y == 0 then
 						goto end
@@ -5236,6 +5665,7 @@ zzm.create_all_entities_actions = function(ref)
 			end)
 			menu.textslider_stateful(reflist.trolling, "Boost", {}, "", {"Forward", "Right", "Left","Up","Down", "Back"}, function(index)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					util.yield(20)
 					if index == 1 then
 						if getcontrole(handle) then
 							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, nearentitieconfig.boostvalue, 0.0, true, true, true, true)
@@ -5326,6 +5756,57 @@ zzm.create_all_entities_actions = function(ref)
 					end
 				end
 			end)
+			menu.text_input(reflist.misc, "Save vehicle / adds number to it", {"Ensaveallveh"}, "", function(input)
+				local numbertoadd = 0
+				local mypos = players.get_position(players.user())
+				local wasinveh = IS_PED_IN_ANY_VEHICLE(players.user_ped())
+				local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
+				local seatofplayer = getseatofplayer(vehicleofped, players.user_ped())
+				for _, handle in pairs(nearentitieconfig.handels) do
+					local modelname = getmodelnamebyhash(entities.get_model_hash(handle))
+					nearentitieconfig.listhavetostoploading = true
+					freeseat = getfreevehseat(handle)
+					if GET_VEHICLE_PED_IS_IN(players.user_ped()) == handle then
+						numbertoadd += 1
+						menu.trigger_commands("savevehicle "..input.." ".. numbertoadd)
+						util.toast("VEH: ".. modelname.. " Saved as ".. input.." ".. numbertoadd)
+						goto end
+					end
+						if freeseat then
+							SET_PED_INTO_VEHICLE(players.user_ped(), handle, freeseat)
+							util.yield(20)
+							numbertoadd += 1
+							menu.trigger_commands("savevehicle "..input.." ".. numbertoadd)
+							util.toast("VEH: ".. modelname.. " Saved as ".. input.." ".. numbertoadd)
+							util.yield(10)
+						else
+							util.toast(modelname.. " Ist voll es wird übersprungen")
+						end
+					::end::
+				end
+				nearentitieconfig.listhavetostoploading = false
+				if wasinveh then
+					if DOES_ENTITY_EXIST(vehicleofped) then
+						if vehicleofped == GET_VEHICLE_PED_IS_IN(players.user_ped()) then
+							goto stopprocess
+						end
+						if IS_VEHICLE_SEAT_FREE(vehicleofped, seatofplayer, false) then
+							SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, seatofplayer)
+						else
+							getfreesetincar = getfreevehseat(vehicleofped)
+							if getfreesetincar then
+								SET_PED_INTO_VEHICLE(players.user_ped(), vehicleofped, getfreesetincar)
+							else
+								SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
+							end
+						end
+					end
+				else
+					SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
+				end
+				::stopprocess::
+				menu.set_value(menu.ref_by_command_name("Ensaveallveh"), "")
+			end)
 		elseif nearentitieconfig.typeoflist == "PEDS" then
 			--ped trolling
 			menu.textslider_stateful(reflist.trolling, "Boost", {}, "", {"Forward", "Right", "Left","Up","Down", "Back"}, function(index)
@@ -5359,9 +5840,10 @@ zzm.create_all_entities_actions = function(ref)
 			end)
 			menu.action(reflist.trolling, "Explode", {}, "", function()
 				for _, handle in pairs(nearentitieconfig.handels) do
+					util.yield(30)
 					local ePos = GET_ENTITY_COORDS(handle)
 					if IS_PED_IN_ANY_VEHICLE(handle) then CLEAR_PED_TASKS_IMMEDIATELY(handle) end
-						ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 100, true, false, 0.0, false)
+						ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 1.0, true, false, 0.0, false)
 						if not IS_PED_A_PLAYER(handle) and entities.request_control(handle) then
 							SET_ENTITY_HEALTH(handle, 0, 0)
 							FORCE_PED_MOTION_STATE(handle, 0x0DBB071C, 0,0,0)
@@ -5456,7 +5938,7 @@ Enearmenu.searchVehicle = menu.text_input(Enearmenu.MainRefVehicles, "Search", {
 	end
 	menu.set_help_text(Enearmenu.searchVehicle ,"Last Input: "..input)
 	if string.len(input) > 0 then
-		menu.set_menu_name(Enearmenu.searchVehicle ,"Search Aktive")
+		menu.set_menu_name(Enearmenu.searchVehicle ,"Search Aktive: ".. input)
 	else
 		menu.set_menu_name(Enearmenu.searchVehicle ,"Search")
 	end
@@ -5469,7 +5951,7 @@ Enearmenu.searchPeds = menu.text_input(Enearmenu.MainRefPeds, "Search", {"ESearc
 	end
 	menu.set_help_text(Enearmenu.searchPeds ,"Last Input: "..input)
 	if string.len(input) > 0 then
-		menu.set_menu_name(Enearmenu.searchPeds ,"Search Aktive")
+		menu.set_menu_name(Enearmenu.searchPeds ,"Search Aktive: ".. input)
 	else
 		menu.set_menu_name(Enearmenu.searchPeds ,"Search")
 	end
@@ -5482,7 +5964,7 @@ Enearmenu.searchObject = menu.text_input(Enearmenu.MainRefObjects, "Search", {"E
 	end
 	menu.set_help_text(Enearmenu.searchObject ,"Last Input: "..input)
 	if string.len(input) > 0 then
-		menu.set_menu_name(Enearmenu.searchObject ,"Search Aktive")
+		menu.set_menu_name(Enearmenu.searchObject ,"Search Aktive: ".. input)
 	else
 		menu.set_menu_name(Enearmenu.searchObject ,"Search")
 	end
@@ -5495,7 +5977,7 @@ Enearmenu.searchPickup = menu.text_input(Enearmenu.MainRefPickups, "Search", {"E
 	end
 	menu.set_help_text(Enearmenu.searchPickup ,"Last Input: "..input)
 	if string.len(input) > 0 then
-		menu.set_menu_name(Enearmenu.searchPickup ,"Search Aktive")
+		menu.set_menu_name(Enearmenu.searchPickup ,"Search Aktive: ".. input)
 	else
 		menu.set_menu_name(Enearmenu.searchPickup ,"Search")
 	end
@@ -5578,15 +6060,16 @@ function aktivenearentitys()
 		entitystoload = zzm.get_max_to_load_entities(entitystoload)
 	end
 	for _, entitiepointer in pairs(entitystoload) do
+		local target = {}
 		if type(entitiepointer) == "table" then
 			entitiepointer = entitiepointer.pointer
 		end
-		if zzm.get_distance_from_entity(false,entitiepointer).dist > nearentitieconfig.maxdist then
+		target.pointer = entitiepointer
+		target.positions = zzm.get_distance_from_entity(false, target.pointer)
+		if target.positions.dist > nearentitieconfig.maxdist then
 			goto end
 		end
-		local target = {}
-		target.handle = entities.pointer_to_handle(entitiepointer)
-		SET_GAMEPLAY_CAM_IGNORE_ENTITY_COLLISION_THIS_UPDATE(target.handle)
+		target.handle = entities.pointer_to_handle(target.pointer)
 		if nearentitieconfig.maxtoload == 0 and not zzm.is_valid_entity(target.handle) then
 			RELEASE_SCRIPT_HANDLE(target.handle)
 			goto end
@@ -5599,15 +6082,13 @@ function aktivenearentitys()
 				target.isplayer = true
 			end
 		end
-		target.pointer = entitiepointer
-		target.infotextline = zzm.get_infotextline(target.handle)
+		target.infotextline = "Handle: "..target.handle
 		target.mainnametextline = zzm.get_maintextline(target.handle)
-		target.positions = zzm.get_distance_from_entity(target.handle)
 		target.allmaininfo = zzm.get_info_about_entity(target.handle)
 		target.ref = nearentitieconfig.mainrefs[target.handle]
 		if not table.contains(nearentitieconfig.handels, target.handle) and zzm.check_search(target.handle) and zzm.check_max_to_load() then
 			table.insert(nearentitieconfig.handels, target.handle)
-			nearentitieconfig.mainrefs[target.handle] = menu.list(nearentitieconfig.currentmainref, target.mainnametextline, {}, target.infotextline, function(on_click)
+			nearentitieconfig.mainrefs[target.handle] =menu.list(nearentitieconfig.currentmainref, target.mainnametextline, {}, target.infotextline, function(on_click)
 				local target = target
 				target.ref = nearentitieconfig.mainrefs[target.handle]
 				local listofref = menu.get_children(target.ref)
@@ -5679,7 +6160,7 @@ function aktivenearentitys()
 			if target.ref != nil and menu.is_ref_valid(target.ref) then
 				menu.set_menu_name(target.ref, target.mainnametextline)
 				if menu.is_focused(target.ref) then
-					menu.set_help_text(target.ref, target.infotextline)
+					menu.set_help_text(target.ref, zzm.get_infotextline(target.handle))
 					zzm.load_visibles_on_screen(target.handle, target.positions)
 				end
 			end
@@ -5721,6 +6202,12 @@ end,nearentitieconfig.stoplistwhenmenucloed)
 Enearmenu.stoplmainlistloading = menu.toggle(Enearmenu.extrasettings, "Stop main list loading", {}, "ON = Stops the main list loading so while you in a entitie list \nif you leave it it will automatically update the main list or if the entitie not exist anymore you will get kicked out of it", function(value)
 	nearentitieconfig.stoplistloadingsetting = value
 end,nearentitieconfig.stoplistloadingsetting)
+
+Enearmenu.setblipsprite = menu.slider(Enearmenu.extrasettings, "Set Blip Sprite / Picture", {"Enearsetblipsprite"}, "",0, 883, nearentitieconfig.blipsprite, 1, function(value)
+	nearentitieconfig.blipsprite = value
+end)
+
+menu.hyperlink(Enearmenu.extrasettings, "ALL Blip Sprites / Pictures", "https://docs.fivem.net/docs/game-references/blips/#blips", "")
 
 Enearmenu.maxtoloadentitiesfreeze = menu.toggle(Enearmenu.maxtoloadlist, "Freeze at the max to load", {}, "ON = Will not go above the max to load settings\nOFF = will stay at max to load + ~20", function(value)
 	nearentitieconfig.maxtoloadfreeze = value
@@ -6030,6 +6517,200 @@ menu.toggle_loop(Self, "anti idle cam", {}, "", function()
 	end
 end)
 
+menu.text_input(Self, "Claim auto", {"claimautoinput"}, "Schreib die zahl rein von dem auto das spawnen soll.\nsiehst du wenn du den command pvs benutzt dann kannst dein auto suchen und als befehlt steht dann welche zahl da ist", function(input)
+	name = input
+end, '')
+
+menu.action(Self, "Claim all vehicles", {"claimallvehicles"}, "Claims all vehicles destroyed from Mors Mutual.\nEs werden einfach alle autos durch stand angefordert und das letzte was angefordert wurde steht dann halt als persönliches auto da", function ()
+	reclaimVehicles()
+	if name ~= number then
+		menu.trigger_commands("pv".. name .."request")
+	end
+end)
+
+function addr_from_pointer_chain(addr, offsets)
+	if addr == 0 then return 0 end
+	for k = 1, (#offsets - 1) do
+		addr = memory.read_long(addr + offsets[k])
+		if addr == 0 then return 0 end
+	end
+	addr = addr + offsets[#offsets]
+	return addr
+end
+
+local weaponModels <const> = {
+	"weapon_rpg",
+	"weapon_firework",
+	"weapon_raypistol",
+	"weapon_grenadelauncher",
+	"weapon_molotov",
+	"weapon_snowball",
+	"weapon_flaregun",
+	"weapon_emplauncher"
+}
+local selectedOpt = 1
+local timer <const> = newTimer()
+
+---Returns the current weapon's time between shots in millis or `-1.0`.
+---@return number
+local function get_time_between_shots()
+	local CPed = entities.handle_to_pointer(players.user_ped())
+	local addr = addr_from_pointer_chain(CPed, {0x10B8, 0x20, 0x013C})
+	return addr ~= 0 and memory.read_float(addr) * 1000 or -1.0
+end
+
+menu.toggle_loop(weapons, "Bullet Changer", {}, "", function()
+	local localPed = players.user_ped()
+	if not IS_PED_ARMED(localPed, 4) then
+		return
+	end
+
+	local selectedBullet = util.joaat(weaponModels[selectedOpt])
+	if not HAS_WEAPON_ASSET_LOADED(selectedBullet) then
+		REQUEST_WEAPON_ASSET(selectedBullet, 31, 26)
+		GIVE_WEAPON_TO_PED(localPed, selectedBullet, 200, false, false)
+	end
+
+	DISABLE_PLAYER_FIRING(players.user(), true)
+	if IS_DISABLED_CONTROL_PRESSED(0, 24) and
+	IS_PLAYER_FREE_AIMING(players.user()) and timer.elapsed() > math.max(get_time_between_shots(), 80.0) then
+		local weapon = GET_CURRENT_PED_WEAPON_ENTITY_INDEX(localPed, false)
+		local bone = GET_ENTITY_BONE_INDEX_BY_NAME(weapon, "gun_muzzle")
+		local bonePos = GET_ENTITY_BONE_POSTION(weapon, bone)
+		local offset = get_offset_from_cam(30.0)
+
+		SHOOT_SINGLE_BULLET_BETWEEN_COORDS(
+			bonePos.x, bonePos.y, bonePos.z,
+			offset.x, offset.y, offset.z,
+			200,
+			true,
+			selectedBullet,
+			localPed, true, false, 2000.0
+		)
+		SET_CONTROL_SHAKE(0, 50, 100)
+		timer.reset()
+
+	elseif IS_DISABLED_CONTROL_JUST_RELEASED(0, 24) then
+		STOP_CONTROL_SHAKE(0)
+	end
+end)
+
+
+local options <const> = {
+	{util.get_label_text("WT_A_RPG")}, {util.get_label_text("WT_FWRKLNCHR")},
+	{util.get_label_text("WT_RAYPISTOL")}, {util.get_label_text("WT_GL")},
+	{util.get_label_text("WT_MOLOTOV")}, {util.get_label_text("WT_SNWBALL")},
+	{util.get_label_text("WT_FLAREGUN")}, {util.get_label_text("WT_EMPL")},
+}
+menu.list_select(weapons, "Set Weapon Bullet", {}, "", options, 1, function(opt)
+	selectedOpt = opt
+end)
+
+menu.toggle(weapons, "Shoot Valkyire Rocket", {"valkrocket"}, "", function(toggle)
+	gUsingValkRocket = toggle
+	if gUsingValkRocket then
+		local rocket = 0
+		local cam = 0
+		local blip = 0
+		local init = false
+		local timer <const> = newTimer()
+		local draw_rect = function(x, y, z, w)
+			DRAW_RECT(x, y, z, w, 255, 255, 255, 255, false)
+		end
+
+		while gUsingValkRocket do
+			util.yield_once()
+			if IS_PED_SHOOTING(players.user_ped()) and not init then
+				init = true
+				timer.reset()
+			elseif init then
+				if not DOES_ENTITY_EXIST(rocket) then
+					local offset = get_offset_from_cam(10)
+					rocket = entities.create_object(util.joaat("w_lr_rpg_rocket"), offset)
+					SET_ENTITY_INVINCIBLE(rocket, true)
+					SET_ENTITY_LOAD_COLLISION_FLAG(rocket, true, 1)
+					SET_NETWORK_ID_EXISTS_ON_ALL_MACHINES(OBJ_TO_NET(rocket), true)
+					SET_NETWORK_ID_CAN_MIGRATE(OBJ_TO_NET(rocket), false)
+					SET_ENTITY_RECORDS_COLLISIONS(rocket, true)
+					SET_ENTITY_HAS_GRAVITY(rocket, false)
+
+					DESTROY_ALL_CAMS(true)
+					cam = CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", true)
+					SET_CAM_NEAR_CLIP(cam, 0.01)
+					SET_CAM_NEAR_DOF(cam, 0.01)
+					CLEAR_TIMECYCLE_MODIFIER()
+					SET_TIMECYCLE_MODIFIER("CAMERA_secuirity")
+					HARD_ATTACH_CAM_TO_ENTITY(cam, rocket, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, true)
+					SET_CAM_ACTIVE(cam, true)
+					RENDER_SCRIPT_CAMS(true, false, 0, true, true, 0)
+
+					DISABLE_PLAYER_FIRING(players.user_ped(), true)
+					FREEZE_ENTITY_POSITION(players.user_ped(), true)
+				else
+					local rot = GET_GAMEPLAY_CAM_ROT(0)
+					local coords = GET_ENTITY_COORDS(rocket, false)
+					local force = rot:toDir()
+					force:mul(40.0)
+
+					SET_ENTITY_ROTATION(rocket, rot.x, rot.y, rot.z, 0, true)
+					SET_FOCUS_POS_AND_VEL(coords.x, coords.y, coords.z, rot.x, rot.y, rot.z)
+					APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(rocket, 1, force.x, force.y, force.z, false, false, false, false)
+
+					HIDE_HUD_AND_RADAR_THIS_FRAME()
+					DISABLE_PLAYER_FIRING(players.user_ped(), true)
+					FREEZE_ENTITY_POSITION(players.user_ped(), true)
+					HUD_SUPPRESS_WEAPON_WHEEL_RESULTS_THIS_FRAME()
+
+					draw_rect(0.5, 0.5 - 0.025, 0.050, 0.002)
+					draw_rect(0.5, 0.5 + 0.025, 0.050, 0.002)
+					draw_rect(0.5 - 0.025, 0.5, 0.002, 0.052)
+					draw_rect(0.5 + 0.025, 0.5, 0.002, 0.052)
+					draw_rect(0.5 + 0.050, 0.5, 0.050, 0.002)
+					draw_rect(0.5 - 0.050, 0.5, 0.050, 0.002)
+					draw_rect(0.5, 0.500 + 0.05, 0.002, 0.05)
+					draw_rect(0.5, 0.500 - 0.05, 0.002, 0.05)
+
+					local maxTime = 10000 -- `ms`
+					local length = 0.5 - 0.5 * (timer.elapsed() / maxTime) -- timer length
+					local perc = length / 0.5
+					local color = get_blended_colour(perc) -- timer color
+					DRAW_RECT(0.25, 0.5, 0.03, 0.5, 255, 255, 255, 120, false)
+					DRAW_RECT(0.25, 0.75 - length / 2, 0.03, length, color.r, color.g, color.b, color.a, false)
+
+					if HAS_ENTITY_COLLIDED_WITH_ANYTHING(rocket) or length <= 0 then
+						local impactCoord = GET_ENTITY_COORDS(rocket, false)
+						ADD_EXPLOSION(impactCoord.x, impactCoord.y, impactCoord.z, 32, 1.0, true, false, 0.4, false)
+						entities.delete_by_handle(rocket)
+						RENDER_SCRIPT_CAMS(false, false, 0, true, false, 0)
+						SET_TIMECYCLE_MODIFIER("DEFAULT")
+						CLEAR_FOCUS()
+						DESTROY_CAM(cam, true)
+						DISABLE_PLAYER_FIRING(players.user_ped(), false)
+						FREEZE_ENTITY_POSITION(players.user_ped(), false)
+						rocket = 0
+						init = false
+					end
+				end
+			end
+		end
+
+		if rocket and DOES_ENTITY_EXIST(rocket) then
+			local impactCoord = GET_ENTITY_COORDS(rocket, false)
+			ADD_EXPLOSION(impactCoord.x, impactCoord.y, impactCoord.z, 32, 1.0, true, false, 0.4, false)
+			entities.delete_by_handle(rocket)
+			CLEAR_FOCUS()
+			RENDER_SCRIPT_CAMS(false, false, 0, true, false, 0)
+			DESTROY_CAM(cam, true)
+			SET_TIMECYCLE_MODIFIER("DEFAULT")
+			FREEZE_ENTITY_POSITION(players.user_ped(), false)
+			DISABLE_PLAYER_FIRING(players.user_ped(), false)
+			if DOES_BLIP_EXIST(blip) then util.remove_blip(blip) end
+			UNLOCK_MINIMAP_ANGLE()
+			UNLOCK_MINIMAP_POSITION()
+		end
+	end
+end)
+
 auswahlauusmachen = menu.list(Zeugforjob, "selbst auswahl für aus machen", {}, "kannst sagen was nicht aus gemacht werden muss\nmach am besste nichts an oder aus wärend du sachen aus machen lässt")
 
 local commandreftableforjob = {}
@@ -6079,7 +6760,7 @@ end
 function jobzuegwiederanmachen()
 	menu.set_value(menu.ref_by_path("Self>Weapons>Lock Weapons>Lock Weapons"), Lockweapons)
 	menu.set_value(menu.ref_by_path("Self>Lock Wanted Level"), wantedlevel)
-	menu.set_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), allweapons)
+	menu.set_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"), allweaponsonoff)
 	menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Region Override>Region Override"), Regionsmatch)
 	menu.set_value(menu.ref_by_path("Online>Transitions>Matchmaking>Pool Override>Pool Override"), poolOver)
 	menu.set_value(menu.ref_by_path("Online>Transitions>Seamless Session Switching>Seamless Session Switching"), seamlessswitch)
@@ -6109,7 +6790,7 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		restrictedareas = menu.get_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"))
 		wantedlevel = menu.get_value(menu.ref_by_path("Self>Lock Wanted Level"))
 		hosttokenspoof = menu.get_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"))
-		allweapons = menu.get_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"))
+		allweaponsonoff = menu.get_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"))
 		groupoveride = menu.get_value(menu.ref_by_path("Online>Transitions>Join Group Override"))
 
 		zeugforthejob = true
@@ -6519,6 +7200,7 @@ end)
 NEARPEDCAMrange = menu.slider(NEAR_PED_CAM, "Only in area", {"clearpedcamsnear"}, "wenn 0 dann wird es auf alle benutzt die es findet", 0, 1000, 0, 25, function (value)
 	nearpedcamrange = value
 end)
+menu.add_value_replacement(NEARPEDCAMrange, 0, "Unlimited")
 
 function request_anim_dict(dict)
     request_time = os.time()
@@ -6533,17 +7215,6 @@ function request_anim_dict(dict)
         util.yield()
     end
 end
-
-menu.text_input(Self, "Claim auto", {"claimautoinput"}, "Schreib die zahl rein von dem auto das spawnen soll.\nsiehst du wenn du den command pvs benutzt dann kannst dein auto suchen und als befehlt steht dann welche zahl da ist", function(input)
-	name = input
-end, '')
-
-menu.action(Self, "Claim all vehicles", {"claimallvehicles"}, "Claims all vehicles destroyed from Mors Mutual.\nEs werden einfach alle autos durch stand angefordert und das letzte was angefordert wurde steht dann halt als persönliches auto da", function ()
-	reclaimVehicles()
-	if name ~= number then
-		menu.trigger_commands("pv".. name .."request")
-	end
-end)
 
 menu.toggle_loop(Entitymanager, "Entity aim Controle", {}, "", function()
 	local entpointer = memory.alloc()
@@ -7068,9 +7739,7 @@ menu.toggle_loop(Entitymanagergravitygun, "Fake Gravity gun", {}, "Ziele auf sac
 		SET_ENTITY_COLLISION(handle, true, true)
 	end]]
 	if not ismissionentity then
-		local ent_ptr = memory.alloc_int()
-		memory.write_int(ent_ptr, handle)
-		SET_ENTITY_AS_NO_LONGER_NEEDED(ent_ptr)
+		SET_ENTITY_AS_NO_LONGER_NEED(handle)
 	end
 	if not gravitiygunfreezeonletgo then
 		FREEZE_ENTITY_POSITION(handle, false)
@@ -7375,8 +8044,6 @@ cmm.context_menu_draw_tick = function()
 						cmm.close_options_menu(target)
 					end
 				end
-				-- TODO: why doesnt disabling here work?
-				--PAD.DISABLE_CONTROL_ACTION(2, 245, true) --chat
 			else
 				if cmm.is_menu_open_control_pressed() then
 					cmm.open_options_menu(target)
@@ -7703,7 +8370,7 @@ config.color.target_bounding_box_output = cmm.color_menu_output(config.color.tar
 
 ---@param dist number
 ---@return v3
-local function get_offset_from_cam(dist)
+function get_offset_from_cam(dist)
     local rot = GET_FINAL_RENDERED_CAM_ROT(2)
     local pos = GET_FINAL_RENDERED_CAM_COORD()
     local dir = rot:toDir()
@@ -7919,7 +8586,7 @@ cmm.handle_inputs = function(target)
 end
 
 cmm.check_option_hotkeys = function(target)
-    --PAD.DISABLE_CONTROL_ACTION(2, 245, true) --chat
+    --DISABLE_CONTROL_ACTION(2, 245, true) --chat
     for option_index, option in target.relevant_options do
         local hotkey = option.hotkey
 		if hotkey then hotkey = hotkey:upper() end
@@ -8652,33 +9319,27 @@ end))
 
 
 
-
-
-
-
-
-
-
 CLEAR_AREA_RANGE = 100
+
 function clearAreaOfEntities(entitie, range)
-    local rangesq = range*range
     local pc = players.get_position(players.user())
 		if entitie == "ped" then
-			for _, ped in pairs(entities.get_all_peds_as_handles()) do
-				local cc = GET_ENTITY_COORDS(ped)
-	            if (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) and not IS_PED_A_PLAYER(ped) then
+			for _, ped in pairs(entities.get_all_peds_as_pointers()) do
+				local cc = zzm.get_distance_from_entity(false, ped)
+	            if cc.dist <= range and entities.get_player_info(ped) == 0 then
 	                entities.delete(ped)
 				end
 			end
 		end
 		if entitie == "veh" then
-			local currentVehicle = entities.get_user_vehicle_as_handle(true)
+			local currentVehicle = entities.handle_to_pointer(entities.get_user_vehicle_as_handle(true))
 			local persoveh = entities.get_user_personal_vehicle_as_handle()
-	        for _, vehicle in pairs(entities.get_all_vehicles_as_handles()) do
-				local cc = GET_ENTITY_COORDS(vehicle)
-	            if not (currentVehicle == vehicle) and (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) then
+	        for _, vehiclepointer in pairs(entities.get_all_vehicles_as_pointers()) do
+				local cc = zzm.get_distance_from_entity(false, vehiclepointer)
+	            if currentVehicle != vehiclepointer and cc.dist <= range then
+					vehicle = entities.pointer_to_handle(vehiclepointer)
 	                local vehtargetData = getTargetVehicleData(vehicle)
-	                if vehtargetData.player == -1 and not (vehicle == currentVehicle) and not (vehicle == persoveh) then
+	                if vehtargetData.player == -1 and vehicle != persoveh then
 	                    entities.delete(vehicle)
 	                end
 	            end
@@ -8686,48 +9347,22 @@ function clearAreaOfEntities(entitie, range)
 		end
 		if entitie == "obj" then
 			for _, object in pairs(entities.get_all_objects_as_handles()) do
-				local cc = GET_ENTITY_COORDS(object)
-	            if (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) then
+				local cc = zzm.get_distance_from_entity(object)
+	            if cc.dist <= range then
 	                entities.delete(object)
 	            end
 	        end
 		end
 		if entitie == "pickup" then
 			for _, pickups in pairs(entities.get_all_pickups_as_handles()) do
-				local cc = GET_ENTITY_COORDS(pickups)
-	            if (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) then
+				local cc = zzm.get_distance_from_entity(pickups)
+	            if cc.dist <= range then
 	                entities.delete(pickups)
 	            end
 	        end
 		end
 end
 
-function getAreaOfEntities(tbl, range)
-    local rangesq = range*range
-    local pc = GET_ENTITY_COORDS(players.user_ped())
-    for _, v in pairs(tbl) do
-        local cc = entities.get_position(v)
-        if (VDIST2(pc.x, pc.y, pc.z, cc.x, cc.y, cc.z) <= rangesq) then
-            local h = entities.pointer_to_handle(v)
-			local playervehicle = entities.get_user_vehicle_as_handle(true)
-            if IS_ENTITY_AN_OBJECT(h) then
-				if IS_OBJECT_A_PICKUP(h) then
-               		return h
-				else
-					return h
-				end
-			elseif IS_ENTITY_A_PED(h) and not IS_PED_A_PLAYER(h) then
-				return h
-			elseif IS_ENTITY_A_VEHICLE(h) and not (playervehicle == h) then
-				return h
-			else 
-				return nil
-            end
-        end
-    end
-end
-
---local x = entities.get_model_hash(h)
 menu.toggle_loop(Entitymanagercleararea, "Clear Area of Peds", {"clearpeds"}, "", function ()
 	clearAreaOfEntities("ped", CLEAR_AREA_RANGE)
 end)
@@ -8737,7 +9372,7 @@ end)
 menu.toggle_loop(Entitymanagercleararea, "Clear Area of Objects", {"clearobjs"}, "", function ()
     clearAreaOfEntities("obj", CLEAR_AREA_RANGE)
 end)
-menu.action(Entitymanagercleararea, "Clear Area of Pickups", {"clearpickups"}, "", function ()
+menu.toggle_loop(Entitymanagercleararea, "Clear Area of Pickups", {"clearpickups"}, "", function ()
     clearAreaOfEntities("pickup", CLEAR_AREA_RANGE)
 end)
 menu.toggle_loop(Entitymanagercleararea, "Delete all", {"deleteall"}, "", function ()
@@ -9038,8 +9673,8 @@ end
 	        end
 	        if ESPConfigtable.showWeapon then
 	            local weapon = getWeapon(ped)
-	            if weapon then
-	                valuesToDisplay[#valuesToDisplay + 1] = weapon
+	            if weapon.name then
+	                valuesToDisplay[#valuesToDisplay + 1] = weapon.name
 	            end
 	        end
 	        if (ESPConfigtable.showVehicle or ESPConfigtable.showSpeed or ESPConfigtable.showVehicleidname) and vehicle then
@@ -9738,6 +10373,7 @@ menu.toggle_loop(antivehicleaction, "kick of vehicle", {}, "dadurch kann er das 
 					local hash = util.joaat(vehname)
 					if hash == vehicleofpid then
 						if dist < maxDistanceantiaction then
+							getcontrole(vehicle)
 							SET_VEHICLE_EXCLUSIVE_DRIVER(vehicle, players.user_ped(), 0)
 							repeat
 								util.yield()
@@ -10349,7 +10985,26 @@ dividercustom2 = menu.divider(actionlistcustomselectionteleport, "PLAYERS")
 dividercustom3 = menu.divider(actionlistcustomselectionfriendly, "PLAYERS")
 dividercustom4 = menu.divider(actionlistcustomselectiontrolling, "PLAYERS")
 dividercustom5 = menu.divider(actionlistcustomselectionkickcrash, "PLAYERS")
-menu.toggle(customselection, "load players", {}, "die liste wird die ganze zeit aktualisiert also vlt nicht dauer an lassen\nsollte aber nichts passieren wenn man es an lässt", function(on_toggle)
+
+customselectionloadnearplayers = menu.click_slider(customselection,"Load near Players", {}, "aktivate all player in range\n50 - 1000", 25,1000,100,25, function(value)
+	if not menu.get_value(customselectionaktive) then
+		util.toast("First load players!!")
+		return
+	end
+	local textline = "Found:"
+	for players.list(false,true,true) as pid do
+		menu.trigger_command(playertable[pid], false) 
+		if zzm.get_distance_from_entity(GET_PLAYER_PED_SCRIPT_INDEX(pid)).dist < value then
+			menu.trigger_command(playertable[pid], true)
+			textline = textline.."\n"..players.get_name(pid)
+		end
+	end
+	if string.len(textline) > 6 then
+		util.toast(textline)
+	end
+end)
+
+customselectionaktive = menu.toggle(customselection, "load players", {}, "die liste wird die ganze zeit aktualisiert also vlt nicht dauer an lassen\nsollte aber nichts passieren wenn man es an lässt", function(on_toggle)
 	if on_toggle then
 		creatplayerlistincustom = true
 		util.create_tick_handler(loadplayerlistcustom)
@@ -10420,6 +11075,10 @@ function loadplayerlistcustom()
 				table.insert(playerlisttable, pid)
 				local pidtoatach = getpidtoattach(pid)
 				playertable[pid] = menu.attach_after(playertable[pidtoatach] ,menu.toggle(menu.shadow_root(), Pname, {}, textline, function(on_toggle)
+					if pid == players.user() then
+						util.toast("cant do stuff on your self")
+						menu.trigger_command(playertable[pid], false)
+					end
 				end))
 			else
 				if menu.is_ref_valid(playertable[pid]) then
@@ -12324,6 +12983,40 @@ end)
 	CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
 end)]]
 
+--[[ function createFiles()
+    -- Durchlaufe alle Sammlungen (spaceshipParts, letterScraps)
+    for collectionName, items in pairs(tables.collectibles) do
+        -- Erstelle einen Ordner für jede Sammlung
+		if filesystem.exists(filesystem.stand_dir().."Places/"..collectionName) then
+			print("Ffile exist: " .. collectionName)
+			continue
+		end
+        filesystem.mkdir(filesystem.stand_dir().."Places/"..collectionName)
+        
+        -- Durchlaufe jedes Item in der Sammlung
+        for _, item in ipairs(items) do
+            -- Dateiname aus dem Itemnamen erstellen
+            local fileName = item.name .. ".txt"
+            -- Datei im entsprechenden Ordner erstellen
+            local filePath = filesystem.stand_dir().."Places/"..collectionName .. "/" .. fileName
+            local file = io.open(filePath, "w")
+            if file then
+                -- Koordinaten in die Datei schreiben
+                local coordinates = item.coordinates
+                file:write(coordinates[1],", ", coordinates[2],", ", coordinates[3]	)
+                file:close()
+                print("File created: " .. filePath)
+            else
+                print("Error creating file: " .. filePath)
+            end
+        end
+    end
+end
+
+menu.action(misc, "create tele file", {}, "", function()
+	createFiles()
+end) ]]
+
 menu.action(misc, "Spawn object", {}, "spawned das object mit dem hash bei has number", function()
 	local playeroffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, -1)
 	local fireowrkpos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +0.5, +1)
@@ -12417,7 +13110,7 @@ menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 	keyCode1 = getKeyCode('VK_S')
 	vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
 	currentSpeed = GET_ENTITY_SPEED(vehicle)
-	umrechnung = a / 10
+	umrechnung = boostvehiclepower / 10
 	if util.is_key_down(keyCode) and IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
 		APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehicle, 1, 0.0, umrechnung, 0.0, true, true, true, true)
 	elseif util.is_key_down(keyCode1) and IS_PED_IN_ANY_VEHICLE(players.user_ped()) then
@@ -12426,7 +13119,7 @@ menu.toggle_loop(vehicle, "Schnell fahren V2 (besser)", {}, "", function()
 end)
 
 menu.slider(vehicle, "Schnell fahren boost einstellen V2", {"selfspeedboost"}, "[0 - 100]\nDamit wird die stärke eingestellt wie stark es dich boosten soll", 1,100, 1, 1, function(boost)
-	a = boost
+	boostvehiclepower = boost
 end)
 
 menu.click_slider(vehicle, "speed boost", {"selfboostsset"}, "[50 - 10000]\ngib die kmh an auf die es boosten soll", 50 ,10000, 0, 50, function(s)
@@ -12460,32 +13153,269 @@ menu.action(vehicle,"Auto Reparieren", {}, "", function()
 
 end)
 
-timer2 = 0
+local enterexitconfig = {
+	infoofveh = true,
+	checkexitpoint = true,
+	groundspawn = true,
+	stoponexit = true,
+	engineoff = false,
+	playerkickveh = false,
+	pedkickveh = true,
+	missionpedharm = true,
+	entertime = 20,
+	exittime = 20,
+}
+local EXrefs = {}
+
+EXrefs.debuginfo = function(name, hash, ispersonal)
+	if enterexitconfig.infoofveh then
+		util.draw_debug_text(name)
+		util.draw_debug_text(getvehtype(hash))
+		if ispersonal then
+			util.draw_debug_text("PERSONALVEHICLE")
+		end
+	end
+end
+
+EXrefs.SET_PLAYER_IN_VEHICLE_SEAT = function(handle, seat)
+	SET_PED_INTO_VEHICLE(players.user_ped(), handle, seat)
+	levideaktivate()
+	if seat == -1 then
+		SET_VEHICLE_ENGINE_ON(handle, true, true, true)
+	end
+end
+
+
+menu.toggle_loop(vehicle, "instant veh enter/exit", {}, "halte F gedrückt dann setzt du dich in das auto was dir am nächsten ist in den settings kann man auswählen wie lange man drücken soll", function()
+	if util.is_session_transition_active() then
+		return
+	end
+	local target = {}
+	local selfinfo = {}
+	local keyCode = getKeyCode("VK_F")
+	selfinfo.pid = players.user()
+	selfinfo.ped = players.user_ped()
+	selfinfo.position = players.get_position(selfinfo.pid)
+	selfinfo.flying = IS_PED_IN_FLYING_VEHICLE(selfinfo.ped)
+	selfinfo.personlaveh = entities.handle_to_pointer(entities.get_user_personal_vehicle_as_handle())
+
+	target.pointer = getClosestVehicle(selfinfo.position, true)
+	if not target.pointer then
+		return
+	end
+	target.hash = entities.get_model_hash(target.pointer)
+	target.name = getmodelnamebyhash(target.hash)
+	
+	local timer = 0
+
+	if not IS_PED_IN_ANY_VEHICLE(selfinfo.ped, false) then
+		EXrefs.debuginfo(target.name, target.hash, (selfinfo.personlaveh == target.pointer))
+		if is_key_just_down(keyCode) then
+			while util.is_key_down(keyCode) do
+				util.yield()
+				EXrefs.debuginfo(target.name, target.hash, (selfinfo.personlaveh == target.pointer))
+				timer += 1
+				if timer == enterexitconfig.entertime then
+					if IS_PED_IN_ANY_VEHICLE(selfinfo.ped, false) then
+						return
+					end
+					util.toast("Enter Vehicle")
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), true)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
+					target.handle = entities.pointer_to_handle(target.pointer)
+					target.driverped = GET_PED_IN_VEHICLE_SEAT(target.handle, -1, true)
+					target.ismission = IS_ENTITY_A_MISSION_ENTITY(target.driverped)
+					target.isplayer = IS_PED_A_PLAYER(target.driverped)
+					if target.isplayer then
+						target.pid = NETWORK_GET_PLAYER_INDEX_FROM_PED(target.driverped)
+						target.pidname = players.get_name(target.pid)
+					end
+					if target.driverped == 0 then
+						EXrefs.SET_PLAYER_IN_VEHICLE_SEAT(target.handle, -1)
+					else
+						if target.isplayer then
+							if enterexitconfig.playerkickveh then
+								menu.trigger_commands("vehkick".. target.pidname)
+								local kicktimer = 0
+								repeat
+									util.yield()
+									kicktimer +=1
+										if kicktimer == 300 then
+											util.toast("er konnte nicht aus dem auto gekickt werden")
+											kicktimer = 0
+											break
+										end
+								until IS_VEHICLE_SEAT_FREE(target.handle, -1)
+								if not IS_VEHICLE_SEAT_FREE(target.handle, -1) then
+									return
+								end
+								EXrefs.SET_PLAYER_IN_VEHICLE_SEAT(target.handle, -1)
+							else
+								if ARE_ANY_VEHICLE_SEATS_FREE(target.handle) then
+									EXrefs.SET_PLAYER_IN_VEHICLE_SEAT(target.handle, -2)
+								else
+									util.toast("No seats Free")
+								end
+							end
+						else
+							if enterexitconfig.pedkickveh then
+								if enterexitconfig.missionpedharm and target.ismission then
+									if getcontrole(target.driverped) then
+										vehoffset = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(target.handle, 0, -4, 0)
+										SET_ENTITY_COORDS_NO_OFFSET(target.driverped, vehoffset.x, vehoffset.y, vehoffset.z, false, false, false)
+									else
+										goto end
+									end
+								else
+									entities.delete(target.driverped)
+									util.yield(30)
+								end
+								EXrefs.SET_PLAYER_IN_VEHICLE_SEAT(target.handle, -1)
+							else
+								if ARE_ANY_VEHICLE_SEATS_FREE(target.handle) then
+									EXrefs.SET_PLAYER_IN_VEHICLE_SEAT(target.handle, -2)
+								else
+									util.toast("No seats Free")
+								end
+							end
+						end
+					end
+					if not IS_PED_IN_ANY_VEHICLE(selfinfo.ped, true) then
+						goto end
+					else
+						repeat
+							util.yield()
+						until not util.is_key_down(keyCode)
+						menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+						menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
+					end
+					::end::
+				end
+			end
+		end
+	else
+		if is_key_just_down(keyCode) then
+			while util.is_key_down(keyCode) do
+				util.yield()
+				timer += 1
+				if timer == enterexitconfig.exittime then
+					if not IS_PED_IN_ANY_VEHICLE(selfinfo.ped, false) then
+						return
+					end
+					util.toast("Exit Vehicle")
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), true)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), true)
+					target.handle = entities.pointer_to_handle(target.pointer)
+					local driverplayer = GET_PED_IN_VEHICLE_SEAT(target.handle, -1) == players.user_ped()
+				if driverplayer then
+					if not enterexitconfig.engineoff then
+						SET_VEHICLE_ENGINE_ON(target.handle, false, true, true)
+					end
+					if enterexitconfig.stoponexit and not target.flying then
+						BRING_VEHICLE_TO_HALT(target.handle, 0, 1, false)
+					end
+				end
+				local seatofplayers = getseatofplayer(target.handle, players.user_ped())
+				local entryposition = GET_ENTRY_POINT_POSITION(target.handle, 0)
+				if seatofplayers != -2 then
+					entryposition = GET_ENTRY_POINT_POSITION(target.handle, seatofplayers + 1)
+				end
+				if entryposition.x == 0.0 and entryposition.y == 0.0 and entryposition.z == 0.0 then
+					goto end
+				end
+				if not enterexitconfig.checkexitpoint then
+					if enterexitconfig.groundspawn then
+						entryposition.z = get_ground_z(entryposition) + 1
+					end
+					SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entryposition.x, entryposition.y, entryposition.z, false, false, false)
+				else
+					if IS_ENTRY_POINT_FOR_SEAT_CLEAR(players.user_ped(), target.handle, seatofplayers, false, false) or IS_ENTRY_POINT_FOR_SEAT_CLEAR(players.user_ped(), target.handle, seatofplayers, true, false) then
+						if enterexitconfig.groundspawn then
+							entryposition.z = get_ground_z(entryposition) + 1
+						end
+						SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entryposition.x, entryposition.y, entryposition.z, false, false, false)
+					else
+						local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(target.handle)
+						local freeseat = false
+						for i=-1, maxPassengers do
+							if IS_ENTRY_POINT_FOR_SEAT_CLEAR(players.user_ped(), target.handle, i, false, false) then
+								freeseat = i
+								break
+							end
+						end
+							if freeseat != false then
+								local entryposition = GET_ENTRY_POINT_POSITION(target.handle, freeseat + 1)
+								if entryposition.x != 0.0 and entryposition.y != 0.0 and entryposition.z != 0.0 then
+									if enterexitconfig.groundspawn then
+										entryposition.z = get_ground_z(entryposition) + 1
+									end
+									SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), entryposition.x, entryposition.y, entryposition.z, false, false, false)
+								else
+									util.toast("Solltest du diese benachichtigung bekommen ist was falsch gelaufen beim suchen der sitz position bitte sag mir bescheid wenn du das hier bekommst und welches fahrzeug benutzt wurde dabei", TOAST_ALL)
+								end
+							else
+								local playersposition = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +3, 0)
+								if enterexitconfig.groundspawn then
+									playersposition.z = get_ground_z(playersposition) + 1
+								end
+								SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), playersposition.x, playersposition.y, playersposition.z, false, false, false)
+							end
+					end
+				end
+				if IS_PED_IN_ANY_VEHICLE(selfinfo.ped, false) then
+					goto end
+				else
+					repeat
+						util.yield()
+					until not util.is_key_down(keyCode)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+					menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
+				end
+				::end::
+				end
+			end
+		end
+	end
+end, function(on_stop)
+	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>VEH_EXIT"), false)
+	menu.trigger_command(menu.ref_by_path("Game>Disables>Disable Game Inputs>ENTER"), false)
+end)
+
+
+
+--[[ timer2 = 0
 menu.toggle_loop(vehicle, "instant veh enter/exit", {}, "halte F gedrückt dann setzt du dich in das auto was dir am nächsten ist in den settings kann man auswählen wie lange man drücken soll", function()
 if not util.is_session_transition_active() then
 	local keyCode = getKeyCode("VK_F")
 	playernameself = players.get_name(players.user())
 	myposition = players.get_position(players.user())
 	flyingvehicle = IS_PED_IN_FLYING_VEHICLE(players.user_ped())
-	local personalveh = entities.get_user_personal_vehicle_as_handle(players.user())
+	local personalveh = entities.handle_to_pointer(entities.get_user_personal_vehicle_as_handle(players.user()))
+	mypositionvehiclepointer = getClosestVehicle(myposition, true)
+	vehhash = entities.get_model_hash(mypositionvehiclepointer)
+	vehiclename = getmodelnamebyhash(vehhash)
 	timer1 = 0
 	if not IS_PED_IN_ANY_VEHICLE(players.user_ped(), false) then --and not (GET_IS_TASK_ACTIVE(ped, 160)) then
-		--[[if infoofveh then
+		if infoofveh then
 			util.draw_debug_text(vehiclename)
 			util.draw_debug_text(getvehtype(vehhash))
-			if personalveh == mypositionvehicle then
+			if personalveh == mypositionvehiclepointer then
 				util.draw_debug_text("PERSONALVEHICLE")
 			end
-		end]]
+		end
 	while util.is_key_down(keyCode) do
+		if infoofveh then
+			util.draw_debug_text(vehiclename)
+			util.draw_debug_text(getvehtype(vehhash))
+			if personalveh == mypositionvehiclepointer then
+				util.draw_debug_text("PERSONALVEHICLE")
+			end
+		end
 		timer1 += 1
-		if timer1 == abb and util.is_key_down(keyCode) then
-			mypositionvehicle = getClosestVehicle(myposition)
+		if timer1 == entertime and util.is_key_down(keyCode) then
+			mypositionvehicle = entities.pointer_to_handle(mypositionvehiclepointer)
 			if not mypositionvehicle then
 				goto stop
-			else
-				vehhash = entities.get_model_hash(mypositionvehicle)
-				vehiclename = getmodelnamebyhash(vehhash)
 			end
 			ped = GET_PED_IN_VEHICLE_SEAT(mypositionvehicle, -1, true)
 			missionped = IS_ENTITY_A_MISSION_ENTITY(ped)
@@ -12579,6 +13509,9 @@ if not util.is_session_transition_active() then
 					SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, -1)
 					levideaktivate()
 				else
+					if GET_VEHICLE_CLASS(mypositionvehicle) == 8 then
+						SET_VEHICLE_ON_GROUND_PROPERLY(mypositionvehicle, 5.0)
+					end
 					SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, -1)
 					levideaktivate()
 					SET_VEHICLE_ENGINE_ON(mypositionvehicle, true, true, true)
@@ -12592,6 +13525,9 @@ if not util.is_session_transition_active() then
 			else
 				if ARE_ANY_VEHICLE_SEATS_FREE(mypositionvehicle) then
 					if IS_VEHICLE_SEAT_FREE(mypositionvehicle, -1) then
+						if GET_VEHICLE_CLASS(mypositionvehicle) == 8 then
+							SET_VEHICLE_ON_GROUND_PROPERLY(mypositionvehicle, 5.0)
+						end
 						SET_PED_INTO_VEHICLE(players.user_ped(), mypositionvehicle, -1)
 						levideaktivate()
 					elseif IS_VEHICLE_SEAT_FREE(mypositionvehicle, 0) then
@@ -12643,7 +13579,7 @@ if not util.is_session_transition_active() then
 		while util.is_key_down(keyCode) do
 			timer1 += 1
 			util.yield()
-			if timer1 == bba and util.is_key_down(keyCode) then
+			if timer1 == exittime and util.is_key_down(keyCode) then
 				mypositionvehicle = entities.get_user_vehicle_as_handle(true)
 				if not mypositionvehicle then
 					goto stop
@@ -12729,7 +13665,7 @@ if not util.is_session_transition_active() then
 	end
 	::stop::
 end
-end)
+end) ]]
 
 --[[menu.slider(Zeug_für_mich, "Schnell fahren boost einstellen", {"selfspeedboost"}, "[0 - 20]\ngib die kmh an auf die es boosten soll", 0 ,20, 0, 1, function(a)
 	boost = a
@@ -12889,80 +13825,48 @@ sliderforaktimer = menu.slider(miscs, "anti afk kill timer", {"enterafktimer"}, 
 end)
 
 menu.divider(enterexitsettings, "ON Enter")
-menu.toggle(enterexitsettings, "npc auto klauen oder beifahrer", {}, "AN = beifahrer\nAUS = klauen", function(on_toggle)
-	if on_toggle then
-		ifnpcincar = true
-	else
-		ifnpcincar = false
-	end
-end)
+menu.toggle(enterexitsettings, "npc auto klauen oder beifahrer", {}, "AUS = beifahrer\nAN = klauen", function(value)
+	enterexitconfig.pedkickveh = value
+end, enterexitconfig.pedkickveh)
 
-menu.toggle(enterexitsettings, "spieler auto klauen oder beifahrer", {}, "AUS = beifahrer\nAN = klauen", function(on_toggle)
-	if on_toggle then
-		ifplayerincar = true
-	else
-		ifplayerincar = false
-	end
-end)
+menu.toggle(enterexitsettings, "spieler auto klauen oder beifahrer", {}, "AUS = beifahrer\nAN = klauen", function(value)
+	enterexitconfig.ifplayerincar = value
+end, enterexitconfig.ifplayerincar)
 
-menu.toggle(enterexitsettings, "Missions npc nicht löschen", {}, "AUS = mission npc wird gelöscht\nAN = mission npc wird nicht gelöscht", function(on_toggle)
-	if on_toggle then
-		missionnpc = true
-	else
-		missionnpc = false
-	end
-end)
+menu.toggle(enterexitsettings, "Missions npc nicht löschen", {}, "AUS = mission npc wird gelöscht\nAN = mission npc wird nicht gelöscht", function(value)
+	enterexitconfig.missionpedharm = value
+end, enterexitconfig.missionpedharm)
 
 menu.divider(enterexitsettings, "ON Exit")
 
-menu.toggle(enterexitsettings, "Motor bei austeigen an lassen", {}, "AUS = beim austeigen geht der motor normal aus\nAN = beim verlassen bleibt der motor an", function(on_toggle)
-	if on_toggle then
-		engineoff = true
-	else
-		engineoff = false
-	end
-end)
+menu.toggle(enterexitsettings, "Motor bei austeigen an lassen", {}, "AUS = beim austeigen geht der motor normal aus\nAN = beim verlassen bleibt der motor an", function(value)
+	enterexitconfig.engineoff = value
+end, enterexitconfig.engineoff)
 
-menu.toggle(enterexitsettings, "Stop on exit", {}, "AUS = auto fährt weiter\nAN = auto bleibt stehen nach dem austeigen\nFliege fahrzeug sind davon ausgeschlosen weil sie dich sonst meistens killen", function(on_toggle)
-	if on_toggle then
-		stoponexit = true
-	else
-		stoponexit = false
-	end
-end)
+menu.toggle(enterexitsettings, "Stop on exit", {}, "AUS = auto fährt weiter\nAN = auto bleibt stehen nach dem austeigen\nFliege fahrzeug sind davon ausgeschlosen weil sie dich sonst meistens killen", function(value)
+	enterexitconfig.stoponexit = value
+end, enterexitconfig.stoponexit)
 
-menu.toggle(enterexitsettings, "immer am boden aussteigen", {}, "AUS = spawned dich neben der tür\nAN = spawned dich auf den boden", function(on_toggle)
-	if on_toggle then
-		groundspawn = true
-	else
-		groundspawn = false
-	end
-end)
+menu.toggle(enterexitsettings, "immer am boden aussteigen", {}, "AUS = spawned dich neben der tür\nAN = spawned dich auf den boden", function(value)
+	enterexitconfig.groundspawn = value
+end, enterexitconfig.groundspawn)
 
-menu.toggle(enterexitsettings, "Checke exit position", {}, "AUS = schmeißt dich einfach direkt aus dem auto raus egal ob platz ist oder nicht\nAN = checkt ob platz ist zum aussteigen wenn nicht sucht es eine besser position für dich", function(on_toggle)
-	if on_toggle then
-		checkexitpoint = true
-	else
-		checkexitpoint = false
-	end
-end)
+menu.toggle(enterexitsettings, "Checke exit position", {}, "AUS = schmeißt dich einfach direkt aus dem auto raus egal ob platz ist oder nicht\nAN = checkt ob platz ist zum aussteigen wenn nicht sucht es eine besser position für dich", function(value)
+	enterexitconfig.checkexitpoint = value
+end, enterexitconfig.checkexitpoint)
 
 menu.divider(enterexitsettings, "Misc")
 
---[[menu.toggle(enterexitsettings, "Veh info as debug", {}, "AUS = keine infos\nAN = rechts oben infos über das veh", function(on_toggle)
-	if on_toggle then
-		infoofveh = true
-	else
-		infoofveh = false
-	end
-end)]]
+menu.toggle(enterexitsettings, "Veh info as debug", {}, "AUS = keine infos\nAN = rechts oben infos über das veh", function(value)
+	enterexitconfig.infoofveh = value
+end, enterexitconfig.infoofveh)
 
-menu.slider(enterexitsettings, "auto einsteigen settings", {"entertimer"}, "[5 - 100]\nwie lang es warten soll bis du einsteigst", 5,100, 10, 5, function(boost1)
-	abb = boost1
+menu.slider(enterexitsettings, "auto einsteigen settings", {"entertimer"}, "[5 - 100]\nwie lang es warten soll bis du einsteigst", 5,100, 10, 5, function(value)
+	enterexitconfig.entertime = value
 end)
 
-menu.slider(enterexitsettings, "auto aussteigen settings", {"exittimer"}, "[5 - 100]\nwie lang es warten soll bis du aussteigst", 5,100, 10, 5, function(boost2)
-	bba = boost2
+menu.slider(enterexitsettings, "auto aussteigen settings", {"exittimer"}, "[5 - 100]\nwie lang es warten soll bis du aussteigst", 5,100, 10, 5, function(value)
+	enterexitconfig.exittime = value
 end)
 
 menu.toggle(entitymanagersettings, "Fahrzeug mit Ped löschen", {}, "wenn es an ist wird das fahrzeug mit dem ped gelöscht\nwenn beides aus dann löscht es zu erst das ped dann muss man nochmal drücken um das auto zu löschen", function(on_toggle)
