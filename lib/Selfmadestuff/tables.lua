@@ -698,4 +698,46 @@ tables.allwindows = {
 	[7]= "Mid Right",
 }
 
+tables.attributes = {
+	[0]= "CanUseCover",
+	[1]= "CanUseVehicles",
+	[2]= "CanDoDrivebys",
+	[3]= "CanLeaveVehicle",
+	[4]= "CanUseDynamicStrafeDecisions",
+	[5]= "AlwaysFight",
+	[12]= "BlindFireWhenInCover",
+	[13]= "Aggressive",
+	[14]= "CanInvestigate",
+	[17]= "AlwaysFlee",
+	[20]= "CanTauntInVehicle",
+	[21]= "CanChaseTargetOnFoot",
+	[22]= "WillDragInjuredPedsToSafety",
+	[24]= "UseProximityFiringRate",
+	[27]= "PerfectAccuracy",
+	[28]= "CanUseFrustratedAdvance",
+	[31]= "MaintainMinDistanceToTarget",
+	[34]= "CanUsePeekingVariations",
+	[39]= "CanBust",
+	[41]= "CanCommandeerVehicles",
+	[42]= "CanFlank",
+	[43]= "SwitchToAdvanceIfCantFindCover",
+	[44]= "SwitchToDefensiveIfInCover",
+	[46]= "CanFightArmedPedsWhenNotArmed",
+	[49]= "UseEnemyAccuracyScaling",
+	[54]= "AlwaysEquipBestWeapon",
+	[55]= "CanSeeUnderwaterPeds",
+	[58]= "DisableFleeFromCombat",
+	[60]= "CanThrowSmokeGrenade",
+	[61]= "NonMissionPedsFleeFromThisPedUnlessArmed",
+	[68]= "DisableReactToBuddyShot",
+}
+
+tables.pedcombatrange = {
+	"Near",
+	"Medium",
+	"Far",
+	"VeryFar",
+	"NumRanges",
+}
+
 return tables
