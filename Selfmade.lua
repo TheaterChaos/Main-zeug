@@ -4,7 +4,7 @@ native_invoker.accept_bools_as_ints(true)
 util.keep_running()
 
 
-local SCRIPT_VERSION = "0.75"
+local SCRIPT_VERSION = "0.76"
 
 
 local allfiles = {
@@ -32,6 +32,7 @@ local allfiles = {
 	"lib/Selfmadestuff/Contextstuff/Misc/_folder.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/Camerashake.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/copyveh.lua",
+	"lib/Selfmadestuff/Contextstuff/Misc/doorControl.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/Mission_Entity.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/Teleport_to_me.lua",
 	"lib/Selfmadestuff/Contextstuff/Misc/Visible.lua",
@@ -63,14 +64,13 @@ util.ensure_package_is_installed('lua/auto-updater')
 local auto_updater = require('auto-updater')
 if not filesystem.exists(filesystem.scripts_dir().."lib/selfmadedevfiletrue.txt") then
 	if auto_updater then
-   	auto_updater.run_auto_update(auto_update_config)
+   		auto_updater.run_auto_update(auto_update_config)
 	end
-end
-
-for _, files in pairs(allfiles) do
-	if not filesystem.exists(filesystem.scripts_dir()..files) then
-		util.toast("Dir fehlt eine datei leite update ein")
-		auto_updater.run_auto_update(auto_update_config)
+	for _, files in pairs(allfiles) do
+		if not filesystem.exists(filesystem.scripts_dir()..files) then
+			util.toast("Dir fehlt eine datei leite update ein")
+			auto_updater.run_auto_update(auto_update_config)
+		end
 	end
 end
 
@@ -169,12 +169,14 @@ local nearentitieconfig = {
 	showplayers = true,
 	showonlywithblib = false,
 	removeattached = false,
+	showownped = false,
 	stoplistloadingsetting = true,
 	stoplistwhenpausemenuopen = true,
 	stoplistwhenmenucloed = true,
 	allentitiemenuopen = false,
 	allentitiemenuref,
 	generalinformation = true,
+	showdebuginfoforallaction = true,
 	playerinfos = true,
 	vehicleinfos = true,
 	pednpcinfos = true,
@@ -186,6 +188,9 @@ local nearentitieconfig = {
 	showarsignal = true,
 	showline = true,
 	showbox = true,
+	allshowarsignal = false,
+	allshowline = true,
+	allshowbox = true,
 }
 
 
@@ -639,6 +644,16 @@ local function getfreevehseat(vehicle)
 	return false
 end
 
+local function tablesizee(OBJ)
+	local counter = 0
+	for _, obj in pairs(OBJ) do
+		if obj then
+			counter += 1
+		end
+	end
+	return counter
+end
+
 local function getpedsinvehicle(vehicle, onlyplayer)
 	local pedstable = {}
 	local maxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(vehicle)
@@ -657,11 +672,7 @@ local function getpedsinvehicle(vehicle, onlyplayer)
 			end
 		end
 	end
-	if pedstable == {} then
-		return 0
-	else
-		return pedstable
-	end
+	return pedstable
 end
 
 local function getlastpedsinvehicle(vehicle, onlyplayer)
@@ -1272,10 +1283,6 @@ function open_in_near_entitie(handle)
 		ref = Enearmenu.MainRefPeds
 		entitietype = "PEDS"
 		searchcommand = "ESearchnearpeds"
-		if handle == players.user_ped() then
-			util.toast("you cant find your self")
-			return
-		end
 		if IS_PED_A_PLAYER(handle) then
 			isplayer = true
 		end
@@ -1315,10 +1322,13 @@ function open_in_near_entitie(handle)
 		if GET_BLIP_FROM_ENTITY(handle) == 0 and Enearmenu.onlyblibstoggleentitys then
 			Enearmenu.onlyblibstoggleentitys = false
 		end
+		if handle == players.user_ped() and not Enearmenu.showownped then
+			Enearmenu.showownped = true
+		end
 	end
 	local entitiefound = false
 	menu.trigger_command(ref)
-	util.yield(300)
+	util.yield(200)
 	for _, handle1 in pairs(nearentitieconfig.handels) do
 		if handle1 == handle then
 			entitiefound = true
@@ -1488,20 +1498,15 @@ local function player(pid)
 	end)
 	menu.action(main, "Open Player ped", {}, "", function()
 		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
-		if ped == players.user_ped() then
-			util.toast("you cant find your self")
-			return
-		end
 		open_in_near_entitie(ped)
  	end)
 	menu.action(main, "open player Vehicle", {}, "", function()
 		local ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
 		if not IS_PED_IN_ANY_VEHICLE(ped) then
-			util.toast("not in a vehicle")
+			util.toast("no vehicle Found")
 			return
 		end
-		local vehicleofped = GET_VEHICLE_PED_IS_IN(ped)
-		open_in_near_entitie(vehicleofped)
+		open_in_near_entitie(GET_VEHICLE_PED_IS_IN(ped))
  	end)
     bozo = menu.list(main, "Notizen", {"Notizen"}, "")
 	anderes = menu.list(main, "anderes zeug", {"anderes"}, "")
@@ -3416,6 +3421,12 @@ end, ESPpickupconfigtable.showownerpickup)
 ESPpickupconfigtable.showownerpickup = menu.get_value(ownertogglepickup)
 
 
+local pretablelogallentity = {
+	alldone = false,
+	laststate = 0,
+	succes = 0,
+	nosucces = 0,
+}
 --nearentitieconfig
 Enearmenu.MainRefVehicles = menu.list(Entitymanagernearentitys, "Vehicles", {}, "", function(on_click)
 	zzm.reset_nearentitie_settings()
@@ -3463,6 +3474,21 @@ zzm.nearentitiysloadsphere = function()
 	end
 end
 
+zzm.create_debugloader = function(table, text)
+	if table.alldone then
+		if table.succes == 0 and table.nosucces == 0 then
+			util.toast("DONE: "..text.."\nNO STATS", TOAST_ALL)
+		else
+			util.toast("DONE: "..text.."\nSucces: "..table.succes.."		NoSucces: "..table.nosucces, TOAST_ALL)
+		end
+		return false
+	end
+	if nearentitieconfig.showdebuginfoforallaction then
+		util.draw_debug_text("Working ON: "..text.."  "..table.laststate.." of "..tablesizee(nearentitieconfig.handels))
+	end
+	return true
+end
+
 zzm.reset_nearentitie_settings = function()
 	if nearentitieconfig.enabled then
 		nearentitieconfig.enabled = false
@@ -3498,13 +3524,11 @@ zzm.get_maintextline = function(handle, entitietype)
 	local mainnametextline = modelname.. "  [".. positions.dist.. "]"
 	if entitietype == "VEHICLES" or entitietype == "PEDS" then
 		if entitietype == "VEHICLES" then
-			if nearentitieconfig.showplayers then
-				if not IS_VEHICLE_SEAT_FREE(handle, -1, false) then
-					pedinveh = GET_PED_IN_VEHICLE_SEAT(handle, -1, true)
-					if IS_PED_A_PLAYER(pedinveh) then
-						local pidnameofp = players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(pedinveh))
-						mainnametextline = mainnametextline .. "  (PL ".. pidnameofp.. ")"
-					end
+			if not IS_VEHICLE_SEAT_FREE(handle, -1, false) then
+				pedinveh = GET_PED_IN_VEHICLE_SEAT(handle, -1, true)
+				if IS_PED_A_PLAYER(pedinveh) then
+					local pidnameofp = players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(pedinveh))
+					mainnametextline = mainnametextline .. "  (PL ".. pidnameofp.. ")"
 				end
 			end
 			if GET_VEHICLE_ENGINE_HEALTH(handle) < 0 then
@@ -3515,10 +3539,8 @@ zzm.get_maintextline = function(handle, entitietype)
 			end
 		elseif entitietype == "PEDS" then
 			if IS_PED_A_PLAYER(handle) then
-				if nearentitieconfig.showplayers then
-					local pidnameofp = players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(handle))
-					mainnametextline = "(pl "..pidnameofp .. ")  [".. positions.dist.. "]"
-				end
+				local pidnameofp = players.get_name(NETWORK_GET_PLAYER_INDEX_FROM_PED(handle))
+				mainnametextline = "(pl "..pidnameofp .. ")  [".. positions.dist.. "]"
 			end
 			if IS_PED_IN_ANY_VEHICLE(handle, false) then
 				mainnametextline = mainnametextline.. " {in veh}"
@@ -3810,15 +3832,13 @@ zzm.is_valid_entity = function(handle, checksearch, entitietype)
 		end
 	elseif entitietype == "VEHICLES" then
 		if not nearentitieconfig.showplayers then
-			if not IS_VEHICLE_SEAT_FREE(handle, -1, false) then
-				pedinveh = GET_PED_IN_VEHICLE_SEAT(handle, -1, true)
-				if IS_PED_A_PLAYER(pedinveh) then
-					return false
-				end
+			local pedsinveh = getpedsinvehicle(handle, true)
+			if table.size(pedsinveh) > 0 then
+				return false
 			end
 		end
 	elseif entitietype == "PEDS" then
-		if handle == players.user_ped() then
+		if not nearentitieconfig.showownped and handle == players.user_ped() then
 			return false
 		end
 		if not nearentitieconfig.showplayers then
@@ -3842,15 +3862,27 @@ zzm.get_info_about_entity = function(handle)
 	return ww
 end
 
-zzm.load_visibles_on_screen = function(handle, positions, arsignal, line, box)
-	if nearentitieconfig.showarsignal and not arsignal then
-		util.draw_ar_beacon(positions.ePos)
-	end
-	if nearentitieconfig.showline and not line then
-		DRAW_LINE(positions.pPos.x, positions.pPos.y, positions.pPos.z, positions.ePos.x, positions.ePos.y, positions.ePos.z, 255, 0, 0, 255)
-	end
-	if nearentitieconfig.showbox and not box then
-		draw_bounding_box(handle)
+zzm.load_visibles_on_screen = function(handle, positions, all)
+	if all then
+		if nearentitieconfig.allshowarsignal then
+			util.draw_ar_beacon(positions.ePos)
+		end
+		if nearentitieconfig.allshowline then
+			DRAW_LINE(positions.pPos.x, positions.pPos.y, positions.pPos.z, positions.ePos.x, positions.ePos.y, positions.ePos.z, 255, 0, 0, 255)
+		end
+		if nearentitieconfig.allshowbox then
+			draw_bounding_box(handle)
+		end
+	else
+		if nearentitieconfig.showarsignal then
+			util.draw_ar_beacon(positions.ePos)
+		end
+		if nearentitieconfig.showline then
+			DRAW_LINE(positions.pPos.x, positions.pPos.y, positions.pPos.z, positions.ePos.x, positions.ePos.y, positions.ePos.z, 255, 0, 0, 255)
+		end
+		if nearentitieconfig.showbox then
+			draw_bounding_box(handle)
+		end
 	end
 end
 
@@ -3873,28 +3905,42 @@ zzm.check_stop_loading_main_list = function()
 	return true
 end
 
-zzm.create_downaction_of_entity = function(datatable, entitietype)
+zzm.create_downaction_of_entity = function(datatable, mainreftoload, entitietype)
 	local reflist = {}
 	if not entitietype then
 		entitietype = nearentitieconfig.typeoflist
 	end
-	reflist.extrastuffdivider = menu.divider(datatable.ref, "Extra Stuff")
-	reflist.teleport = menu.list(datatable.ref, "Teleport", {}, datatable.infotextline)
-	reflist.friendly = menu.list(datatable.ref, "Friendly", {}, datatable.infotextline)
-	reflist.trolling = menu.list(datatable.ref, "Trolling", {}, datatable.infotextline)
-	reflist.position = menu.list(datatable.ref, "Position", {}, datatable.infotextline)
-	reflist.misc = menu.list(datatable.ref, "Misc", {}, datatable.infotextline)
+	reflist.extrastuffdivider = menu.divider(mainreftoload, "Extra Stuff")
+	reflist.teleport = menu.list(mainreftoload, "Teleport", {}, datatable.infotextline)
+	reflist.friendly = menu.list(mainreftoload, "Friendly", {}, datatable.infotextline)
+	reflist.trolling = menu.list(mainreftoload, "Trolling", {}, datatable.infotextline)
+	reflist.position = menu.list(mainreftoload, "Position", {}, datatable.infotextline)
+	reflist.misc = menu.list(mainreftoload, "Misc", {}, datatable.infotextline)
 	if entitietype == "PLAYER" then
 		reflist.weapons = menu.attach_after(reflist.friendly, menu.list(menu.shadow_root(), "Weapons", {}, datatable.infotextline))
+		reflist.pedstuff = menu.attach_after(reflist.misc, menu.list(menu.shadow_root(), "Ped Stuff", {}, "Extra info: dont expect that everything will work in here maybe it will nothing work", function(on_click)
+			local target = datatable
+			local reflist = reflist
+			if table.size(menu.get_children(reflist.pedstuff)) != 0 then
+				for _, ref in pairs(menu.get_children(reflist.pedstuff)) do
+					menu.delete(ref)
+				end
+			end
+			zzm.create_downaction_of_entity(target, reflist.pedstuff, "PEDS")
+		end, function(on_back)
+			for _, ref in pairs(menu.get_children(reflist.pedstuff)) do
+				menu.delete(ref)
+			end
+		end))
 		menu.attach_before(reflist.extrastuffdivider, menu.action(menu.shadow_root(), "Open player menu", {}, datatable.infotextline, function()
 			local target = datatable
 			menu.trigger_commands("p" .. target.name)
 		end))
-		menu.attach_before(reflist.extrastuffdivider, menu.action(menu.shadow_root(), "Kick "..datatable.name, {}, datatable.infotextline, function()
+		menu.attach_before(reflist.extrastuffdivider, menu.action(menu.shadow_root(), "Kick   {"..datatable.name.."}", {}, datatable.infotextline, function()
 			local target = datatable
 			menu.trigger_commands("kick"..target.name)
 		end))
-		menu.attach_before(reflist.extrastuffdivider, menu.action(menu.shadow_root(), "Crash "..datatable.name, {}, datatable.infotextline, function()
+		menu.attach_before(reflist.extrastuffdivider, menu.action(menu.shadow_root(), "Crash   {"..datatable.name.."}", {}, datatable.infotextline, function()
 			local target = datatable
 			menu.trigger_commands("crash" .. target.name)
 			menu.trigger_commands("crash" .. target.name)
@@ -4147,9 +4193,9 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			menu.trigger_commands("ceojoin"..target.name.." on")
 		end)
 
-		menu.divider(datatable.ref, "-----------")
+		menu.divider(mainreftoload, "-----------")
 		--get vehicle of player
-		menu.action(datatable.ref, "Vehicle of Player", {}, datatable.infotextline, function()
+		menu.action(mainreftoload, "Vehicle of Player", {}, datatable.infotextline, function()
 			local target = datatable
 			if not IS_PED_IN_ANY_VEHICLE(target.handle) then
 				util.toast("not in a vehicle")
@@ -4159,7 +4205,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			open_in_near_entitie(vehicleofped)
 		end)
 
-		reflist.ORGmembersref = menu.list(datatable.ref, "Org Members", {}, datatable.infotextline, function(on_click)
+		reflist.ORGmembersref = menu.list(mainreftoload, "Org Members", {}, datatable.infotextline, function(on_click)
 			local reflist = reflist
 			local target = datatable
 			if players.get_boss(target.pid) == -1 then
@@ -4412,7 +4458,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		util.remove_blip(blip)
 	end)
 	if entitietype == "VEHICLES" then
-		reflist.doorcontrole = menu.list(datatable.ref, "Door Controle", {}, "Extra info: If the door is not on the vehicle anymore you cant do something with it", function(on_click)
+		reflist.doorcontrole = menu.list(mainreftoload, "Door Controle", {}, "Extra info: If the door is not on the vehicle anymore you cant do something with it", function(on_click)
 			local reflist = reflist
 			local target = datatable
 			if table.size(menu.get_children(reflist.doorcontrole)) > 3 then
@@ -4594,7 +4640,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		menu.divider(reflist.doorcontrole, "DOORS:")
 
 
-		reflist.windowcontrole = menu.list(datatable.ref, "Window Controle", {}, "", function(on_click)
+		reflist.windowcontrole = menu.list(mainreftoload, "Window Controle", {}, "", function(on_click)
 			local target = datatable
 			local reflist = reflist
 			if table.size(menu.get_children(reflist.windowcontrole)) != 2 then
@@ -4691,9 +4737,21 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 				end
 			end
 		end)
+		menu.textslider_stateful(reflist.windowcontroleall, "Make unbreakable", {}, "Extra info: its like they dont exist", {"TRUE","FALSE"}, function(value)
+			local target = datatable
+			if getcontrole(target.handle) then
+				for windowid, windowname in pairs(tables.allwindows) do
+					if value == 1 then
+						SET_DONT_PROCESS_VEHICLE_GLASS(target.handle, true)
+					else
+						SET_DONT_PROCESS_VEHICLE_GLASS(target.handle, false)
+					end
+				end
+			end
+		end)
 		menu.divider(reflist.windowcontrole, "Windows:")
 
-		reflist.setsomestatsveh = menu.list(datatable.ref, "Set Some Stats", {}, "", function(on_click)
+		reflist.setsomestatsveh = menu.list(mainreftoload, "Set Some Stats", {}, "", function(on_click)
 			local target = datatable
 			local reflist = reflist
 			if table.size(menu.get_children(reflist.setsomestatsveh)) != 0 then
@@ -4736,8 +4794,8 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			end)
 		end)
 
-		menu.divider(datatable.ref, "-----------")
-		reflist.pedsinveh = menu.list(datatable.ref, "Peds in vehicle", {}, datatable.infotextline, function(on_click)
+		menu.divider(mainreftoload, "-----------")
+		reflist.pedsinveh = menu.list(mainreftoload, "Peds in vehicle", {}, datatable.infotextline, function(on_click)
 			local reflist = reflist
 			if table.size(menu.get_children(reflist.pedsinveh)) != 0 then
 				for _, ref in pairs(menu.get_children(reflist.pedsinveh)) do
@@ -4754,10 +4812,6 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 					if not DOES_ENTITY_EXIST(target.extrahandle) then
 						util.toast("Entitie not exist anymore")
 						menu.delete(target.extraref)
-						return
-					end
-					if target.extrahandle == players.user_ped() then
-						util.toast("you cant find your self")
 						return
 					end
 					open_in_near_entitie(target.extrahandle)
@@ -4902,7 +4956,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		menu.action(reflist.trolling, "Kick peds of vehicle", {}, datatable.infotextline, function()
 			local target = datatable
 			local pedsinveh = getpedsinvehicle(target.handle)
-			if pedsinveh != 0 then
+			if table.size(pedsinveh) != 0 then
 				for pedsinveh as pedsinveh1 do
 					if not IS_PED_A_PLAYER(pedsinveh1) then
 						if getcontrole(pedsinveh1) and getcontrole(target.handle) then
@@ -4915,7 +4969,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		menu.action(reflist.trolling, "Delete peds of vehicle", {}, datatable.infotextline, function()
 			local target = datatable
 			local pedsinveh = getpedsinvehicle(target.handle)
-			if pedsinveh != 0 then
+			if table.size(pedsinveh) != 0 then
 				for pedsinveh as pedsinveh1 do
 					if not IS_PED_A_PLAYER(pedsinveh1) then
 						entities.delete(pedsinveh1)
@@ -5017,7 +5071,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			menu.set_value(menu.ref_by_command_name("Esave"..target.allmaininfo.modelname), "")
 		end)
 	elseif entitietype == "PEDS" then
-		reflist.taskthings = menu.list(datatable.ref, "Let the ped do stuff", {}, "")
+		reflist.taskthings = menu.list(mainreftoload, "Let the ped do stuff", {}, "")
 		menu.action(reflist.taskthings, "Clear Tasks", {}, datatable.infotextline, function()
 			local target = datatable
 			if getcontrole(target.handle) then
@@ -5028,7 +5082,7 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 		end)
 		menu.divider(reflist.taskthings, "-----------")
 
-		reflist.setsomestatsped = menu.list(datatable.ref, "Set Some Stats", {}, "", function(on_click)
+		reflist.setsomestatsped = menu.list(mainreftoload, "Set Some Stats", {}, "", function(on_click)
 			local target = datatable
 			local reflist = reflist
 			if table.size(menu.get_children(reflist.setsomestatsped)) != 0 then
@@ -5132,16 +5186,15 @@ zzm.create_downaction_of_entity = function(datatable, entitietype)
 			end)
 		end)
 
-		menu.divider(datatable.ref, "-----------")
-		menu.action(datatable.ref, "Vehicle of ped", {}, datatable.infotextline, function()
+		menu.divider(mainreftoload, "-----------")
+		menu.action(mainreftoload, "Vehicle of ped", {}, datatable.infotextline, function()
 			local reflist = reflist
 			local target = datatable
 			if not IS_PED_IN_ANY_VEHICLE(target.handle) then
-				util.toast("not in a vehicle")
+				util.toast("no vehicle Found")
 				return
 			end
-			local vehicleofped = GET_VEHICLE_PED_IS_IN(target.handle)
-			open_in_near_entitie(vehicleofped)
+			open_in_near_entitie(GET_VEHICLE_PED_IS_IN(target.handle))
 		end)
 
 		--Trolling
@@ -5266,9 +5319,20 @@ end
 zzm.create_all_entities_actions = function(ref)
 	local reflist = {}
 	menu.action(ref, "Delete", {}, "", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Delete") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			entities.delete(handle)
+			if DOES_ENTITY_EXIST(handle) then
+				log.nosucces += 1
+			else
+				log.succes += 1
+			end
 		end
+		log.alldone = true
 	end)
 	menu.divider(ref, "Extra Stuff")
 	reflist.teleport = menu.list(ref, "Teleport", {}, "")
@@ -5279,94 +5343,165 @@ zzm.create_all_entities_actions = function(ref)
 	--teleport
 	if nearentitieconfig.typeoflist != "VEHICLES" then
 		menu.action(reflist.teleport, "Teleport to me", {}, "", function()
+			local log = deep_table_copy(pretablelogallentity)
+			util.create_tick_handler(function()
+				if not zzm.create_debugloader(log, "Teleport to me") then return false end
+			end)
 			for _, handle in pairs(nearentitieconfig.handels) do
 				util.yield(20)
+				log.laststate = _
 				local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +2, 0)
 				if getcontrole(handle) then
 					SET_ENTITY_COORDS_NO_OFFSET(handle, mypos.x, mypos.y, mypos.z, false, false, false)
+					log.succes += 1
 				else
+					log.nosucces += 1
 					util.toast("konnte keine kontrolle bekommen")
 				end
 			end
+			log.alldone = true
 		end)
 	end
 
 	--trolling
 	menu.action(reflist.trolling, "Freeze ON", {}, "", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Freeze ON") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			if getcontrole(handle) then
 				FREEZE_ENTITY_POSITION(handle, true)
+				log.succes += 1
 			else
+				log.nosucces += 1
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end
+		log.alldone = true
 	end)
 	menu.action(reflist.trolling, "Freeze OFF", {}, "", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Freeze OFF") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			if getcontrole(handle) then
 				FREEZE_ENTITY_POSITION(handle, false)
+				log.succes += 1
 			else
+				log.nosucces += 1
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end
+		log.alldone = true
 	end)
 
 	--friendly
 	menu.action(reflist.friendly, "Give Godmode", {}, "", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Give Godmode") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			if getcontrole(handle) then
+				log.succes += 1
 				set_godmode(handle, true)
 			else
+				log.nosucces += 1
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end
+		log.alldone = true
 	end)
 	menu.action(reflist.friendly, "Remove Godmode", {}, "", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Remove Godmode") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			if getcontrole(handle) then
+				log.succes += 1
 				set_godmode(handle, false)
 			else
+				log.nosucces += 1
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end
+		log.alldone = true
 	end)
 
 	--misc
 	menu.action(reflist.misc, "Set Entitie as mission Entitie", {}, "setzt das Object als mission entity kann also nicht einfach so despawnen", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Set Entitie as mission Entitie") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			if getcontrole(handle) then
+				log.succes += 1
 				SET_ENTITY_AS_MISSION_ENTITY(handle)
 			else
+				log.nosucces += 1
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end
+		log.alldone = true
 	end)
 	menu.action(reflist.misc, "Set Entitie as no longer needed", {}, "setzt das Object einfach auf ein normal enitity das despawned wenn du weg gehst", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Set Entitie as no longer needed") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			if getcontrole(handle) then
+				log.succes += 1
 				SET_ENTITY_AS_NO_LONGER_NEED(handle)
 			else
+				log.nosucces += 1
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end
+		log.alldone = true
 	end)
 	menu.action(reflist.misc, "Set Visible", {}, "", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Set Visible") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			if getcontrole(handle) then
+				log.succes += 1
 				SET_ENTITY_VISIBLE(handle, true, 0)
 			else
+				log.nosucces += 1
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end
+		log.alldone = true
 	end)
 	menu.action(reflist.misc, "Set Invisible", {}, "", function()
+		local log = deep_table_copy(pretablelogallentity)
+		util.create_tick_handler(function()
+			if not zzm.create_debugloader(log, "Set Invisible") then return false end
+		end)
 		for _, handle in pairs(nearentitieconfig.handels) do
+			log.laststate = _
 			if getcontrole(handle) then
+				log.succes += 1
 				SET_ENTITY_VISIBLE(handle, false, 0)
 			else
 				util.toast("konnte keine kontrolle bekommen")
 			end
 		end
+		log.alldone = true
 	end)
 	if nearentitieconfig.typeoflist == "VEHICLES" or nearentitieconfig.typeoflist == "PEDS" then
 	
@@ -5374,210 +5509,421 @@ zzm.create_all_entities_actions = function(ref)
 			reflist.doorcontrole = menu.list(ref, "Door Controle", {}, "")
 			reflist.doorcontroleall = menu.list(reflist.doorcontrole, "ALL Doors", {}, "")
 			menu.action(reflist.doorcontroleall, "Open Doors", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Open Doors") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
-					for doorid, doorname in pairs(tables.doorids) do
-						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
-							continue
-						end
-						if getcontrole(handle) then
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for doorid, doorname in pairs(tables.doorids) do
+							if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+								continue
+							end
 							SET_VEHICLE_DOOR_OPEN(handle, doorid, false, false)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.doorcontroleall, "Close Doors", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Close Doors") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
-					for doorid, doorname in pairs(tables.doorids) do
-						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
-							continue
-						end
-						if getcontrole(handle) then
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for doorid, doorname in pairs(tables.doorids) do
+							if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+								continue
+							end
 							SET_VEHICLE_DOOR_SHUT(handle, doorid, false)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.doorcontroleall, "Delete Doors", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Delete Doors") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
-					for doorid, doorname in pairs(tables.doorids) do
-						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
-							continue
-						end
-						if getcontrole(handle) then
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for doorid, doorname in pairs(tables.doorids) do
+							if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+								continue
+							end
 							SET_VEHICLE_DOOR_BROKEN(handle, doorid, true)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.doorcontroleall, "Brake Doors", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Brake Doors") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
-					for doorid, doorname in pairs(tables.doorids) do
-						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
-							continue
-						end
-						if getcontrole(handle) then
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for doorid, doorname in pairs(tables.doorids) do
+							if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+								continue
+							end
 							SET_VEHICLE_DOOR_BROKEN(handle, doorid, false)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.list_action(reflist.doorcontroleall, "Set Lock Status", {}, "", tables.vehlockstatus, function(index)
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Set Lock Status") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
-					for doorid, doorname in pairs(tables.doorids) do
-						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
-							continue
-						end
-						if getcontrole(handle) then
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for doorid, doorname in pairs(tables.doorids) do
+							if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+								continue
+							end
 							SET_VEHICLE_DOORS_LOCKED(handle, index)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.doorcontroleall, "Make Doors unbreakable", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Make Doors unbreakable") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
-					for doorid, doorname in pairs(tables.doorids) do
-						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
-							continue
-						end
-						if getcontrole(handle) then
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for doorid, doorname in pairs(tables.doorids) do
+							if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+								continue
+							end
 							SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(handle, doorid, false)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.doorcontroleall, "Make Doors breakable", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Make Doors breakable") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
-					for doorid, doorname in pairs(tables.doorids) do
-						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
-							continue
-						end
-						if getcontrole(handle) then
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for doorid, doorname in pairs(tables.doorids) do
+							if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+								continue
+							end
 							SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(handle, doorid, true)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.slider(reflist.doorcontroleall, "Set Door Angle", {"allentitiesdoorangleall"}, "Extra info: if door is breakable then == Door can brake above 125 and will 100% brake at 163", 0, 500, 0, 1, function(value)
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Set Door Angle") then return false end
+				end)
 				value = value / 100
 				for _, handle in pairs(nearentitieconfig.handels) do
-					for doorid, doorname in pairs(tables.doorids) do
-						if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
-							continue
-						end
-						if getcontrole(handle) then
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for doorid, doorname in pairs(tables.doorids) do
+							if not GET_IS_DOOR_VALID(handle, doorid) or IS_VEHICLE_DOOR_DAMAGED(handle, doorid) then
+								continue
+							end
 							SET_VEHICLE_DOOR_CONTROL(handle, doorid, 100, value)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.divider(reflist.doorcontrole, "DOORS:")
 			for doorid, doorname in pairs(tables.doorids) do
 				local dooridref
 				dooridref = menu.list(reflist.doorcontrole, doorname, {}, "")
 				menu.action(dooridref, "Open door", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Open door") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SET_VEHICLE_DOOR_OPEN(handle, doorid, false, false)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(dooridref, "Close door", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Close door") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SET_VEHICLE_DOOR_SHUT(handle, doorid, false)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(dooridref, "Delete door", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Delete door") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SET_VEHICLE_DOOR_BROKEN(handle, doorid, true)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(dooridref, "Brake door", {}, "Extra info: you will moved back a tab bc you cant interact with this door anymore", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Brake door") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SET_VEHICLE_DOOR_BROKEN(handle, doorid, false)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.list_action(dooridref, "Set Lock Status", {}, "", tables.vehlockstatus, function(index)
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Set Lock Status") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SET_VEHICLE_INDIVIDUAL_DOORS_LOCKED(handle, doorid, index)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(dooridref, "Make door unbreakable", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Make door unbreakable") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(handle, doorid, false)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(dooridref, "Make door breakable", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Make door breakable") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SET_DOOR_ALLOWED_TO_BE_BROKEN_OFF(handle, doorid, true)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.slider(dooridref, "Set Door Angle", {"doorangleallentities"..doorname}, "Extra info: if door is breakable then == Door can brake above 125 and will 100% brake at 163", 0, 500, 0, 1, function(value)
 					value = value / 100
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Set Door Angle") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SET_VEHICLE_DOOR_CONTROL(handle, doorid, 100, value)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 			end
 			reflist.windowcontrole = menu.list(ref, "Window Controle", {}, "")
 			reflist.windowcontroleall = menu.list(reflist.windowcontrole, "All Windows", {}, "")
 			menu.action(reflist.windowcontroleall, "Roll up", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Roll up") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						for windowid, windowname in pairs(tables.allwindows) do
 							ROLL_UP_WINDOW(handle, windowid)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.windowcontroleall, "Roll down", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Roll down") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						for windowid, windowname in pairs(tables.allwindows) do
 							ROLL_DOWN_WINDOW(handle, windowid)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.windowcontroleall, "Remove Windows", {}, "Extra info: the window can only get back after a full car repair", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Remove Windows") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						for windowid, windowname in pairs(tables.allwindows) do
 							REMOVE_VEHICLE_WINDOW(handle, windowid)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.windowcontroleall, "Smash Windows", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Smash Windows") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						for windowid, windowname in pairs(tables.allwindows) do
 							SMASH_VEHICLE_WINDOW(handle, windowid)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.windowcontroleall, "Fix Windows", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Fix Windows") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						for windowid, windowname in pairs(tables.allwindows) do
 							FIX_VEHICLE_WINDOW(handle, windowid)
 						end
+					else
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
+			end)
+			menu.textslider_stateful(reflist.windowcontroleall, "Make unbreakable", {}, "Extra info: its like they dont exist", {"TRUE","FALSE"}, function(value)
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Make unbreakable") then return false end
+				end)
+				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+						for windowid, windowname in pairs(tables.allwindows) do
+							if value == 1 then
+								SET_DONT_PROCESS_VEHICLE_GLASS(handle, true)
+							else
+								SET_DONT_PROCESS_VEHICLE_GLASS(handle, false)
+							end
+						end
+					else
+						log.nosucces += 1
+					end
+				end
+				log.alldone = true
 			end)
 
 			menu.divider(reflist.windowcontrole, "WINDOWS:")
@@ -5585,61 +5931,119 @@ zzm.create_all_entities_actions = function(ref)
 				local windowref
 				windowref = menu.list(reflist.windowcontrole, windowname, {}, "")
 				menu.action(windowref, "Roll up", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Roll up") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							ROLL_UP_WINDOW(handle, windowid)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(windowref, "Roll down", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Roll down") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							ROLL_DOWN_WINDOW(handle, windowid)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(windowref, "Remove Window", {}, "Extra info: the window can only get back after a full car repair", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Remove Window") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							REMOVE_VEHICLE_WINDOW(handle, windowid)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(windowref, "Smash Window", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Smash Window") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							SMASH_VEHICLE_WINDOW(handle, windowid)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 				menu.action(windowref, "Fix Window", {}, "", function()
+					local log = deep_table_copy(pretablelogallentity)
+					util.create_tick_handler(function()
+						if not zzm.create_debugloader(log, "Fix Window") then return false end
+					end)
 					for _, handle in pairs(nearentitieconfig.handels) do
+						log.laststate = _
 						if getcontrole(handle) then
+							log.succes += 1
 							FIX_VEHICLE_WINDOW(handle, windowid)
+						else
+							log.nosucces += 1
 						end
 					end
+					log.alldone = true
 				end)
 			end
 			--vehicle teleport
 			menu.action(reflist.teleport, "Teleport to me", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Teleport to me") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
 					util.yield(20)
 					local ent_ptr = memory.alloc_int()
 					memory.write_int(ent_ptr, handle)
 					local mypos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(players.user_ped(), 0, +6, 0)
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						SET_VEHICLE_FORWARD_SPEED(handle, 0)
 						SET_ENTITY_AS_MISSION_ENTITY(handle)
 						SET_ENTITY_COORDS_NO_OFFSET(handle, mypos.x, mypos.y, mypos.z, false, false, false)
 					else
+						log.nosucces += 1
 						util.toast("konnte keine kontrolle bekommen")
 					end
 				end
+				log.alldone = true
 			end)
 
 			--vehicle trolling
 			menu.action(reflist.trolling, "Explode", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Explode") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					util.yield(30)
 					local ePos = GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(handle, 0, 0, 0)
 					if ePos.x == 0 or ePos.y == 0 then
@@ -5660,93 +6064,146 @@ zzm.create_all_entities_actions = function(ref)
 							--timer += 1
 						until vehiclehealth < 0 or vehiclebodyhealth < 1 --or timer > 250
 					end
+					if GET_VEHICLE_ENGINE_HEALTH(handle) < 0 or GET_VEHICLE_BODY_HEALTH(handle) < 1 then
+						log.succes += 1
+					else
+						log.nosucces += 1
+					end
 					::end::
 				end
+				log.alldone = true
 			end)
 			menu.textslider_stateful(reflist.trolling, "Boost", {}, "", {"Forward", "Right", "Left","Up","Down", "Back"}, function(index)
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Boost") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					util.yield(20)
+					if not getcontrole(handle) then
+						log.nosucces += 1
+						continue
+					else
+						log.succes += 1
+					end
 					if index == 1 then
-						if getcontrole(handle) then
 							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, nearentitieconfig.boostvalue, 0.0, true, true, true, true)
-						end
 					elseif index == 2 then
-						if getcontrole(handle) then
 							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, nearentitieconfig.boostvalue, 0.0, 0.0, true, true, true, true)
-						end
 					elseif index == 3 then
-						if getcontrole(handle) then
 							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, -nearentitieconfig.boostvalue, 0.0, 0.0, true, true, true, true)
-						end
 					elseif index == 4 then
-						if getcontrole(handle) then
 							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, 0.0, nearentitieconfig.boostvalue, true, true, true, true)
-						end
 					elseif index == 5 then
-						if getcontrole(handle) then
 							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, 0.0, -nearentitieconfig.boostvalue, true, true, true, true)
-						end
 					elseif index == 6 then
-						if getcontrole(handle) then
 							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, -nearentitieconfig.boostvalue, 0.0, true, true, true, true)
-						end
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.trolling, "Kick Peds of Vehicle", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Kick Peds of Vehicle") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					local pedsinveh = getpedsinvehicle(handle)
-					if pedsinveh != 0 then
+					if table.size(pedsinveh) != 0 then
 						for pedsinveh as pedsinveh1 do
 							if not IS_PED_A_PLAYER(pedsinveh1) then
 								if getcontrole(pedsinveh1) and getcontrole(handle) then
+									log.succes += 1
 									TASK_LEAVE_VEHICLE(pedsinveh1, handle, 16)
 									CLEAR_PED_TASKS_IMMEDIATELY(pedsinveh1)
+								else
+									log.nosucces += 1
 								end
 							end
 						end
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.trolling, "Delete Peds of Vehicle", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Delete Peds of Vehicle") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					local pedsinveh = getpedsinvehicle(handle)
-					if pedsinveh != 0 then
+					if table.size(pedsinveh) != 0 then
 						for pedsinveh as pedsinveh1 do
 							if not IS_PED_A_PLAYER(pedsinveh1) then
 								entities.delete(pedsinveh1)
+								if DOES_ENTITY_EXIST(pedsinveh1) then
+									log.nosucces += 1
+								else
+									log.succes += 1
+								end
 							end
 						end
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.trolling, "Remove wheels", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Remove wheels") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						for i=0, 7 do
 							SET_VEHICLE_TYRE_BURST(handle, i, true, 0)
 							entities.detach_wheel(handle, i)
 						end
 					else
+						log.nosucces += 1
 						util.toast("konnte keine kontrolle bekommen")
 					end
 				end
+				log.alldone = true
 			end)
 
 			--vehicle friendly
 			menu.action(reflist.friendly, "Repair", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Repair") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						STOP_ENTITY_FIRE(handle)
 						SET_VEHICLE_FIXED(handle)
 						SET_VEHICLE_DIRT_LEVEL(handle, 0)
 					else
+						log.nosucces += 1
 						util.toast("konnte keine kontrolle bekommen")
 					end
 				end
+				log.alldone = true
 			end)
 			menu.list_action(reflist.friendly, "Upgrade", {}, "", {"full", "random", "down"}, function(index)
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Upgrade") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
+					if getcontrole(handle) then
+						log.succes += 1
+					else
+						log.nosucces += 1
+						continue
+					end
 					if index == 1 then
 						upgrade_vehicle(handle)
 					elseif index == 2 then
@@ -5755,6 +6212,7 @@ zzm.create_all_entities_actions = function(ref)
 						downggrade_vehicle(handle)
 					end
 				end
+				log.alldone = true
 			end)
 			menu.text_input(reflist.misc, "Save vehicle / adds number to it", {"Ensaveallveh"}, "", function(input)
 				local numbertoadd = 0
@@ -5762,7 +6220,12 @@ zzm.create_all_entities_actions = function(ref)
 				local wasinveh = IS_PED_IN_ANY_VEHICLE(players.user_ped())
 				local vehicleofped = GET_VEHICLE_PED_IS_IN(players.user_ped())
 				local seatofplayer = getseatofplayer(vehicleofped, players.user_ped())
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Save vehicle") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					local modelname = getmodelnamebyhash(entities.get_model_hash(handle))
 					nearentitieconfig.listhavetostoploading = true
 					freeseat = getfreevehseat(handle)
@@ -5770,6 +6233,7 @@ zzm.create_all_entities_actions = function(ref)
 						numbertoadd += 1
 						menu.trigger_commands("savevehicle "..input.." ".. numbertoadd)
 						util.toast("VEH: ".. modelname.. " Saved as ".. input.." ".. numbertoadd)
+						log.succes += 1
 						goto end
 					end
 						if freeseat then
@@ -5778,8 +6242,10 @@ zzm.create_all_entities_actions = function(ref)
 							numbertoadd += 1
 							menu.trigger_commands("savevehicle "..input.." ".. numbertoadd)
 							util.toast("VEH: ".. modelname.. " Saved as ".. input.." ".. numbertoadd)
+							log.succes += 1
 							util.yield(10)
 						else
+							log.nosucces += 1
 							util.toast(modelname.. " Ist voll es wird übersprungen")
 						end
 					::end::
@@ -5805,84 +6271,125 @@ zzm.create_all_entities_actions = function(ref)
 					SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), mypos, false, false, false)
 				end
 				::stopprocess::
+				log.alldone = true
 				menu.set_value(menu.ref_by_command_name("Ensaveallveh"), "")
 			end)
 		elseif nearentitieconfig.typeoflist == "PEDS" then
 			--ped trolling
 			menu.textslider_stateful(reflist.trolling, "Boost", {}, "", {"Forward", "Right", "Left","Up","Down", "Back"}, function(index)
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Boost") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					if getcontrole(handle) then
+						log.succes += 1
+					else
+						log.nosucces += 1
+						continue
+					end
 					if index == 1 then
-						if getcontrole(handle) then
-							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, nearentitieconfig.boostvalue, 0.0, true, true, true, true)
-						end
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, nearentitieconfig.boostvalue, 0.0, true, true, true, true)
 					elseif index == 2 then
-						if getcontrole(handle) then
-							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, nearentitieconfig.boostvalue, 0.0, 0.0, true, true, true, true)
-						end
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, nearentitieconfig.boostvalue, 0.0, 0.0, true, true, true, true)
 					elseif index == 3 then
-						if getcontrole(handle) then
-							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, -nearentitieconfig.boostvalue, 0.0, 0.0, true, true, true, true)
-						end
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, -nearentitieconfig.boostvalue, 0.0, 0.0, true, true, true, true)
 					elseif index == 4 then
-						if getcontrole(handle) then
-							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, 0.0, nearentitieconfig.boostvalue, true, true, true, true)
-						end
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, 0.0, nearentitieconfig.boostvalue, true, true, true, true)
 					elseif index == 5 then
-						if getcontrole(handle) then
-							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, 0.0, -nearentitieconfig.boostvalue, true, true, true, true)
-						end
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, 0.0, -nearentitieconfig.boostvalue, true, true, true, true)
 					elseif index == 6 then
-						if getcontrole(handle) then
-							APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, -nearentitieconfig.boostvalue, 0.0, true, true, true, true)
-						end
+						APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(handle, 1, 0.0, -nearentitieconfig.boostvalue, 0.0, true, true, true, true)
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.trolling, "Explode", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Explode") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
 					util.yield(30)
 					local ePos = GET_ENTITY_COORDS(handle)
 					if IS_PED_IN_ANY_VEHICLE(handle) then CLEAR_PED_TASKS_IMMEDIATELY(handle) end
-						ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 1.0, true, false, 0.0, false)
-						if not IS_PED_A_PLAYER(handle) and entities.request_control(handle) then
-							SET_ENTITY_HEALTH(handle, 0, 0)
-							FORCE_PED_MOTION_STATE(handle, 0x0DBB071C, 0,0,0)
-						end
+					ADD_EXPLOSION(ePos.x, ePos.y, ePos.z, 5, 1.0, true, false, 0.0, false)
+					if not IS_PED_A_PLAYER(handle) and entities.request_control(handle) then
+						log.succes += 1
+						SET_ENTITY_HEALTH(handle, 0, 0)
+						FORCE_PED_MOTION_STATE(handle, 0x0DBB071C, 0,0,0)
+					else
+						log.nosucces += 1
+					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.trolling, "Kill", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Kill") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						SET_ENTITY_HEALTH(handle, 0, 0)
 						FORCE_PED_MOTION_STATE(handle, 0x0DBB071C, 0,0,0)
 					else
 						util.toast("konnte keine kontrolle bekommen")
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.trolling, "Shoot", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Shoot") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if GET_VEHICLE_PED_IS_USING(handle) ~= 0 then CLEAR_PED_TASKS_IMMEDIATELY(handle) end
 					local PedPos = GET_ENTITY_COORDS(handle)
 					local AddPos = GET_ENTITY_COORDS(handle)
 					AddPos.z = AddPos.z + 1
 					SHOOT_SINGLE_BULLET_BETWEEN_COORDS(AddPos.x, AddPos.y, AddPos.z, PedPos.x, PedPos.y, PedPos.z, 1000, false, 0xC472FE2, players.user_ped(), false, true, 1000)
+					if IS_PED_DEAD_OR_DYING(handle) then
+						log.succes += 1
+					else
+						log.nosucces += 1
+					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.trolling, "Remove weapons", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Remove weapons") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						REMOVE_ALL_PED_WEAPONS(handle, false)
 					else
 						util.toast("konnte keine kontrolle bekommen")
+						log.nosucces += 1
 					end
 				end
+				log.alldone = true
 			end)
 			--peds friendly
 			menu.action(reflist.friendly, "Heal/Revive", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Heal/Revive") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
 					local ispeddead = IS_PED_DEAD_OR_DYING(handle)
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						maxhealth = GET_PED_MAX_HEALTH(handle)
 						SET_ENTITY_HEALTH(handle, maxhealth, 0)
 						STOP_ENTITY_FIRE(handle)
@@ -5890,18 +6397,28 @@ zzm.create_all_entities_actions = function(ref)
 							CLEAR_PED_TASKS_IMMEDIATELY(handle)
 						end
 					else
+						log.nosucces += 1
 						util.toast("konnte keine kontrolle bekommen")
 					end
 				end
+				log.alldone = true
 			end)
 			menu.action(reflist.misc, "Clear Tasks", {}, "", function()
+				local log = deep_table_copy(pretablelogallentity)
+				util.create_tick_handler(function()
+					if not zzm.create_debugloader(log, "Clear Tasks") then return false end
+				end)
 				for _, handle in pairs(nearentitieconfig.handels) do
+					log.laststate = _
 					if getcontrole(handle) then
+						log.succes += 1
 						CLEAR_PED_TASKS_IMMEDIATELY(handle)
 					else
+						log.nosucces += 1
 						util.toast("konnte keine kontrolle bekommen")
 					end
 				end
+				log.alldone = true
 			end)
 		end
 	elseif nearentitieconfig.typeoflist == "OBJECTS" or nearentitieconfig.typeoflist == "PICKUPS" then
@@ -5914,7 +6431,7 @@ zzm.load_all_action_visibles = function(ref)
 		return false
 	end
 	for _, handle in pairs(nearentitieconfig.handels) do
-		zzm.load_visibles_on_screen(handle, zzm.get_distance_from_entity(handle), true, true, false)
+		zzm.load_visibles_on_screen(handle, zzm.get_distance_from_entity(handle), true)
 	end
 end
 
@@ -5930,6 +6447,24 @@ zzm.check_everything_for_all_action_stuff = function(ref)
 	nearentitieconfig.allentitiemenuopen = true
 	util.create_tick_handler(zzm.load_all_action_visibles)
 end
+
+--[[ zzm.get_ref_to_attach = function(ref, dist)
+	local sortedlist = {}
+	for _, reftoget in pairs(menu.get_children(ref)) do
+		if _ <= 2 then
+			continue
+		end
+		local distofnewref = string.match(menu.get_menu_name(reftoget), "%[(%d+)%]")
+		table.insert(sortedlist, { ref = reftoget, dist = tonumber(distofnewref) })
+	end
+	table.sort(sortedlist, function(a, b) return a.dist < b.dist end)
+	for _, sortlist in pairs(sortedlist) do
+		util.toast(dist.."     "..sortlist.dist)
+		if dist >= sortlist.dist then
+			return sortlist.ref
+		end
+	end
+end ]]
 
 Enearmenu.searchVehicle = menu.text_input(Enearmenu.MainRefVehicles, "Search", {"ESearchnearveh"}, "", function(input)
 	nearentitieconfig.searchofvehicles = input
@@ -6069,9 +6604,12 @@ function aktivenearentitys()
 		if target.positions.dist > nearentitieconfig.maxdist then
 			goto end
 		end
+		local hashandle = entities.has_handle(target.pointer)
 		target.handle = entities.pointer_to_handle(target.pointer)
 		if nearentitieconfig.maxtoload == 0 and not zzm.is_valid_entity(target.handle) then
-			RELEASE_SCRIPT_HANDLE(target.handle)
+			if not hashandle then
+				RELEASE_SCRIPT_HANDLE(target.handle)
+			end
 			goto end
 		end
 		target.isplayer = false
@@ -6094,9 +6632,9 @@ function aktivenearentitys()
 				local listofref = menu.get_children(target.ref)
 				if table.size(listofref) == 0 then
 					if target.isplayer then
-						zzm.create_downaction_of_entity(target, "PLAYER")
+						zzm.create_downaction_of_entity(target, target.ref, "PLAYER")
 					else
-						zzm.create_downaction_of_entity(target)
+						zzm.create_downaction_of_entity(target, target.ref)
 					end
 				end
 				if nearentitieconfig.allentitiemenuopen then nearentitieconfig.allentitiemenuopen = false end
@@ -6168,7 +6706,7 @@ function aktivenearentitys()
 		::end::
 	end
 
-	for nearentitieconfig.handels as handle do
+	for _, handle in pairs(nearentitieconfig.handels) do
 		ref = nearentitieconfig.mainrefs[handle]
 		if DOES_ENTITY_EXIST(handle) then
 			if not zzm.is_valid_entity(handle, true) then
@@ -6183,6 +6721,8 @@ function aktivenearentitys()
 				tableremove(nearentitieconfig.handels, handle)
 				menu.delete(ref)
 			end
+		elseif handle == nil then
+			table.remove( nearentitieconfig.handels,_)
 		end
 	end
 end
@@ -6193,6 +6733,9 @@ Enearmenu.extrasettings = menu.list(Entitymanagernearentitys, "Extra Settings", 
 Enearmenu.maxtoloadlist = menu.list(Enearmenu.extrasettings, "Max entities to Load", {}, "")
 Enearmenu.infosettings = menu.list(Enearmenu.extrasettings, "Help Text settings", {}, "")
 
+Enearmenu.showdebuginfoinallaction = menu.toggle(Enearmenu.extrasettings, "Show debug infos in All Action", {}, "shows how far it is with doing the action to all entitys", function(value)
+	nearentitieconfig.showdebuginfoforallaction = value
+end,nearentitieconfig.showdebuginfoforallaction)
 Enearmenu.stoplmainlistwhenpausemenuopen = menu.toggle(Enearmenu.extrasettings, "Stop list when pause menu open", {}, "ON = stops loading the main list if the pause menu is open", function(value)
 	nearentitieconfig.stoplistwhenpausemenuopen = value
 end,nearentitieconfig.stoplistwhenpausemenuopen)
@@ -6269,7 +6812,7 @@ end, nearentitieconfig.searchininfo)
 Enearmenu.onlymissiontoggleentitys = menu.toggle(Entitymanagernearentitys, "Only Mission entitys", {}, "", function(value)
 	nearentitieconfig.onlymission = value
 end, nearentitieconfig.onlymission)
-Enearmenu.showplayerstoggleentitys = menu.toggle(Entitymanagernearentitys, "Show players", {}, "", function(value)
+Enearmenu.showplayerstoggleentitys = menu.toggle(Entitymanagernearentitys, "Show players", {}, "will not show player peds and no vehicles if there is a player in it", function(value)
 	nearentitieconfig.showplayers = value
 end, nearentitieconfig.showplayers)
 Enearmenu.onlyblibstoggleentitys = menu.toggle(Entitymanagernearentitys, "Show only entitys with a blib", {}, "", function(value)
@@ -6278,18 +6821,34 @@ end, nearentitieconfig.showonlywithblib)
 Enearmenu.removeattachobjtoggleentitys = menu.toggle(Entitymanagernearentitys, "Remove attached OBJ in list", {}, "", function(value)
 	nearentitieconfig.removeattached = value
 end, nearentitieconfig.removeattached)
+Enearmenu.showownped = menu.toggle(Entitymanagernearentitys, "Show Own Ped", {}, "", function(value)
+	nearentitieconfig.showownped = value
+end, nearentitieconfig.showownped)
 Enearmenu.debugginfostoggleentitys = menu.toggle(Entitymanagernearentitys, "Show Debug infos in help text", {}, "", function(value)
 	nearentitieconfig.showdebuginfos = value
 end, nearentitieconfig.showdebuginfos)
-Enearmenu.drawarsignalstoggleentitys = menu.toggle(Entitymanagernearentitys, "Show AR signal", {}, "", function(value)
+
+Enearmenu.markings = menu.list(Entitymanagernearentitys, "Markings", {}, "")
+menu.divider(Enearmenu.markings, "one Entitys")
+Enearmenu.drawarsignalstoggleentitys = menu.toggle(Enearmenu.markings, "Show AR signal", {}, "", function(value)
 	nearentitieconfig.showarsignal = value
 end, nearentitieconfig.showarsignal)
-Enearmenu.drawlinetoggleentitys = menu.toggle(Entitymanagernearentitys, "Show line", {}, "", function(value)
+Enearmenu.drawlinetoggleentitys = menu.toggle(Enearmenu.markings, "Show line", {}, "", function(value)
 	nearentitieconfig.showline = value
 end, nearentitieconfig.showline)
-Enearmenu.drawboxtoggleentitys = menu.toggle(Entitymanagernearentitys, "Show Box", {}, "", function(value)
+Enearmenu.drawboxtoggleentitys = menu.toggle(Enearmenu.markings, "Show Box", {}, "", function(value)
 	nearentitieconfig.showbox = value
 end, nearentitieconfig.showbox)
+menu.divider(Enearmenu.markings, "ALL Entitys")
+Enearmenu.alldrawarsignalstoggleentitys = menu.toggle(Enearmenu.markings, "ALL Show AR signal", {}, "", function(value)
+	nearentitieconfig.allshowarsignal = value
+end, nearentitieconfig.allshowarsignal)
+Enearmenu.alldrawlinetoggleentitys = menu.toggle(Enearmenu.markings, "ALL Show line", {}, "", function(value)
+	nearentitieconfig.allshowline = value
+end, nearentitieconfig.allshowline)
+Enearmenu.alldrawboxtoggleentitys = menu.toggle(Enearmenu.markings, "ALL Show Box", {}, "", function(value)
+	nearentitieconfig.allshowbox = value
+end, nearentitieconfig.allshowbox)
 
 
 
@@ -6442,19 +7001,18 @@ end, function(on_stop)
 	end
 end)
 
---[[if IS_PED_IN_ANY_VEHICLE(ped,true) then
-players.is_godmode(pid) and 
-IS_PLAYER_FREE_AIMING_AT_ENTITY(pid, players.user_ped()) or 
-	local vehicleped = players.get_vehicle_model(players.user())
-	if IS_PED_ARMED(ped, 7) and IS_PLAYER_FREE_AIMING(pid) and IS_PLAYER_FREE_AIMING_AT_ENTITY(vehicleped, players.user_ped()) and not players.is_in_interior(pid) then
-		if not vehiclegodmode then
-			SET_REMOTE_PLAYER_AS_GHOST(pid, true)
+menu.toggle_loop(Self, "irgnore window break", {}, "Igrnores the window on aming in vehicle", function()
+	if GET_IS_TASK_ACTIVE(players.user_ped(), 204) then --is_key_down("VK_RBUTTON") then --IS_PED_IN_ANY_VEHICLE(players.user_ped()) and IS_PLAYER_FREE_AIMING(players.user())  then
+		vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
+		windowindex = getseatofplayer(vehicle, players.user_ped()) +1
+		if IS_VEHICLE_WINDOW_INTACT(vehicle, windowindex) then
+			--util.toast("test ding")
+			SMASH_VEHICLE_WINDOW(vehicle, windowindex)
+			CLEAR_DEFAULT_PRIMARY_TASK(players.user_ped())
 		end
-	else
-		SET_REMOTE_PLAYER_AS_GHOST(pid, false)
 	end
-else]]
---or GET_IS_TASK_ACTIVE(ped, 199) or GET_IS_TASK_ACTIVE(ped, 128)  and not is_in_interior(pid) 
+end)
+
 
 local timerforafk = 120
 local timegerade = util.current_time_millis()
@@ -6468,7 +7026,7 @@ menu.toggle_loop(Self, "anti afk kill", {}, "", function()
 				ismovingon = true
 			end
 		end
-		if isanykeypressed() or ismovingon  then
+		if isanykeypressed() or ismovingon then
 			timegerade = util.current_time_millis()
 			if ghostplayer then
 				menu.set_value(ghostarmedplayers, true)
@@ -7894,7 +8452,6 @@ local config = {
     wrap_read_model_with_pcall=false,
 	target_switch_ped_veh=false,
 	target_ignore_player_veh=true,
-	hold_to_view_wheel=false,
 	ped_preview = {
         enabled=true,
         preset_name="PAUSE_SINGLE_LEFT",
@@ -7951,7 +8508,7 @@ local config = {
         {name="Foliage", value=256, enabled=true},
     },
     trace_flag_value=0,
-	key_to_player_tp_vehicle="E",
+	key_to_player_switch_vehicle="E",
 }
 
 local CONTEXT_MENUS_DIR = filesystem.scripts_dir()..config.menu_options_scripts_dir
@@ -8010,44 +8567,25 @@ cmm.context_menu_draw_tick = function()
 	local target = state.current_target
     if target ~= nil and target.pos ~= nil then
         cmm.draw_selection(target)
-		if config.hold_to_view_wheel then
-        	if cmm.is_menu_open_control_pressed() and not createphoneoutofding then
-           		DISABLE_CONTROL_ACTION(2, 27, true)
-            	timetodestroypgone += 1
-            	if not menu.is_open() then
-                	cmm.open_options_menu(target)
-            	end
-       		elseif cmm.is_menu_close_control_pressed() then
-            	cmm.close_options_menu(target)
-            	if timetodestroypgone < 15 and timetodestroypgone > 1 then createphoneoutofding = true SET_CONTROL_VALUE_NEXT_FRAME(2, 27, 1.0) else createphoneoutofding = false end
-           		timetodestroypgone = 0
-        	end
+		DISABLE_CONTROL_ACTION(2, 27, true)
+		if state.is_menu_open then
+			cmm.disable_controls()
+			cmm.update_menu(target)
 			if cmm.is_menu_select_control_pressed() then
 				cmm.execute_selected_action(target)
 			end
-			if state.is_menu_open then
-            	cmm.update_menu(target)
-       		end
+			if cmm.is_menu_close_control_pressed() then
+				if target.previous_relevant_options then
+					cmm.build_relevant_options(target, target.previous_relevant_options.relevant_options)
+					target.previous_relevant_options = target.previous_relevant_options.parent
+					target.selected_option = nil
+				else
+					cmm.close_options_menu(target)
+				end
+			end
 		else
-			DISABLE_CONTROL_ACTION(2, 27, true)
-			if state.is_menu_open then
-				cmm.disable_controls()
-				cmm.update_menu(target)
-				if cmm.is_menu_select_control_pressed() then
-					cmm.execute_selected_action(target)
-				end
-				if cmm.is_menu_close_control_pressed() then
-					if target.previous_relevant_options then
-						cmm.build_relevant_options(target, target.previous_relevant_options.relevant_options)
-						target.previous_relevant_options = target.previous_relevant_options.parent
-					else
-						cmm.close_options_menu(target)
-					end
-				end
-			else
-				if cmm.is_menu_open_control_pressed() then
-					cmm.open_options_menu(target)
-				end
+			if cmm.is_menu_open_control_pressed() then
+				cmm.open_options_menu(target)
 			end
 		end
     end
@@ -8066,19 +8604,11 @@ cmm.is_menu_select_control_pressed = function()
 end
 
 cmm.is_menu_open_control_pressed = function()
-	if config.hold_to_view_wheel then
-		return IS_DISABLED_CONTROL_PRESSED(2, 27) and not IS_PAUSE_MENU_ACTIVE()
-	else
-    	return IS_DISABLED_CONTROL_JUST_PRESSED(2, 27) and not IS_PAUSE_MENU_ACTIVE()
-	end
+    return IS_DISABLED_CONTROL_JUST_PRESSED(2, 27) and not IS_PAUSE_MENU_ACTIVE()
 end
 
 cmm.is_menu_close_control_pressed = function()
-	if config.hold_to_view_wheel then
-    	return not IS_DISABLED_CONTROL_PRESSED(2, 27) or IS_PAUSE_MENU_ACTIVE()
-	else
-		return IS_DISABLED_CONTROL_JUST_PRESSED(2, 27) or IS_DISABLED_CONTROL_JUST_PRESSED(2, 177)
-	end
+	return IS_DISABLED_CONTROL_JUST_PRESSED(2, 27) or IS_DISABLED_CONTROL_JUST_PRESSED(2, 177)
 end
 
 cmm.is_menu_available = function()
@@ -8204,7 +8734,7 @@ cmm.find_nearest_target = function()
     --check_pointers_for_closest_target(entities.get_all_objects_as_pointers(), result, config.target_object_distance, config.target_snap_distance.object)
 
     if result.closest_target.pointer then
-        result.closest_target.handle = entities.pointer_to_handle(result.closest_target.pointer)
+		result.closest_target.handle = entities.pointer_to_handle(result.closest_target.pointer)
     end
     if result.closest_target.handle then
 		if IS_ENTITY_A_PED(result.closest_target.handle) then
@@ -8228,7 +8758,9 @@ cmm.find_nearest_target = function()
 		end
     end
 
-    return cmm.get_raycast_target()
+	if config.trace_flag_value > 0 then
+        return cmm.get_raycast_target()
+    end
 end
 
 ---
@@ -8488,22 +9020,24 @@ end
 local pointx = memory.alloc()
 local pointy = memory.alloc()
 
-function get_circle_coords(origin, radius, angle_degree)
+local function get_circle_coords(origin, radius, angle_degree, aspect_x, aspect_y)
     local angle_radian = math.rad(angle_degree)
+    if aspect_x == nil then aspect_x = 0.9 end
+    if aspect_y == nil then aspect_y = 1.6 end
     return {
-        x=(radius * math.cos(angle_radian) * 0.9) + origin.x,
-        y=(radius * math.sin(angle_radian) * 1.6) + origin.y
+        x=(radius * math.cos(angle_radian) * aspect_x) + origin.x,
+        y=(radius * math.sin(angle_radian) * aspect_y) + origin.y
     }
 end
 
-function reverse_table(tab)
+local function reverse_table(tab)
     for i = 1, #tab//2, 1 do
         tab[i], tab[#tab-i+1] = tab[#tab-i+1], tab[i]
     end
     return tab
 end
 
-function calculate_point_angles(target, option, option_angle, option_width)
+local function calculate_point_angles(target, option, option_angle, option_width)
     local width_scale = 1 - config.option_wedge_padding
     local point_angles = {
         option_angle - (option_width / 2 * width_scale),
@@ -8516,7 +9050,7 @@ function calculate_point_angles(target, option, option_angle, option_width)
 end
 
 
-function build_wedge_points(point_angles, target)
+local function build_wedge_points(point_angles, target)
     local top_points = {}
     local bottom_points = {}
     for _, point_angle in point_angles do
@@ -8657,7 +9191,7 @@ cmm.execute_selected_action = function(target)
     end
 end
 
-function get_option_wedge_draw_color(target, option)
+local function get_option_wedge_draw_color(target, option)
     local draw_color = config.color.option_wedge
     if target.selected_option == option then
         if target.selected_option.ticks_shown ~= nil then
@@ -8673,7 +9207,7 @@ function get_option_wedge_draw_color(target, option)
     return draw_color
 end
 
-function build_option_text_label(option)
+local function build_option_text_label(option)
     local option_text = option.name --.. "["..math.floor(option.option_angle + 90).."]"
     if option.num_relevant_children and option.num_relevant_children > 0 then
         option_text = option_text.." ("..option.num_relevant_children..")"
@@ -8681,7 +9215,7 @@ function build_option_text_label(option)
     return option_text
 end
 
-function get_option_text_coords(target, option)
+local function get_option_text_coords(target, option)
     return get_circle_coords(target.menu_pos, config.menu_radius*config.option_label_distance, option.option_angle)
 end
 
@@ -8751,7 +9285,7 @@ cmm.draw_target_label = function(target)
     end
 end
 
-function is_menu_option_relevant(menu_option, target)
+local function is_menu_option_relevant(menu_option, target)
     -- If menu option is a container, then check for at least one relevant child
     if menu_option.items ~= nil then
         menu_option.num_relevant_children = 0
@@ -8805,7 +9339,9 @@ cmm.build_relevant_options = function(target, options)
             if option.on_open and type(option.on_open) == "function" then
                 option.on_open(target, option)
             end
-            table.insert(target.relevant_options, cmm.deep_table_copy(option))
+			if not option.deleteitall then
+            	table.insert(target.relevant_options, cmm.deep_table_copy(option))
+			end
         end
     end
     --if #relevant_options == 1 then table.insert(relevant_options, cmm.empty_menu_option()) end
@@ -8818,7 +9354,7 @@ cmm.build_relevant_options = function(target, options)
     cmm.build_option_wedge_points(target)
 end
 
-function get_target_type(new_target)
+local function get_target_type(new_target)
     local entity_type = ENTITY_TYPES[GET_ENTITY_TYPE(new_target.handle)] or "WORLD_OBJECT"
     if entity_type == "PED" and entities.is_player_ped(new_target.handle) then
         return "PLAYER"
@@ -8826,7 +9362,7 @@ function get_target_type(new_target)
     return entity_type
 end
 
-function get_player_id_from_handle(handle)
+local function get_player_id_from_handle(handle)
     for _, pid in players.list() do
         local player_ped = GET_PLAYER_PED_SCRIPT_INDEX(pid)
         if player_ped == handle then
@@ -8843,7 +9379,7 @@ cmm.get_vehicle_name_by_handle = function(handle)
     return cmm.get_vehicle_name_by_model(entities.get_model_hash(handle))
 end
 
-function get_target_name(target)
+local function get_target_name(target)
     if target.type == "PLAYER" and target.player_id then
         return GET_PLAYER_NAME(target.player_id)
     elseif target.type == "VEHICLE" then
@@ -8852,7 +9388,7 @@ function get_target_name(target)
     return target.model
 end
 
-function get_target_owner(target)
+local function get_target_owner(target)
     local owner_pid
     if target.type == "PLAYER" then
         owner_pid = get_player_id_from_handle(target.handle)
@@ -9006,9 +9542,16 @@ cmm.is_target_a_vehicle_with_ped = function(target)
     return target.type == "VEHICLE" and DOES_ENTITY_EXIST((GET_PED_IN_VEHICLE_SEAT(target.handle, -1)))
 end
 
+cmm.switch_to_new_target = function(target, newtarget)
+	cmm.close_options_menu(target)
+	target.handle = newtarget
+	cmm.update_target_data(target)
+	cmm.open_options_menu(target)
+end
+
 
 cmm.check_player_to_vehicle_switch = function(target)
-	if is_key_just_down(config.key_to_player_tp_vehicle) then
+	if is_key_just_down(config.key_to_player_switch_vehicle) then
         if cmm.is_target_a_ped_in_vehicle(target) then
 			playersinveh = getpedsinvehicle(GET_VEHICLE_PED_IS_IN(target.handle, false), false)
 			seatofmainplayer = getseatofplayer(GET_VEHICLE_PED_IS_IN(target.handle, false), target.handle)
@@ -9021,35 +9564,23 @@ cmm.check_player_to_vehicle_switch = function(target)
 					--if IS_PED_A_PLAYER(ped) then
 						seatofplayer = getseatofplayer(GET_VEHICLE_PED_IS_IN(target.handle, false), ped)
 						if seatofmainplayer < seatofplayer then
-							cmm.close_options_menu(target)
-							target.handle = GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, false), seatofplayer)
-							cmm.update_target_data(target)
-							cmm.open_options_menu(target)
+							cmm.switch_to_new_target(target, GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, false), seatofplayer))
 							break
 						end
 					--end
 					if _ == tablesize then
 						if GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, true), seatofmainplayer) == target.handle then
-							cmm.close_options_menu(target)
-							target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
-							cmm.update_target_data(target)
-							cmm.open_options_menu(target)
+							cmm.switch_to_new_target(target, GET_VEHICLE_PED_IS_IN(target.handle, false))
 						end
 					end
 				end
 			else
 				if GET_PED_IN_VEHICLE_SEAT(GET_VEHICLE_PED_IS_IN(target.handle, true), -1) == target.handle then
-					cmm.close_options_menu(target)
-        			target.handle = GET_VEHICLE_PED_IS_IN(target.handle, false)
-        			cmm.update_target_data(target)
-					cmm.open_options_menu(target)
+					cmm.switch_to_new_target(target, GET_VEHICLE_PED_IS_IN(target.handle, false))
 				end
 			end
 		elseif cmm.is_target_a_vehicle_with_ped(target) then
-			cmm.close_options_menu(target)
-			target.handle = GET_PED_IN_VEHICLE_SEAT(target.handle, -1)
-        	cmm.update_target_data(target)
-			cmm.open_options_menu(target)
+			cmm.switch_to_new_target(target, GET_PED_IN_VEHICLE_SEAT(target.handle, -1))
         end
 	end
 end
@@ -9077,16 +9608,7 @@ end
 
 --ändern wegen unter ordner
 cmm.close_options_menu = function(target)
-	if config.hold_to_view_wheel then
-    	if state.is_menu_open then
-        	cmm.trigger_selected_action(target)
-    	end
-    	if not target.selected_option then
-        	state.is_menu_open = false
-    	end
-	else
-		state.is_menu_open = false
-	end
+	state.is_menu_open = false
 end
 
 cmm.draw_pointer_line = function(target)
@@ -9192,13 +9714,10 @@ end, config.target_switch_ped_veh)
 menus.settings:toggle("Ignore player vehicle", {}, "ignores the players vehicle so the player is on focus", function(value)
     config.target_ignore_player_veh = value
 end, config.target_ignore_player_veh)
-menus.settings:toggle("hold to get wheel", {}, "", function(value)
-    config.hold_to_view_wheel = value
-end, config.hold_to_view_wheel)
 menus.settings:text_input("Key_to_Switch", {"key_to_Switch"}, "Key to switch from player to vehicle and vehicle to player", function(value)
     value = string.upper(value)
-	config.key_to_player_tp_vehicle = value
-end, config.key_to_player_tp_vehicle)
+	config.key_to_player_switch_vehicle = value
+end, config.key_to_player_switch_vehicle)
 
 menus.settings_snap_distance = menus.settings:list("Snap Distance", {}, "How close your crosshair needs to be to an entity to snap to it")
 menus.settings_snap_distance:slider_float("Player Snap Distance", {"cmmsnapdistanceplayer"}, "How close your crosshair needs to be to a player to snap to it", 0, 100, math.floor(config.target_snap_distance.player * 100), 1, function(value)
@@ -10658,7 +11177,7 @@ menu.toggle(translator, "Traduct even if the language is the same as the desired
 end)
 
 traductmymessage = menu.list(translator, "Send Traducted message")
-finallangmenu = menu.list_select(traductmymessage, "Final Language", {"finallang"}, "Final Languge of your message.																	  You need to click to aply change", LangName, 1, function(s)
+finallangmenu = menu.list_select(traductmymessage, "Final Language", {"finallang"}, "Final Languge of your message.\nYou need to click to aply change", LangName, 1, function(s)
    targetlangmessagesend = LangLookupByName[LangKeys[s]]
 end)
 
@@ -13142,7 +13661,7 @@ menu.action(vehicle, "sofort anhalten", {}, "", function()
 	end
 end)
 
-menu.action(vehicle,"Auto Reparieren", {}, "", function()
+--[[menu.action(vehicle,"Auto Reparieren", {}, "", function()
 	vehicle = entities.get_user_vehicle_as_handle(true)
 	currentSpeed = GET_ENTITY_SPEED(vehicle)
 	seatplayer = GET_PED_IN_VEHICLE_SEAT(vehicle, -1, true)
@@ -13151,7 +13670,7 @@ menu.action(vehicle,"Auto Reparieren", {}, "", function()
 		SET_VEHICLE_FORWARD_SPEED(vehicle, currentSpeed)
 	end
 
-end)
+end)]]
 
 local enterexitconfig = {
 	infoofveh = true,
