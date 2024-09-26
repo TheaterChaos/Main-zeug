@@ -4,7 +4,7 @@ native_invoker.accept_bools_as_ints(true)
 util.keep_running()
 
 
-local SCRIPT_VERSION = "0.76"
+local SCRIPT_VERSION = "0.77"
 
 
 local allfiles = {
@@ -7286,9 +7286,9 @@ local deactivatejobtable = {
 	[10]= "Online>Protections>Block Entity Spam>Block Entity Spam",
 	[11]= "Game>Disables>Disable Restricted Areas",
 	[12]= "Self>Lock Wanted Level",
-	[13]= "Online>Spoofing>Host Token Spoofing>Host Token Spoofing",
-	[14]= "Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer",
-	[15]= "Online>Transitions>Join Group Override"}
+	--[13]= "Online>Spoofing>Host Token Spoofing>Host Token Spoofing",
+	[13]= "Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer",
+	[14]= "Online>Transitions>Join Group Override"}
 
 function loadtoggleoptionjobs()
 	for i, adress in pairs(deactivatejobtable) do
@@ -7329,7 +7329,7 @@ function jobzuegwiederanmachen()
 	menu.set_value(menu.ref_by_path("Online>Protections>Delete Modded Pop Multiplier Areas"), multiplierareas)
 	menu.set_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"), Entityspamzeug)
 	menu.set_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"), restrictedareas)
-	menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
+	--menu.set_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"), hosttokenspoof)
 	menu.set_value(menu.ref_by_path("Online>Transitions>Join Group Override"), groupoveride)
 end
 
@@ -7347,7 +7347,7 @@ menu.toggle(Zeugforjob, "Zeug für Job aus machen", {}, "Macht zeug aus damit in
 		Entityspamzeug = menu.get_value(menu.ref_by_path("Online>Protections>Block Entity Spam>Block Entity Spam"))
 		restrictedareas = menu.get_value(menu.ref_by_path("Game>Disables>Disable Restricted Areas"))
 		wantedlevel = menu.get_value(menu.ref_by_path("Self>Lock Wanted Level"))
-		hosttokenspoof = menu.get_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"))
+		--hosttokenspoof = menu.get_value(menu.ref_by_path("Online>Spoofing>Host Token Spoofing>Host Token Spoofing"))
 		allweaponsonoff = menu.get_value(menu.ref_by_path("Stand>Lua Scripts>"..SCRIPT_NAME..">Zeug für mich angepasst>alle waffen immer"))
 		groupoveride = menu.get_value(menu.ref_by_path("Online>Transitions>Join Group Override"))
 
@@ -9942,6 +9942,25 @@ menu.toggle_loop(player_zeug, "Anti modder scripthost", {}, "gibt dir script hos
     end
 end)
 
+local currentplayer
+
+menu.toggle_loop(player_zeug, "Auto block host sync", {}, "", function()
+	if util.is_session_transition_active() then
+		return
+	end
+	local host = {}
+	host.pid = players.get_host()
+	host.name = players.get_name(host.pid)
+	if host.name == "InvalidPlayer" then
+		return
+	end
+	if host.name != players.get_name(players.user()) and host.name != currentplayer then
+		currentplayer = host.name
+		menu.trigger_commands("desync"..host.name.." on")
+		util.toast("set current block host to: "..host.name)
+	end
+end)
+
 local anti_laender_zeug = menu.list(player_zeug, "Anti Länder zeug", {}, "")
 local leanderauswahl = menu.list(anti_laender_zeug, "länder auswahl", {}, "")
 local ESP = menu.list(player_zeug, "ESP", {}, "")
@@ -11255,6 +11274,24 @@ while run<10 do
 	util.yield()
 	run = run+1
 end
+local kickeduser = {}
+
+function kickalltohost()
+	local phostpos = players.get_host_queue_position(players.user())
+	kickeduser = {}
+	for players.list(false, true, true) as pid do
+		local hostposition = players.get_host_queue_position(pid)
+		if players.get_host() != pid then
+			if hostposition < phostpos then
+				if players.exists(pid) then
+					table.insert(kickeduser, pid)
+					menu.trigger_commands("kick"..players.get_name(pid))
+					util.yield(300)
+				end
+			end
+		end
+	end
+end
 
 
 
@@ -11266,13 +11303,39 @@ menu.action(player_zeug, "Get Host", {}, "kickt die leute die vor dir host werde
 		if players.get_host() != pid then
 			if hostposition < phostpos then
 				if players.exists(pid) then
+					table.insert(kickeduser, pid)
 					textline = textline.. "\n" ..players.get_name(pid).. "  :kicked"
 					menu.trigger_commands("kick"..players.get_name(pid))
+					util.yield(300)
 				end
 			end
 		end
 	end
+	local allkicked = false
+	repeat
+		util.yield()
+		local foundone = false
+		for pid in pairs(players.list_all_with_excludes(false)) do
+			for pid1 in pairs(kickeduser) do
+				if pid == pid1 then
+					foundone = true
+					break
+				end
+			end
+		end
+		if not foundone then
+			if players.get_host_queue_position(players.user()) > 1 then
+				kickalltohost()
+			else
+				allkicked = true
+			end
+		end
+	until allkicked or util.is_session_transition_active()
+	if util.is_session_transition_active() then
+		return
+	end
 	if players.get_host() != players.user() then
+		textline = textline.. "\n" ..players.get_name(pid).. "  :kicked  HOST"
 		menu.trigger_commands("kick"..players.get_name(players.get_host()))
 	end
 	if textline:len() > 0 then
